@@ -1,10 +1,10 @@
-# perMIR - 用户画像生成系统
+# MindPeek - 用户画像生成系统
 
 基于LLM的多轮对话用户画像生成系统。用户通过与AI聊天，系统自动分析并生成用户画像，包括性格类型、行为习惯、潜在想法等隐性特征。
 
 ## 项目简介
 
-**perMIR** 能做什么：
+**MindPeek** 能做什么：
 - 从多轮对话中提取用户的隐性特征（MBTI、大五人格、行为习惯、潜在想法）
 - 随着对话深入，自动关联和更新用户画像
 - 图形化展示用户画像，支持实时更新
@@ -165,7 +165,7 @@ perMIR/
 ├── main.py                    # 后端入口
 ├── requirements.txt          # Python依赖
 ├── config/
-│   └── config.json           # 配置文件
+│   └── config.example.json   # 配置文件模板
 ├── backend/
 │   ├── api/routes.py         # API路由
 │   ├── core/config.py        # 配置加载
@@ -301,4 +301,5 @@ A: 修改config/config.json中的default_provider和对应的模型配置
 
 ## License
 
-MIT
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+See the [LICENSE](LICENSE) file for details.
