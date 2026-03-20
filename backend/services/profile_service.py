@@ -16,6 +16,7 @@ from ..models.schemas import (
 from ..agents.agent_engine import AgentOrchestrator
 from ..knowledge_graph.graph import knowledge_graph
 from ..core.config import config_manager
+from .memo_base_service import memo_base_service
 
 
 class ProfileService:
@@ -44,7 +45,7 @@ class ProfileService:
     async def add_conversation(self, user_id: str, message: MessageCreate) -> ConversationModel:
         """添加对话"""
         user = await self.get_or_create_user(user_id)
-        
+
         conversation = ConversationModel(
             user_id=user_id,
             role=message.role.value,
@@ -54,7 +55,12 @@ class ProfileService:
         self.db.add(conversation)
         await self.db.commit()
         await self.db.refresh(conversation)
-        
+
+        if memo_base_service.is_enabled():
+            await memo_base_service.update_conversation(
+                user_id, message.role.value, message.content, message.session_id
+            )
+
         return conversation
     
     async def get_conversation_history(self, user_id: str, limit: int = 50) -> List[ConversationModel]:
@@ -111,7 +117,13 @@ class ProfileService:
             user_id, feature.feature_type, feature.feature_value,
             feature.confidence, feature.source_message
         )
-        
+
+        if memo_base_service.is_enabled():
+            await memo_base_service.save_feature(
+                user_id, feature.feature_type, feature.feature_value,
+                feature.confidence, feature.reasoning or "", feature.evidence or ""
+            )
+
         return feature_model
     
     async def get_user_features(self, user_id: str, feature_type: str = None) -> List[FeatureModel]:
@@ -159,7 +171,7 @@ class ProfileService:
             existing_profile.updated_at = datetime.utcnow()
             await self.db.commit()
             await self.db.refresh(existing_profile)
-            return existing_profile
+            profile = existing_profile
         else:
             profile = ProfileModel(
                 user_id=user_id,
@@ -169,7 +181,11 @@ class ProfileService:
             self.db.add(profile)
             await self.db.commit()
             await self.db.refresh(profile)
-            return profile
+
+        if memo_base_service.is_enabled():
+            await memo_base_service.save_user_profile(user_id, profile_data, summary)
+
+        return profile
     
     async def _generate_summary(self, user_id: str, features: List[FeatureModel]) -> str:
         """生成画像摘要"""

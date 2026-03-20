@@ -1,25 +1,32 @@
 {
     "llm_providers": {
-        "openrouter": {
+        "deepseek": {
             "enabled": true,
-            "api_key": "YOUR_OPENROUTER_API_KEY",
-            "api_url": "https://openrouter.ai/api/v1/chat/completions",
-            "model": "stepfun/step-3.5-flash:free"
-        },
-        "custom": {
-            "enabled": true,
-            "api_key": "",
-            "api_url": "",
-            "model": ""
+            "api_key": "your_api_key_here",
+            "api_url": "http://your_llm_server:8000/v1",
+            "model": "deepseek-chat",
+            "temperature": 0.7,
+            "max_tokens": 2000
         },
         "openai": {
             "enabled": false,
-            "api_key": "",
+            "api_key": "your_api_key_here",
             "api_url": "https://api.openai.com/v1/chat/completions",
             "model": "gpt-4"
+        },
+        "openrouter": {
+            "enabled": false,
+            "api_key": "your_api_key_here",
+            "api_url": "https://openrouter.ai/api/v1/chat/completions",
+            "model": "stepfun/step-3.5-flash:free"
         }
     },
-    "default_provider": "openrouter",
+    "default_provider": "deepseek",
+    "memo_base": {
+        "enabled": true,
+        "project_url": "http://your_memobase_server:8019",
+        "api_key": "your_memobase_api_key_here"
+    },
     "feature_extraction": {
         "confidence_threshold": 0.6,
         "auto_update_on_new_message": true,

@@ -1,140 +1,141 @@
 <template>
   <div class="profile-view">
-    <el-row :gutter="20">
-      <el-col :span="8">
-        <el-card class="user-card">
-          <template #header>
-            <div class="card-header">
-              <span>用户信息</span>
-              <el-input
-                v-model="userId"
-                placeholder="用户ID"
-                size="small"
-                style="width: 120px"
-                @change="loadProfile"
-              />
-            </div>
-          </template>
-
-          <div v-if="profileSummary" class="user-info">
-            <div class="avatar-section">
-              <div class="avatar-circle">
-                <el-avatar :size="70" :style="{ background: avatarColor }">
-                  {{ userId.charAt(0).toUpperCase() }}
-                </el-avatar>
+    <div class="profile-grid">
+      <div class="profile-sidebar">
+        <div class="user-card">
+          <div class="user-avatar">
+            <div class="avatar-ring">
+              <div class="avatar-inner">
+                {{ userId.charAt(0).toUpperCase() }}
               </div>
-              <h3>{{ userId }}</h3>
-              <el-tag :type="confidenceLevel" size="small">
-                置信度: {{ (profileSummary.confidence_score * 100).toFixed(0) }}%
-              </el-tag>
-            </div>
-
-            <el-divider />
-
-            <div class="stats-section">
-              <el-row>
-                <el-col :span="12">
-                  <div class="stat-item">
-                    <div class="stat-value">{{ profileSummary.total_features }}</div>
-                    <div class="stat-label">特征数</div>
-                  </div>
-                </el-col>
-                <el-col :span="12">
-                  <div class="stat-item">
-                    <div class="stat-value">{{ profileSummary.conversation_count }}</div>
-                    <div class="stat-label">对话轮数</div>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-
-            <el-divider />
-
-            <div v-if="profileSummary.mbti" class="mbti-section">
-              <h4>性格类型</h4>
-              <div class="mbti-display">
-                <span
-                  v-for="(char, idx) in profileSummary.mbti.split('')"
-                  :key="idx"
-                  class="mbti-char"
-                  :class="{ active: mbtiActive[idx] }"
-                  @mouseenter="highlightMbti(idx)"
-                  @mouseleave="resetMbti"
-                >
-                  {{ char }}
-                </span>
-              </div>
-              <div class="mbti-meaning">{{ getMbtiMeaning() }}</div>
             </div>
           </div>
-          <el-empty v-else description="暂无用户数据" />
-        </el-card>
-      </el-col>
+          <h2 class="user-name">{{ userId }}</h2>
+          <div class="user-badge" v-if="profileSummary?.mbti">
+            <span class="mbti-badge">{{ profileSummary.mbti }}</span>
+          </div>
 
-      <el-col :span="16">
-        <el-card class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>用户画像可视化</span>
-              <el-button text @click="refreshProfile" :icon="Refresh">刷新</el-button>
+          <div class="user-stats">
+            <div class="stat-item">
+              <span class="stat-value">{{ profileSummary?.total_features || 0 }}</span>
+              <span class="stat-label">特征数</span>
             </div>
-          </template>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-value">{{ profileSummary?.conversation_count || 0 }}</span>
+              <span class="stat-label">对话轮数</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-value">{{ confidencePercent }}%</span>
+              <span class="stat-label">置信度</span>
+            </div>
+          </div>
+
+          <div class="user-input-section">
+            <el-input
+              v-model="userIdInput"
+              placeholder="输入用户ID"
+              size="default"
+              @change="loadProfile"
+              class="user-id-input"
+            >
+              <template #append>
+                <el-button @click="loadProfile">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
+          </div>
+        </div>
+
+        <div class="mbti-card" v-if="profileSummary?.mbti">
+          <div class="card-title">MBTI 性格解析</div>
+          <div class="mbti-chars">
+            <div
+              v-for="(char, idx) in profileSummary.mbti.split('')"
+              :key="idx"
+              class="mbti-char-item"
+              @mouseenter="highlightMbti(idx)"
+              @mouseleave="resetMbti"
+              :class="{ active: mbtiActive[idx] }"
+            >
+              <span class="mbti-char">{{ char }}</span>
+              <span class="mbti-label">{{ getMbtiCharLabel(char) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-main">
+        <div class="charts-card">
+          <div class="card-header">
+            <span class="card-title">用户画像分析</span>
+            <el-button text @click="refreshProfile" class="refresh-btn">
+              <el-icon :size="18"><Refresh /></el-icon>
+            </el-button>
+          </div>
 
           <el-tabs v-model="activeTab" class="profile-tabs">
-            <el-tab-pane label="人格雷达图" name="radar">
+            <el-tab-pane label="雷达图" name="radar">
               <div ref="radarContainer" class="chart-container"></div>
             </el-tab-pane>
-
-            <el-tab-pane label="特征关系图" name="graph">
+            <el-tab-pane label="关系图" name="graph">
               <div ref="graphContainer" class="chart-container"></div>
             </el-tab-pane>
-
-            <el-tab-pane label="特征分布" name="pie">
+            <el-tab-pane label="分布图" name="pie">
               <div ref="pieContainer" class="chart-container"></div>
             </el-tab-pane>
           </el-tabs>
-        </el-card>
+        </div>
 
-        <el-card class="features-card" style="margin-top: 20px">
-          <template #header>
-            <span>详细特征</span>
-          </template>
-          <div class="features-timeline">
-            <el-timeline>
-              <el-timeline-item
-                v-for="(feature, index) in allFeatures"
-                :key="index"
-                :type="getFeatureColor(feature.feature_type)"
-                :hollow="feature.confidence < 0.7"
-              >
-                <div class="feature-item">
-                  <div class="feature-header">
-                    <el-tag :type="getFeatureTagType(feature.feature_type)" size="small">
-                      {{ feature.feature_type }}
-                    </el-tag>
-                    <span class="confidence">{{ (feature.confidence * 100).toFixed(0) }}%</span>
-                  </div>
-                  <div class="feature-value">{{ feature.feature_value }}</div>
-                  <div v-if="feature.reasoning" class="feature-reasoning">
-                    {{ feature.reasoning }}
-                  </div>
-                </div>
-              </el-timeline-item>
-            </el-timeline>
+        <div class="features-card">
+          <div class="card-header">
+            <span class="card-title">详细特征</span>
+            <span class="feature-count">{{ allFeatures.length }} 个特征</span>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+
+          <div class="features-timeline">
+            <div
+              v-for="(feature, index) in allFeatures"
+              :key="index"
+              class="timeline-item"
+            >
+              <div class="timeline-dot" :style="{ background: getFeatureColor(feature.feature_type) }"></div>
+              <div class="timeline-content">
+                <div class="feature-header">
+                  <el-tag :type="getFeatureTagType(feature.feature_type)" size="small">
+                    {{ feature.feature_type }}
+                  </el-tag>
+                  <span class="confidence">{{ (feature.confidence * 100).toFixed(0) }}%</span>
+                </div>
+                <div class="feature-value">{{ feature.feature_value }}</div>
+                <div v-if="feature.reasoning" class="feature-reasoning">
+                  {{ feature.reasoning }}
+                </div>
+              </div>
+            </div>
+
+            <div v-if="allFeatures.length === 0" class="empty-features">
+              <el-icon :size="48"><Document /></el-icon>
+              <p>暂无特征数据</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useProfileStore } from '@/stores/profile'
 import * as echarts from 'echarts'
+import { Search, Refresh, Document } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
+const userIdInput = ref(store.currentUserId)
 const userId = ref(store.currentUserId)
 const activeTab = ref('radar')
 const profileSummary = ref(null)
@@ -150,21 +151,9 @@ let pieChart = null
 
 const mbtiActive = ref([false, false, false, false])
 
-const confidenceLevel = computed(() => {
-  if (!profileSummary.value) return 'info'
-  const score = profileSummary.value.confidence_score
-  if (score >= 0.8) return 'success'
-  if (score >= 0.6) return 'warning'
-  return 'danger'
-})
-
-const avatarColor = computed(() => {
-  const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
-  let hash = 0
-  for (let i = 0; i < userId.value.length; i++) {
-    hash = userId.value.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return colors[Math.abs(hash) % colors.length]
+const confidencePercent = computed(() => {
+  if (!profileSummary.value?.confidence_score) return 0
+  return (profileSummary.value.confidence_score * 100).toFixed(0)
 })
 
 onMounted(async () => {
@@ -180,6 +169,11 @@ watch(activeTab, () => {
 })
 
 async function loadProfile() {
+  if (userIdInput.value) {
+    userId.value = userIdInput.value
+    store.setUserId(userId.value)
+  }
+
   try {
     const data = await store.loadProfile()
     profileSummary.value = data.summary
@@ -198,9 +192,10 @@ async function refreshProfile() {
 function renderRadarChart() {
   if (!radarContainer.value) return
 
-  if (!radarChart) {
-    radarChart = echarts.init(radarContainer.value)
+  if (radarChart) {
+    radarChart.dispose()
   }
+  radarChart = echarts.init(radarContainer.value)
 
   const bigFiveData = profileSummary.value?.big_five || {}
   const indicators = [
@@ -220,15 +215,30 @@ function renderRadarChart() {
   ]
 
   const option = {
+    backgroundColor: 'transparent',
     tooltip: {
-      trigger: 'item'
+      trigger: 'item',
+      backgroundColor: 'var(--bg-tertiary)',
+      borderColor: 'var(--border-color)',
+      textStyle: { color: 'var(--text-primary)' }
     },
     radar: {
       indicator: indicators,
       radius: '65%',
       axisName: {
-        color: '#333',
+        color: 'var(--text-secondary)',
         fontSize: 12
+      },
+      splitArea: {
+        areaStyle: {
+          color: ['rgba(99, 102, 241, 0.05)', 'rgba(99, 102, 241, 0.1)']
+        }
+      },
+      splitLine: {
+        lineStyle: { color: 'var(--border-color)' }
+      },
+      axisLine: {
+        lineStyle: { color: 'var(--border-color)' }
       }
     },
     series: [{
@@ -237,20 +247,16 @@ function renderRadarChart() {
         value: values,
         name: '大五人格',
         areaStyle: {
-          color: 'rgba(102, 126, 234, 0.3)'
+          color: 'rgba(99, 102, 241, 0.3)'
         },
         lineStyle: {
-          color: '#667eea'
+          color: '#6366f1',
+          width: 2
         },
         itemStyle: {
-          color: '#667eea'
+          color: '#6366f1'
         }
-      }],
-      emphasis: {
-        lineStyle: {
-          width: 3
-        }
-      }
+      }]
     }]
   }
 
@@ -260,9 +266,10 @@ function renderRadarChart() {
 function renderGraphChart() {
   if (!graphContainer.value) return
 
-  if (!graphChart) {
-    graphChart = echarts.init(graphContainer.value)
+  if (graphChart) {
+    graphChart.dispose()
   }
+  graphChart = echarts.init(graphContainer.value)
 
   const categories = ['MBTI', '大五人格', '行为习惯', '潜在想法', '兴趣爱好']
 
@@ -284,12 +291,12 @@ function renderGraphChart() {
     source: userId.value,
     target: f.feature_value,
     lineStyle: {
-      width: f.confidence * 5,
+      width: f.confidence * 3,
       color: {
         type: 'linear',
         x: 0, y: 0, x2: 1, y2: 0,
         colorStops: [
-          { offset: 0, color: '#667eea' },
+          { offset: 0, color: '#6366f1' },
           { offset: 1, color: getFeatureColor(f.feature_type) }
         ]
       }
@@ -297,12 +304,16 @@ function renderGraphChart() {
   }))
 
   const option = {
+    backgroundColor: 'transparent',
     tooltip: {
-      formatter: '{b}'
+      formatter: '{b}',
+      backgroundColor: 'var(--bg-tertiary)',
+      borderColor: 'var(--border-color)',
+      textStyle: { color: 'var(--text-primary)' }
     },
     legend: [{
       data: categories,
-      textStyle: { fontSize: 10 }
+      textStyle: { color: 'var(--text-secondary)', fontSize: 10 }
     }],
     series: [{
       type: 'graph',
@@ -312,13 +323,15 @@ function renderGraphChart() {
       label: {
         show: true,
         position: 'right',
-        fontSize: 10
+        fontSize: 10,
+        color: 'var(--text-primary)'
       },
       categories: categories.map((name, idx) => ({ name, itemStyle: { color: getCategoryColor(idx) } })),
       nodes: nodes,
       links: links,
       lineStyle: {
-        curveness: 0.3
+        curveness: 0.3,
+        color: 'source'
       },
       emphasis: {
         focus: 'adjacency'
@@ -336,9 +349,10 @@ function renderGraphChart() {
 function renderPieChart() {
   if (!pieContainer.value) return
 
-  if (!pieChart) {
-    pieChart = echarts.init(pieContainer.value)
+  if (pieChart) {
+    pieChart.dispose()
   }
+  pieChart = echarts.init(pieContainer.value)
 
   const typeCount = {}
   allFeatures.value.forEach(f => {
@@ -351,22 +365,26 @@ function renderPieChart() {
   }))
 
   const option = {
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} ({d}%)'
+      formatter: '{b}: {c} ({d}%)',
+      backgroundColor: 'var(--bg-tertiary)',
+      borderColor: 'var(--border-color)',
+      textStyle: { color: 'var(--text-primary)' }
     },
     legend: {
       orient: 'vertical',
       left: 'left',
-      textStyle: { fontSize: 11 }
+      textStyle: { color: 'var(--text-secondary)', fontSize: 11 }
     },
     series: [{
       type: 'pie',
       radius: ['40%', '70%'],
       avoidLabelOverlap: false,
       itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
+        borderRadius: 8,
+        borderColor: 'var(--bg-secondary)',
         borderWidth: 2
       },
       label: {
@@ -377,14 +395,15 @@ function renderPieChart() {
         label: {
           show: true,
           fontSize: 14,
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          color: 'var(--text-primary)'
         }
       },
       labelLine: {
         show: false
       },
       data: pieData,
-      color: ['#667eea', '#f44336', '#ff9800', '#4caf50', '#2196f3', '#9c27b0']
+      color: ['#6366f1', '#ef4444', '#f59e0b', '#22c55e', '#2196f3', '#8b5cf6']
     }]
   }
 
@@ -392,19 +411,19 @@ function renderPieChart() {
 }
 
 function getCategoryColor(idx) {
-  const colors = ['#9c27b0', '#2196f3', '#ff9800', '#f44336', '#4caf50', '#e91e63']
-  return colors[idx] || '#607d8b'
+  const colors = ['#8b5cf6', '#2196f3', '#f59e0b', '#ef4444', '#22c55e', '#ec4899']
+  return colors[idx] || '#6b6c7d'
 }
 
 function getFeatureColor(type) {
   const colors = {
-    'MBTI': '#9c27b0',
+    'MBTI': '#8b5cf6',
     '大五人格': '#2196f3',
-    '行为习惯': '#ff9800',
-    '潜在想法': '#f44336',
-    '兴趣爱好': '#4caf50'
+    '行为习惯': '#f59e0b',
+    '潜在想法': '#ef4444',
+    '兴趣爱好': '#22c55e'
   }
-  return colors[type] || '#607d8b'
+  return colors[type] || '#6b6c7d'
 }
 
 function getFeatureTagType(type) {
@@ -426,155 +445,324 @@ function resetMbti() {
   mbtiActive.value = [false, false, false, false]
 }
 
-function getMbtiMeaning() {
-  if (!profileSummary.value?.mbti) return ''
+function getMbtiCharLabel(char) {
   const meanings = {
-    'I': '内向型 - 从内心世界获取能量',
-    'E': '外向型 - 从外部世界获取能量',
-    'N': '直觉型 - 关注抽象概念',
-    'S': '感觉型 - 关注具体细节',
-    'T': '思考型 - 依据逻辑决策',
-    'F': '情感型 - 依据价值观决策',
-    'J': '判断型 - 喜欢计划和控制',
-    'P': '感知型 - 喜欢灵活应变'
+    'I': '内向',
+    'E': '外向',
+    'N': '直觉',
+    'S': '感觉',
+    'T': '思考',
+    'F': '情感',
+    'J': '判断',
+    'P': '感知'
   }
-  return profileSummary.value.mbti.split('').map(c => meanings[c]).join(' / ')
+  return meanings[char] || ''
 }
 </script>
 
 <style scoped>
 .profile-view {
-  height: 100%;
+  height: calc(100vh - 112px);
   overflow-y: auto;
 }
 
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+}
+
+.profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .user-card {
-  height: auto;
-  min-height: calc(100vh - 160px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.user-avatar {
+  margin-bottom: 16px;
+}
+
+.avatar-ring {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  padding: 4px;
+  margin: 0 auto;
+}
+
+.avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.user-badge {
+  margin-bottom: 20px;
+}
+
+.mbti-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border-color);
+}
+
+.user-input-section {
+  padding-top: 8px;
+}
+
+.user-id-input {
+  width: 100%;
+}
+
+.user-id-input :deep(.el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.user-id-input :deep(.el-input__inner) {
+  color: var(--text-primary);
+}
+
+.mbti-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.mbti-chars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.mbti-char-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mbti-char-item:hover,
+.mbti-char-item.active {
+  background: var(--accent-color);
+}
+
+.mbti-char {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mbti-char-item.active .mbti-char {
+  color: white;
+}
+
+.mbti-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mbti-char-item.active .mbti-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.charts-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 16px;
 }
 
-.avatar-section {
-  text-align: center;
-  padding: 10px 0;
+.refresh-btn {
+  color: var(--text-secondary);
 }
 
-.avatar-circle {
-  margin-bottom: 10px;
+.refresh-btn:hover {
+  color: var(--accent-color);
 }
 
-.avatar-section h3 {
-  margin: 10px 0;
-  color: #303133;
+.profile-tabs :deep(.el-tabs__header) {
+  margin-bottom: 16px;
 }
 
-.stats-section {
-  padding: 5px 0;
+.profile-tabs :deep(.el-tabs__item) {
+  color: var(--text-secondary);
 }
 
-.stat-item {
-  text-align: center;
+.profile-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--accent-color);
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #667eea;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #909399;
-}
-
-.mbti-section {
-  text-align: center;
-}
-
-.mbti-section h4 {
-  margin-bottom: 10px;
-  color: #606266;
-}
-
-.mbti-display {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  margin-bottom: 10px;
-}
-
-.mbti-char {
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  border-radius: 50%;
-  background: #f0f2f5;
-  color: #909399;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.mbti-char.active {
-  background: #667eea;
-  color: white;
-  transform: scale(1.2);
-}
-
-.mbti-meaning {
-  font-size: 11px;
-  color: #909399;
-  line-height: 1.4;
-}
-
-.chart-card {
-  min-height: 450px;
+.profile-tabs :deep(.el-tabs__active-bar) {
+  background-color: var(--accent-color);
 }
 
 .chart-container {
-  width: 100%;
   height: 350px;
 }
 
 .features-card {
-  max-height: 400px;
-  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.feature-count {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .features-timeline {
-  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.feature-item {
-  padding: 5px 0;
+.timeline-item {
+  display: flex;
+  gap: 14px;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.timeline-content {
+  flex: 1;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .feature-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
 .confidence {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .feature-value {
   font-weight: 500;
-  color: #303133;
-  margin-bottom: 3px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
 }
 
 .feature-reasoning {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.empty-features {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-features p {
+  margin-top: 12px;
+  font-size: 14px;
 }
 </style>

@@ -413,10 +413,74 @@ class OpenRouterProvider(BaseLLMProvider):
                                 continue
 
 
+class DeepSeekProvider(BaseLLMProvider):
+    """DeepSeek提供者 - 使用 OpenAI 兼容接口"""
+
+    async def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
+        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "dummy_key")
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": self.config.model or "deepseek-chat",
+            "messages": messages,
+            "temperature": kwargs.get("temperature", self.config.temperature),
+            "max_tokens": kwargs.get("max_tokens", self.config.max_tokens)
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                self.config.api_url or "http://172.16.5.147:8000/v1/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+
+    async def chat_stream(self, messages: List[Dict[str, str]], **kwargs):
+        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "dummy_key")
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": self.config.model or "deepseek-chat",
+            "messages": messages,
+            "temperature": kwargs.get("temperature", self.config.temperature),
+            "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
+            "stream": True
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            async with client.stream(
+                "POST",
+                self.config.api_url or "http://172.16.5.147:8000/v1/chat/completions",
+                headers=headers,
+                json=payload
+            ) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data != "[DONE]":
+                            try:
+                                chunk = json.loads(data)
+                                if chunk["choices"][0].get("delta", {}).get("content"):
+                                    yield chunk["choices"][0]["delta"]["content"]
+                            except json.JSONDecodeError:
+                                continue
+
+
 class LLMProviderFactory:
     """LLM提供者工厂"""
-    
+
     _providers = {
+        "deepseek": DeepSeekProvider,
         "qwen": QwenProvider,
         "yi": YiProvider,
         "ERNIE": ERNIEProvider,

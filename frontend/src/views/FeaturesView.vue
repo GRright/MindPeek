@@ -1,59 +1,81 @@
 <template>
   <div class="features-view">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>特征管理</span>
-          <div>
-            <el-input
-              v-model="userId"
-              placeholder="用户ID"
-              size="small"
-              style="width: 150px; margin-right: 10px"
-              @change="loadFeatures"
-            />
-            <el-button type="primary" @click="showAddDialog = true">
-              添加特征
-            </el-button>
-          </div>
-        </div>
-      </template>
-      
-      <el-table :data="features" style="width: 100%" v-loading="loading">
-        <el-table-column prop="feature_type" label="特征类型" width="120">
+    <div class="features-header">
+      <div class="header-left">
+        <el-icon :size="20"><Document /></el-icon>
+        <span class="header-title">特征管理</span>
+      </div>
+      <div class="header-actions">
+        <el-input
+          v-model="userId"
+          placeholder="用户ID"
+          size="default"
+          class="user-input"
+        />
+        <el-button type="primary" @click="loadFeatures" :loading="loading" class="load-btn">
+          <el-icon v-if="!loading"><Search /></el-icon>
+          {{ loading ? '加载中...' : '加载特征' }}
+        </el-button>
+      </div>
+    </div>
+
+    <div class="features-content">
+      <el-table
+        :data="features"
+        style="width: 100%"
+        v-loading="loading"
+        class="features-table"
+        :row-class-name="tableRowClassName"
+      >
+        <el-table-column prop="feature_type" label="特征类型" width="140">
           <template #default="{ row }">
-            <el-tag :type="getFeatureTagType(row.feature_type)">
+            <el-tag :type="getFeatureTagType(row.feature_type)" size="small">
               {{ row.feature_type }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="feature_value" label="特征值" min-width="200" />
-        <el-table-column prop="confidence" label="置信度" width="150">
+        <el-table-column prop="feature_value" label="特征值" min-width="200">
           <template #default="{ row }">
-            <el-progress
-              :percentage="row.confidence * 100"
-              :stroke-width="8"
-              :color="getConfidenceColor(row.confidence)"
-            />
+            <span class="feature-value-cell">{{ row.feature_value }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="source_message" label="来源消息" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="reasoning" label="推理依据" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="updated_at" label="更新时间" width="180">
+        <el-table-column prop="confidence" label="置信度" width="160">
           <template #default="{ row }">
-            {{ formatTime(row.updated_at) }}
+            <div class="confidence-cell">
+              <el-progress
+                :percentage="row.confidence * 100"
+                :stroke-width="6"
+                :color="getConfidenceColor(row.confidence)"
+                :show-text="false"
+                class="confidence-bar"
+              />
+              <span class="confidence-text">{{ (row.confidence * 100).toFixed(0) }}%</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="source_message" label="来源消息" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="reasoning" label="推理依据" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="updated_at" label="更新时间" width="160">
+          <template #default="{ row }">
+            <span class="time-cell">{{ formatTime(row.updated_at) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
-            <el-button type="danger" size="small" text @click="deleteFeature(row)">
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click="deleteFeature(row)"
+              class="delete-btn"
+            >
               删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
-      
-      <div class="pagination">
+
+      <div class="pagination-wrapper" v-if="total > pageSize">
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="pageSize"
@@ -62,10 +84,15 @@
           @current-change="loadFeatures"
         />
       </div>
-    </el-card>
-    
-    <el-dialog v-model="showAddDialog" title="添加特征" width="500px">
-      <el-form :model="newFeature" label-width="100px">
+
+      <div class="empty-state" v-if="!loading && features.length === 0">
+        <el-icon :size="48"><Document /></el-icon>
+        <p>暂无特征数据</p>
+      </div>
+    </div>
+
+    <el-dialog v-model="showAddDialog" title="添加特征" width="500px" class="add-dialog">
+      <el-form :model="newFeature" label-width="100px" class="add-form">
         <el-form-item label="特征类型">
           <el-select v-model="newFeature.feature_type" placeholder="选择类型" style="width: 100%">
             <el-option label="MBTI" value="MBTI" />
@@ -76,15 +103,15 @@
             <el-option label="价值观" value="价值观" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="特征值">
           <el-input v-model="newFeature.feature_value" placeholder="输入特征值" />
         </el-form-item>
-        
+
         <el-form-item label="置信度">
           <el-slider v-model="newFeature.confidence" :min="0" :max="1" :step="0.1" show-input />
         </el-form-item>
-        
+
         <el-form-item label="来源消息">
           <el-input
             v-model="newFeature.source_message"
@@ -93,7 +120,7 @@
             placeholder="可选"
           />
         </el-form-item>
-        
+
         <el-form-item label="推理依据">
           <el-input
             v-model="newFeature.reasoning"
@@ -103,10 +130,12 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="addFeature" :loading="adding">添加</el-button>
+        <el-button @click="showAddDialog = false" class="cancel-btn">取消</el-button>
+        <el-button type="primary" @click="addFeature" :loading="adding" class="submit-btn">
+          添加
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -116,6 +145,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
+import { Document, Search } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
@@ -158,11 +188,11 @@ async function addFeature() {
     ElMessage.warning('请填写特征类型和特征值')
     return
   }
-  
+
   adding.value = true
   try {
     await store.addFeature(newFeature.value)
-    ElMessage.success('特征添加成功')
+    ElMessage.success('添加成功')
     showAddDialog.value = false
     newFeature.value = {
       feature_type: '',
@@ -179,14 +209,33 @@ async function addFeature() {
   }
 }
 
-function deleteFeature(row) {
-  ElMessageBox.confirm('确定要删除该特征吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    ElMessage.info('删除功能待实现')
-  }).catch(() => {})
+async function deleteFeature(row) {
+  try {
+    await ElMessageBox.confirm('确定要删除这个特征吗？', '确认删除', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await store.deleteFeature(row.id)
+    ElMessage.success('删除成功')
+    await loadFeatures()
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function getFeatureTagType(type) {
@@ -197,35 +246,230 @@ function getFeatureTagType(type) {
     '潜在想法': 'danger',
     '兴趣爱好': 'info'
   }
-  return types[type] || ''
+  return types[type] || 'info'
 }
 
 function getConfidenceColor(confidence) {
-  if (confidence >= 0.8) return '#67c23a'
-  if (confidence >= 0.6) return '#e6a23c'
-  return '#f56c6c'
+  if (confidence >= 0.8) return '#22c55e'
+  if (confidence >= 0.6) return '#f59e0b'
+  return '#ef4444'
 }
 
-function formatTime(timestamp) {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  return date.toLocaleString('zh-CN')
+function tableRowClassName({ rowIndex }) {
+  return rowIndex % 2 === 0 ? 'even-row' : 'odd-row'
 }
 </script>
 
 <style scoped>
 .features-view {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: calc(100vh - 112px);
 }
 
-.card-header {
+.features-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
-.pagination {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-input {
+  width: 200px;
+}
+
+.user-input :deep(.el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.user-input :deep(.el-input__inner) {
+  color: var(--text-primary);
+}
+
+.load-btn {
+  background: var(--accent-color) !important;
+  border: none !important;
+}
+
+.features-content {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.features-table {
+  background: transparent;
+}
+
+.features-table :deep(.el-table__header-wrapper th) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.features-table :deep(.el-table__body-wrapper) {
+  background: transparent;
+}
+
+.features-table :deep(.el-table__row) {
+  background: transparent;
+}
+
+.features-table :deep(.el-table__row.even-row) {
+  background: var(--bg-tertiary);
+}
+
+.features-table :deep(.el-table__row:hover>td) {
+  background: var(--bg-hover) !important;
+}
+
+.features-table :deep(.el-table__row td) {
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.feature-value-cell {
+  font-weight: 500;
+}
+
+.confidence-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.confidence-bar {
+  flex: 1;
+}
+
+.confidence-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-width: 40px;
+}
+
+.time-cell {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  color: var(--danger-color) !important;
+}
+
+.delete-btn:hover {
+  opacity: 0.8;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
   margin-top: 20px;
-  text-align: right;
+}
+
+.pagination-wrapper :deep(.el-pagination) {
+  color: var(--text-secondary);
+}
+
+.pagination-wrapper :deep(.el-pagination button) {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.pagination-wrapper :deep(.el-pager li) {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.pagination-wrapper :deep(.el-pager li.is-active) {
+  background: var(--accent-color);
+  color: white;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state p {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.add-dialog :deep(.el-dialog) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.add-dialog :deep(.el-dialog__header) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.add-dialog :deep(.el-dialog__title) {
+  color: var(--text-primary);
+}
+
+.add-form :deep(.el-form-item__label) {
+  color: var(--text-secondary);
+}
+
+.add-form :deep(.el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.add-form :deep(.el-input__inner) {
+  color: var(--text-primary);
+}
+
+.add-form :deep(.el-textarea__inner) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+
+.cancel-btn {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.submit-btn {
+  background: var(--accent-color) !important;
+  border: none !important;
 }
 </style>
