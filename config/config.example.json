@@ -1,0 +1,30 @@
+{
+    "llm_providers": {
+        "openrouter": {
+            "enabled": true,
+            "api_key": "YOUR_OPENROUTER_API_KEY",
+            "api_url": "https://openrouter.ai/api/v1/chat/completions",
+            "model": "stepfun/step-3.5-flash:free"
+        },
+        "custom": {
+            "enabled": true,
+            "api_key": "",
+            "api_url": "",
+            "model": ""
+        },
+        "openai": {
+            "enabled": false,
+            "api_key": "",
+            "api_url": "https://api.openai.com/v1/chat/completions",
+            "model": "gpt-4"
+        }
+    },
+    "default_provider": "openrouter",
+    "feature_extraction": {
+        "confidence_threshold": 0.6,
+        "auto_update_on_new_message": true,
+        "max_history_messages": 100,
+        "enable_knowledge_graph": true,
+        "enable_multi_agent": true
+    }
+}
