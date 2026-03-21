@@ -17,12 +17,13 @@ api.interceptors.response.use(
 )
 
 export default {
-  async chat(userId, message, sessionId = null) {
+  async chat(userId, message, sessionId = null, deepThink = false) {
     return api.post('/chat', {
       user_id: userId,
       message,
       session_id: sessionId,
-      extract_features: true
+      extract_features: true,
+      deep_think: deepThink
     })
   },
 

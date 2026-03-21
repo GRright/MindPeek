@@ -2,6 +2,12 @@
 
 基于 LLM 的多轮对话用户画像生成系统。通过自然对话，MindPeek 能够深入分析用户的隐性特征，包括性格类型、行为习惯、潜在想法等，为用户研究和个性化服务提供强大支持。
 
+---
+
+**🌐 Language / 语言 / 言語**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
+
+---
+
 ## 核心特性
 
 - **智能特征提取**：从多轮对话中自动识别 MBTI 性格类型、大五人格特征、行为习惯、潜在想法等
@@ -51,7 +57,7 @@
 ### 1. 安装依赖
 
 ```bash
-cd c:\myProject\MindPeek
+cd MindPeek
 pip install -r requirements.txt
 cd frontend
 npm install
@@ -99,14 +105,14 @@ copy config\config.example.json config\config.json
 启动后端（终端 1）：
 
 ```bash
-cd c:\myProject\MindPeek
+cd MindPeek
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 启动前端（终端 2）：
 
 ```bash
-cd c:\myProject\MindPeek\frontend
+cd MindPeek/frontend
 npm run dev
 ```
 
@@ -198,4 +204,6 @@ MindPeek/
 
 ## License
 
-MIT License
+GNU General Public License v3.0 (GPL-3.0)
+
+See [LICENSE](LICENSE) for full license text.

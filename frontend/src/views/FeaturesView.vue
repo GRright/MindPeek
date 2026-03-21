@@ -5,18 +5,6 @@
         <el-icon :size="20"><Document /></el-icon>
         <span class="header-title">特征管理</span>
       </div>
-      <div class="header-actions">
-        <el-input
-          v-model="userId"
-          placeholder="用户ID"
-          size="default"
-          class="user-input"
-        />
-        <el-button type="primary" @click="loadFeatures" :loading="loading" class="load-btn">
-          <el-icon v-if="!loading"><Search /></el-icon>
-          {{ loading ? '加载中...' : '加载特征' }}
-        </el-button>
-      </div>
     </div>
 
     <div class="features-content">
@@ -145,11 +133,10 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
-import { Document, Search } from '@element-plus/icons-vue'
+import { Document } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
-const userId = ref(store.currentUserId)
 const features = ref([])
 const loading = ref(false)
 const currentPage = ref(1)

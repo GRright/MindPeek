@@ -1,12 +1,19 @@
 <template>
   <el-config-provider :locale="zhCn">
     <div class="app-container">
-      <aside class="sidebar">
+      <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="sidebar-header">
-          <div class="logo">
+          <div class="logo" v-show="!sidebarCollapsed">
             <el-icon :size="24"><Cpu /></el-icon>
             <span class="logo-text">MindPeek</span>
           </div>
+          <el-button
+            class="collapse-btn"
+            @click="sidebarCollapsed = !sidebarCollapsed"
+            :icon="sidebarCollapsed ? 'DArrowRight' : 'DArrowLeft'"
+            circle
+            plain
+          />
         </div>
 
         <nav class="sidebar-nav">
@@ -18,16 +25,11 @@
             :class="{ active: isActive(item.path) }"
           >
             <el-icon :size="20"><component :is="item.icon" /></el-icon>
-            <span class="nav-text">{{ item.label }}</span>
+            <span class="nav-text" v-show="!sidebarCollapsed">{{ item.label }}</span>
           </router-link>
         </nav>
 
-        <div class="sidebar-footer">
-          <div class="user-section">
-            <el-icon :size="18"><Setting /></el-icon>
-            <span class="nav-text">设置</span>
-          </div>
-        </div>
+        <div class="sidebar-footer"></div>
       </aside>
 
       <main class="main-content">
@@ -46,7 +48,11 @@
         </header>
 
         <div class="content-area">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <transition name="fade-slide" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
         </div>
       </main>
 
@@ -68,11 +74,14 @@ import {
   UserFilled,
   Connection,
   List,
-  Setting
+  Setting,
+  DArrowLeft,
+  DArrowRight
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const showConfigDialog = ref(false)
+const sidebarCollapsed = ref(false)
 
 const navItems = [
   { path: '/chat', label: '对话分析', icon: 'ChatDotRound' },
@@ -110,14 +119,14 @@ html, body, #app {
 }
 
 :root {
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1b26;
-  --bg-tertiary: #24253a;
-  --bg-hover: #2a2b3d;
-  --border-color: #2e2f42;
-  --text-primary: #f0f0f2;
-  --text-secondary: #a0a1ad;
-  --text-muted: #6b6c7d;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f6fa;
+  --bg-tertiary: #e8eaed;
+  --bg-hover: #e2e5ea;
+  --border-color: #dde1e7;
+  --text-primary: #1a1b26;
+  --text-secondary: #5c5f6a;
+  --text-muted: #8b8d96;
   --accent-color: #6366f1;
   --accent-hover: #818cf8;
   --danger-color: #ef4444;
@@ -139,11 +148,39 @@ html, body, #app {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 72px;
 }
 
 .sidebar-header {
   padding: 20px;
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.collapse-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 20px 12px;
+}
+
+.sidebar.collapsed .collapse-btn {
+  margin-left: 0;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
 }
 
 .logo {
@@ -169,6 +206,7 @@ html, body, #app {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .nav-item {
@@ -185,11 +223,13 @@ html, body, #app {
 .nav-item:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+  transform: translateX(4px);
 }
 
 .nav-item.active {
   background: var(--accent-color);
   color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .nav-item .el-icon {
@@ -199,6 +239,15 @@ html, body, #app {
 .nav-text {
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.2s ease, width 0.3s ease;
+}
+
+.sidebar.collapsed .nav-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
 }
 
 .sidebar-footer {
@@ -303,5 +352,63 @@ html, body, #app {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bg-hover);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.pulse-hover:hover {
+  animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 </style>

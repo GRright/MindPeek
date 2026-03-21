@@ -98,6 +98,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     extract_features: bool = True
+    deep_think: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -105,6 +106,7 @@ class ChatResponse(BaseModel):
     features_extracted: List[FeatureBase] = []
     profile_updated: bool = False
     session_id: Optional[str] = None
+    think_content: Optional[str] = None
 
 
 class LLMConfigRequest(BaseModel):

@@ -37,14 +37,16 @@ async def chat(
         result = await service.process_chat(
             user_id=request.user_id,
             message=request.message,
-            extract_features=request.extract_features
+            extract_features=request.extract_features,
+            deep_think=request.deep_think
         )
-        
+
         return ChatResponse(
             response="消息已处理",
             features_extracted=result["extracted_features"],
             profile_updated=True,
-            session_id=request.session_id
+            session_id=request.session_id,
+            think_content=result.get("think_content")
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

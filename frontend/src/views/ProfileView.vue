@@ -2,7 +2,7 @@
   <div class="profile-view">
     <div class="profile-grid">
       <div class="profile-sidebar">
-        <div class="user-card">
+        <div class="user-card card-animate">
           <div class="user-avatar">
             <div class="avatar-ring">
               <div class="avatar-inner">
@@ -31,25 +31,9 @@
               <span class="stat-label">置信度</span>
             </div>
           </div>
-
-          <div class="user-input-section">
-            <el-input
-              v-model="userIdInput"
-              placeholder="输入用户ID"
-              size="default"
-              @change="loadProfile"
-              class="user-id-input"
-            >
-              <template #append>
-                <el-button @click="loadProfile">
-                  <el-icon><Search /></el-icon>
-                </el-button>
-              </template>
-            </el-input>
-          </div>
         </div>
 
-        <div class="mbti-card" v-if="profileSummary?.mbti">
+        <div class="mbti-card card-animate" v-if="profileSummary?.mbti">
           <div class="card-title">MBTI 性格解析</div>
           <div class="mbti-chars">
             <div
@@ -68,7 +52,7 @@
       </div>
 
       <div class="profile-main">
-        <div class="charts-card">
+        <div class="charts-card card-animate">
           <div class="card-header">
             <span class="card-title">用户画像分析</span>
             <el-button text @click="refreshProfile" class="refresh-btn">
@@ -131,15 +115,15 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useProfileStore } from '@/stores/profile'
 import * as echarts from 'echarts'
-import { Search, Refresh, Document } from '@element-plus/icons-vue'
+import { Refresh, Document } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
-const userIdInput = ref(store.currentUserId)
-const userId = ref(store.currentUserId)
 const activeTab = ref('radar')
 const profileSummary = ref(null)
 const allFeatures = ref([])
+
+const userId = computed(() => store.currentUserId)
 
 const radarContainer = ref(null)
 const graphContainer = ref(null)
@@ -169,11 +153,6 @@ watch(activeTab, () => {
 })
 
 async function loadProfile() {
-  if (userIdInput.value) {
-    userId.value = userIdInput.value
-    store.setUserId(userId.value)
-  }
-
   try {
     const data = await store.loadProfile()
     profileSummary.value = data.summary
@@ -216,6 +195,9 @@ function renderRadarChart() {
 
   const option = {
     backgroundColor: 'transparent',
+    animation: true,
+    animationDuration: 1500,
+    animationEasing: 'cubicOut',
     tooltip: {
       trigger: 'item',
       backgroundColor: 'var(--bg-tertiary)',
@@ -305,6 +287,9 @@ function renderGraphChart() {
 
   const option = {
     backgroundColor: 'transparent',
+    animation: true,
+    animationDuration: 1500,
+    animationEasing: 'cubicOut',
     tooltip: {
       formatter: '{b}',
       backgroundColor: 'var(--bg-tertiary)',
@@ -366,6 +351,9 @@ function renderPieChart() {
 
   const option = {
     backgroundColor: 'transparent',
+    animation: true,
+    animationDuration: 1500,
+    animationEasing: 'cubicOut',
     tooltip: {
       trigger: 'item',
       formatter: '{b}: {c} ({d}%)',
@@ -484,6 +472,12 @@ function getMbtiCharLabel(char) {
   border-radius: 16px;
   padding: 24px;
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
 }
 
 .user-avatar {
@@ -590,6 +584,12 @@ function getMbtiCharLabel(char) {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mbti-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
 }
 
 .card-title {

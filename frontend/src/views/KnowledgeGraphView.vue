@@ -6,17 +6,6 @@
           <el-icon :size="20"><Connection /></el-icon>
           <span class="header-title">知识图谱</span>
         </div>
-        <div class="header-actions">
-          <el-input
-            v-model="userId"
-            placeholder="用户ID（可选）"
-            size="default"
-            class="user-input"
-          />
-          <el-button type="primary" @click="loadGraph" :loading="loading" class="load-btn">
-            加载图谱
-          </el-button>
-        </div>
       </div>
 
       <div class="graph-container" ref="graphContainer">
@@ -25,7 +14,7 @@
             <el-icon :size="64"><Share /></el-icon>
           </div>
           <p class="empty-title">知识图谱</p>
-          <p class="empty-desc">点击加载图谱查看用户特征关系网络</p>
+          <p class="empty-desc">正在加载用户特征关系网络...</p>
         </div>
         <div v-else ref="networkContainer" class="network-container"></div>
       </div>
@@ -72,7 +61,6 @@ import { Connection, Share } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
-const userId = ref('')
 const loading = ref(false)
 const graphData = ref(null)
 const graphContainer = ref(null)
@@ -90,19 +78,13 @@ const nodeTypeStats = computed(() => {
 })
 
 onMounted(async () => {
-  userId.value = store.currentUserId
+  await loadGraph()
 })
 
 async function loadGraph() {
   loading.value = true
   try {
-    if (userId.value) {
-      graphData.value = await store.loadKnowledgeGraph()
-    } else {
-      const api = (await import('@/api')).default
-      graphData.value = await api.getKnowledgeGraph()
-    }
-
+    graphData.value = await store.loadKnowledgeGraph()
     await nextTick()
     renderGraph()
   } catch (e) {

@@ -37,15 +37,15 @@ export const useProfileStore = defineStore('profile', () => {
       }))
   })
 
-  async function sendMessage(message) {
+  async function sendMessage(message, deepThink = false) {
     loading.value = true
     error.value = null
     try {
-      const result = await api.chat(currentUserId.value, message)
-      
+      const result = await api.chat(currentUserId.value, message, null, deepThink)
+
       await loadProfile()
       await loadConversations()
-      
+
       return result
     } catch (e) {
       error.value = e.message

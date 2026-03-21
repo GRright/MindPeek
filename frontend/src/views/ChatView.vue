@@ -23,6 +23,7 @@
           <p class="empty-desc">发送消息开始分析用户特征</p>
         </div>
 
+        <transition-group name="message" tag="div" class="messages-wrapper">
         <div
           v-for="msg in messages"
           :key="msg.id"
@@ -36,7 +37,7 @@
           </div>
           <div class="message-content">
             <div class="message-bubble">
-              {{ msg.content }}
+              <div v-if="msg.content" class="message-text">{{ msg.content }}</div>
             </div>
             <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
           </div>
@@ -56,18 +57,31 @@
             </div>
           </div>
         </div>
+        </transition-group>
       </div>
 
       <div class="chat-input-area">
         <div class="input-wrapper">
+          <el-tooltip content="深度思考" placement="top">
+            <el-button
+              class="think-btn"
+              :class="{ active: deepThink }"
+              @click="deepThink = !deepThink"
+              :disabled="loading"
+            >
+              <el-icon :size="18"><MagicStick /></el-icon>
+            </el-button>
+          </el-tooltip>
           <el-input
             v-model="inputMessage"
-            placeholder="输入消息..."
-            @keyup.enter="sendMessage"
+            type="textarea"
+            placeholder="输入消息... (Shift+Enter换行，Enter发送)"
+            :rows="1"
+            :autosize="{ minRows: 1, maxRows: 6 }"
+            @keydown.enter.exact.prevent="sendMessage"
             :disabled="loading"
             class="message-input"
-          >
-          </el-input>
+          />
           <el-button
             type="primary"
             @click="sendMessage"
@@ -118,7 +132,8 @@ import {
   ChatDotRound,
   Promotion,
   Loading,
-  Document
+  Document,
+  MagicStick
 } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
@@ -129,6 +144,7 @@ const messages = ref([])
 const extractedFeatures = ref([])
 const loading = ref(false)
 const messagesContainer = ref(null)
+const deepThink = ref(false)
 
 onMounted(async () => {
   await loadConversations()
@@ -154,6 +170,7 @@ async function sendMessage() {
     id: Date.now(),
     role: 'user',
     content: message,
+    deepThink: deepThink.value,
     timestamp: new Date().toISOString()
   })
 
@@ -161,7 +178,7 @@ async function sendMessage() {
 
   loading.value = true
   try {
-    const result = await store.sendMessage(message)
+    const result = await store.sendMessage(message, deepThink.value)
 
     messages.value.push({
       id: Date.now() + 1,
@@ -364,6 +381,17 @@ function getFeatureTagType(type) {
   border-bottom-right-radius: 4px;
 }
 
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.message-text {
+  white-space: pre-wrap;
+}
+
 .message.assistant .message-bubble {
   border-bottom-left-radius: 4px;
 }
@@ -402,31 +430,57 @@ function getFeatureTagType(type) {
 .chat-input-area {
   padding: 16px 20px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .input-wrapper {
   display: flex;
   gap: 12px;
+  align-items: flex-end;
+}
+
+.think-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary) !important;
+  transition: all 0.2s ease;
+}
+
+.think-btn:hover:not(:disabled) {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.think-btn.active {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  color: white !important;
 }
 
 .message-input {
   flex: 1;
 }
 
-.message-input :deep(.el-input__wrapper) {
+.message-input :deep(.el-textarea__inner) {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   box-shadow: none;
   padding: 12px 16px;
   border-radius: 12px;
-}
-
-.message-input :deep(.el-input__inner) {
   color: var(--text-primary);
   font-size: 15px;
+  resize: none;
 }
 
-.message-input :deep(.el-input__inner::placeholder) {
+.message-input :deep(.el-textarea__inner::placeholder) {
   color: var(--text-muted);
 }
 
@@ -507,5 +561,27 @@ function getFeatureTagType(type) {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.message-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.message-leave-active {
+  transition: all 0.2s ease-in;
+}
+
+.message-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.message-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.message-move {
+  transition: transform 0.3s ease;
 }
 </style>
