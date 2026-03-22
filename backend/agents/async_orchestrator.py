@@ -19,6 +19,7 @@ class TaskType(Enum):
     PROFILE_UPDATE = "profile_update"
     MEMORY_CONSOLIDATION = "memory_consolidation"
     LATENT_INTENT = "latent_intent"
+    STABILITY_EVALUATION = "stability_evaluation"
 
 
 class TaskStatus(Enum):
@@ -119,6 +120,8 @@ class AsyncAgentOrchestrator:
                 result = await self._memory_consolidation(task.input_data)
             elif task.task_type == TaskType.LATENT_INTENT:
                 result = await self._latent_intent_discovery(task.input_data)
+            elif task.task_type == TaskType.STABILITY_EVALUATION:
+                result = await self._stability_evaluation(task.input_data)
             else:
                 result = {"error": f"Unknown task type: {task.task_type}"}
 
@@ -365,6 +368,89 @@ class AsyncAgentOrchestrator:
         )
 
         return result
+
+    async def _stability_evaluation(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """LLM评估特征稳定性 - 智能判断哪些特征容易变化"""
+        features = input_data.get("features", [])
+        feature_type = input_data.get("feature_type", "")
+        feature_value = input_data.get("feature_value", "")
+
+        features_text = json.dumps(features[:20], ensure_ascii=False, indent=2)
+
+        system_prompt = f"""你是一个专业的心理学分析师。你的任务是评估用户特征的稳定性和变化倾向。
+
+## 特征信息
+- 类型: {feature_type}
+- 值: {feature_value}
+
+## 用户已有特征参考
+{features_text}
+
+## 评估要求
+分析这个特征属于哪种变化模式：
+
+1. **高度稳定特征**（如MBTI、核心价值观、基本习惯）：
+   - 稳定期：60-180天
+   - 衰减率：0.01-0.02
+
+2. **中等稳定特征**（如兴趣爱好、生活偏好）：
+   - 稳定期：30-60天
+   - 衰减率：0.03-0.06
+
+3. **易变特征**（如情感状态、临时想法、日常情绪）：
+   - 稳定期：7-14天
+   - 衰减率：0.08-0.15
+
+## 考虑因素
+- 这个特征的心理根植程度有多深？
+- 这个特征受环境影响的可能性有多大？
+- 用户主动改变这个特征的可能性？
+
+## 输出格式（JSON）
+```json
+{{
+    "stability_period_days": 30-180的整数,
+    "decay_rate": 0.01-0.15的小数,
+    "reasoning": "评估理由",
+    "change_likelihood": "low/medium/high",
+    "factors": ["影响因素1", "因素2"]
+}}
+```
+
+请直接返回JSON，不要有其他内容。"""
+
+        try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"请评估这个特征的稳定性：{feature_type} - {feature_value}"}
+            ]
+
+            response = await self.llm.chat(messages)
+
+            start = response.find('{')
+            end = response.rfind('}') + 1
+            if start != -1 and end != 0:
+                result = json.loads(response[start:end])
+                return {
+                    "stability_period_days": result.get("stability_period_days", 30),
+                    "decay_rate": result.get("decay_rate", 0.05),
+                    "reasoning": result.get("reasoning", ""),
+                    "change_likelihood": result.get("change_likelihood", "medium"),
+                    "factors": result.get("factors", []),
+                    "raw_response": response
+                }
+
+        except Exception as e:
+            return {
+                "stability_period_days": 30,
+                "decay_rate": 0.05,
+                "error": str(e)
+            }
+
+        return {
+            "stability_period_days": 30,
+            "decay_rate": 0.05
+        }
 
     def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
         """获取任务状态"""

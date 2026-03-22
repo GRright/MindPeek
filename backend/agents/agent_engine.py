@@ -367,49 +367,57 @@ class ImplicitIntentAgent(BaseAgent):
 
 class CorrelationAgent(BaseAgent):
     """特征关联分析Agent"""
-    
+
     async def analyze(self, context: Dict[str, Any]) -> AgentResult:
         new_features = context.get("new_features", [])
         existing_features = context.get("existing_features", {})
-        
+
         correlations = []
-        
+        all_feature_values = set()
+
         for feature in new_features:
             feature_value = feature.get("value", "")
-            kg_correlations = knowledge_graph.get_feature_correlations(feature_value)
-            
-            for relation_type, related_features in kg_correlations.items():
-                for related in related_features:
+            if feature_value:
+                all_feature_values.add(feature_value)
+                inferred = knowledge_graph._get_inferred_features(feature_value)
+                for inf in inferred:
                     correlations.append({
                         "source": feature_value,
-                        "target": related["feature"],
-                        "relation": relation_type,
-                        "weight": related["weight"],
+                        "target": inf,
+                        "relation": "implies",
+                        "weight": 0.7,
                         "inferred": True
                     })
-        
+
         conflicts = []
+        existing_values = []
+        for features_list in existing_features.values():
+            for f in features_list:
+                val = f.get("value", "") if isinstance(f, dict) else f
+                if val:
+                    existing_values.append(val)
+                    all_feature_values.add(val)
+
         for feature in new_features:
             feature_value = feature.get("value", "")
-            for existing_type, existing_list in existing_features.items():
-                for existing in existing_list:
-                    existing_value = existing.get("value", "") if isinstance(existing, dict) else existing
-                    
-                    if knowledge_graph.graph.has_edge(
-                        knowledge_graph._get_or_create_node(feature_value),
-                        knowledge_graph._get_or_create_node(existing_value)
-                    ):
-                        edge_data = knowledge_graph.graph.get_edge_data(
-                            knowledge_graph._get_or_create_node(feature_value),
-                            knowledge_graph._get_or_create_node(existing_value)
-                        )
-                        if edge_data.get("relation") == "conflicts_with":
-                            conflicts.append({
-                                "feature_a": feature_value,
-                                "feature_b": existing_value,
-                                "conflict_weight": edge_data.get("weight", 0)
-                            })
-        
+            if not feature_value:
+                continue
+            for existing_val in existing_values:
+                if feature_value == existing_val:
+                    continue
+                inf_new = set(knowledge_graph._get_inferred_features(feature_value))
+                inf_exist = set(knowledge_graph._get_inferred_features(existing_val))
+                common = inf_new & inf_exist
+                if common:
+                    for shared in common:
+                        correlations.append({
+                            "source": feature_value,
+                            "target": existing_val,
+                            "relation": "correlates_with",
+                            "weight": 0.6,
+                            "inferred": True
+                        })
+
         return AgentResult(
             agent_name=self.name,
             task_type="correlation_analysis",
@@ -419,7 +427,7 @@ class CorrelationAgent(BaseAgent):
                 "inference_suggestions": self._generate_inference_suggestions(correlations)
             },
             confidence=0.8,
-            reasoning="基于知识图谱的关联分析"
+            reasoning="基于知识库的关联分析"
         )
     
     def _generate_inference_suggestions(self, correlations: List[Dict]) -> List[Dict]:

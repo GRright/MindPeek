@@ -110,7 +110,7 @@ class ChatGraph:
     async def load_context(self, state: ChatState) -> ChatState:
         """加载用户上下文"""
         try:
-            features = await self.profile_service.get_user_features(state.user_id)
+            features, _ = await self.profile_service.get_user_features(state.user_id)
 
             if not features:
                 state.has_context = False
@@ -207,7 +207,7 @@ class ChatGraph:
     async def extract_features(self, state: ChatState) -> ChatState:
         """使用FeatureDiscovery Agent提取用户特征"""
         try:
-            existing_features = await self.profile_service.get_user_features(state.user_id)
+            existing_features, feature_metadata = await self.profile_service.get_user_features(state.user_id)
             existing_features_data = [
                 {
                     "feature_type": f.feature_type,
@@ -236,7 +236,19 @@ class ChatGraph:
                     reasoning=feature.get("reasoning", ""),
                     evidence=feature.get("evidence", [])
                 )
-                await self.profile_service.add_feature(state.user_id, feature_create)
+                added_feature = await self.profile_service.add_feature(state.user_id, feature_create)
+
+                if self.async_orchestrator and added_feature:
+                    await self.async_orchestrator.submit_task(
+                        task_type=TaskType.STABILITY_EVALUATION,
+                        user_id=state.user_id,
+                        input_data={
+                            "feature_type": feature.get("feature_type", ""),
+                            "feature_value": feature.get("feature_value", ""),
+                            "features": existing_features_data
+                        },
+                        priority=-1
+                    )
 
             if discovery_result.get("new_category_suggestions"):
                 state.errors.append(f"建议新特征类型: {discovery_result['new_category_suggestions']}")
@@ -252,7 +264,7 @@ class ChatGraph:
             await self.profile_service.update_profile(state.user_id)
 
             if state.extracted_features:
-                existing_features = await self.profile_service.get_user_features(state.user_id)
+                existing_features, _ = await self.profile_service.get_user_features(state.user_id)
                 existing_features_data = [
                     {
                         "feature_type": f.feature_type,

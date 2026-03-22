@@ -121,19 +121,29 @@ async def get_conversations(
 
 @router.get("/knowledge-graph", response_model=KnowledgeGraphResponse)
 async def get_knowledge_graph():
-    """获取完整知识图谱"""
+    """获取人格心理学知识库"""
     try:
-        graph_data = knowledge_graph.export_graph()
-        return KnowledgeGraphResponse(**graph_data)
+        from ..knowledge_graph.graph import PersonalityKnowledgeBase
+        kb = PersonalityKnowledgeBase()
+        return KnowledgeGraphResponse(
+            nodes=[{"id": 1, "label": "人格心理学知识库", "type": "root"}],
+            edges=[]
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/knowledge-graph/{user_id}", response_model=KnowledgeGraphResponse)
-async def get_user_knowledge_graph(user_id: str):
-    """获取用户相关知识图谱"""
+async def get_user_knowledge_graph(user_id: str, db: AsyncSession = Depends(get_async_session)):
+    """获取用户相关知识图谱（基于用户特征实时计算）"""
     try:
-        graph_data = knowledge_graph.get_user_subgraph(user_id)
+        profile_service = ProfileService(db)
+        features = await profile_service.get_user_features(user_id)
+        feature_dicts = [
+            {"feature_type": f.feature_type, "feature_value": f.feature_value}
+            for f in features
+        ]
+        graph_data = knowledge_graph.get_user_subgraph(feature_dicts)
         return KnowledgeGraphResponse(**graph_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

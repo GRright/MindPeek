@@ -1,9 +1,9 @@
 """
 用户画像服务层
 """
-import json
-from datetime import datetime
-from typing import Dict, List, Optional, Any
+import math
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc
 from sqlalchemy.orm import selectinload
@@ -17,6 +17,13 @@ from ..agents.agent_engine import AgentOrchestrator
 from ..knowledge_graph.graph import knowledge_graph
 from ..core.config import config_manager
 from .memo_base_service import memo_base_service
+
+DEFAULT_DECAY_CONFIG = {
+    "enabled": True,
+    "min_confidence": 0.3,
+    "default_stability_period_days": 30,
+    "default_decay_rate": 0.05
+}
 
 
 class ProfileService:
@@ -112,11 +119,6 @@ class ProfileService:
         self.db.add(feature_model)
         await self.db.commit()
         await self.db.refresh(feature_model)
-        
-        knowledge_graph.add_user_feature(
-            user_id, feature.feature_type, feature.feature_value,
-            feature.confidence, feature.source_message
-        )
 
         if memo_base_service.is_enabled():
             await memo_base_service.save_feature(
@@ -124,19 +126,104 @@ class ProfileService:
                 feature.confidence, feature.reasoning or "", feature.evidence or ""
             )
 
+        await self._apply_decay_on_write(user_id)
+
         return feature_model
+
+    async def _apply_decay_on_write(self, user_id: str) -> None:
+        """写入时顺便应用衰减 - 减少数据库写入次数"""
+        result = await self.db.execute(
+            select(FeatureModel).where(
+                and_(
+                    FeatureModel.user_id == user_id,
+                    FeatureModel.is_active == True,
+                    FeatureModel.decay_enabled == True
+                )
+            )
+        )
+        features = list(result.scalars().all())
+
+        needs_update = []
+        for feature in features:
+            decayed_confidence, is_expired = self.calculate_confidence_with_decay(
+                feature.confidence,
+                feature.feature_type,
+                feature.created_at,
+                feature.last_confirmed_at,
+                stability_period_days=feature.stability_period_days or 30,
+                decay_rate=feature.decay_rate or 0.05
+            )
+
+            if decayed_confidence < feature.confidence:
+                feature.confidence = decayed_confidence
+                feature.updated_at = datetime.utcnow()
+                needs_update.append(feature)
+
+            if is_expired:
+                feature.is_active = False
+                needs_update.append(feature)
+
+        if needs_update:
+            await self.db.commit()
     
-    async def get_user_features(self, user_id: str, feature_type: str = None) -> List[FeatureModel]:
-        """获取用户特征"""
+    async def get_user_features(self, user_id: str, feature_type: str = None,
+                           apply_decay: bool = True) -> Tuple[List[FeatureModel], Dict]:
+        """获取用户特征
+
+        Args:
+            user_id: 用户ID
+            feature_type: 可选，筛选特定类型
+            apply_decay: 是否计算衰减（默认True，只读计算，不写数据库）
+
+        Returns:
+            (特征列表, 元数据，包含数据新鲜度等信息)
+        """
         query = select(FeatureModel).where(
             and_(FeatureModel.user_id == user_id, FeatureModel.is_active == True)
         )
-        
+
         if feature_type:
             query = query.where(FeatureModel.feature_type == feature_type)
-        
+
         result = await self.db.execute(query.order_by(desc(FeatureModel.confidence)))
-        return list(result.scalars().all())
+        features = list(result.scalars().all())
+
+        metadata = {
+            "total_count": len(features),
+            "data_stale": False,
+            "last_update": None,
+            "needs_stability_eval": []
+        }
+
+        if features:
+            latest_feature = max(features, key=lambda f: f.updated_at)
+            metadata["last_update"] = latest_feature.updated_at.isoformat() if latest_feature.updated_at else None
+
+            days_since_update = (datetime.utcnow() - latest_feature.updated_at).days if latest_feature.updated_at else 0
+            if days_since_update > 90:
+                metadata["data_stale"] = True
+
+        if apply_decay:
+            for feature in features:
+                if feature.decay_enabled and feature.confidence > 0 and feature.stability_period_days > 0:
+                    decayed_confidence, _ = self.calculate_confidence_with_decay(
+                        feature.confidence,
+                        feature.feature_type,
+                        feature.created_at,
+                        feature.last_confirmed_at,
+                        stability_period_days=feature.stability_period_days or 30,
+                        decay_rate=feature.decay_rate or 0.05
+                    )
+                    feature.confidence = decayed_confidence
+
+                if feature.last_stability_eval_at is None and feature.decay_enabled:
+                    metadata["needs_stability_eval"].append({
+                        "id": feature.id,
+                        "feature_type": feature.feature_type,
+                        "feature_value": feature.feature_value
+                    })
+
+        return features, metadata
 
     async def add_relationship(self, user_id: str, person_name: str,
                               relationship_type: str, interaction_pattern: str = None,
@@ -176,10 +263,6 @@ class ProfileService:
         await self.db.commit()
         await self.db.refresh(relationship)
 
-        knowledge_graph.add_social_relationship(
-            user_id, person_name, relationship_type, confidence, evidence
-        )
-
         return relationship
 
     async def get_user_relationships(self, user_id: str) -> List[Any]:
@@ -206,8 +289,8 @@ class ProfileService:
     async def update_profile(self, user_id: str) -> ProfileModel:
         """更新用户画像"""
         user = await self.get_or_create_user(user_id)
-        
-        features = await self.get_user_features(user_id)
+
+        features, _ = await self.get_user_features(user_id, apply_decay=False)
         
         profile_data = {}
         for feature in features:
@@ -268,6 +351,139 @@ class ProfileService:
         
         return " | ".join(summary_parts)
 
+    def calculate_confidence_with_decay(
+        self,
+        initial_confidence: float,
+        feature_type: str,
+        created_at: datetime,
+        last_confirmed_at: datetime,
+        stability_period_days: int = 30,
+        decay_rate: float = 0.05,
+        decay_config: Dict = None
+    ) -> Tuple[float, bool]:
+        """智能计算时间衰减后的置信度
+
+        使用对数衰减函数：
+        - 前期衰减很慢（特征稳定期）
+        - 超过稳定期后衰减加速
+        - 最终趋于最低置信度
+
+        Args:
+            initial_confidence: 初始置信度
+            feature_type: 特征类型
+            created_at: 特征创建时间
+            last_confirmed_at: 最后确认时间
+            stability_period_days: 该特征的稳定期天数（由LLM评估）
+            decay_rate: 该特征的衰减率（由LLM评估）
+            decay_config: 全局衰减配置
+
+        Returns:
+            (衰减后的置信度, 是否过期)
+        """
+        if decay_config is None:
+            decay_config = DEFAULT_DECAY_CONFIG
+
+        if not decay_config.get("enabled", True):
+            return initial_confidence, False
+
+        min_confidence = decay_config.get("min_confidence", 0.3)
+
+        days_since_confirmed = (datetime.utcnow() - last_confirmed_at).days
+
+        if days_since_confirmed <= stability_period_days:
+            return initial_confidence, False
+
+        days_after_stability = days_since_confirmed - stability_period_days
+
+        log_decay = math.log1p(days_after_stability * decay_rate)
+
+        confidence_range = initial_confidence - min_confidence
+        decayed_confidence = initial_confidence - (log_decay * confidence_range * 0.3)
+
+        decayed_confidence = max(decayed_confidence, min_confidence)
+
+        is_expired = decayed_confidence <= min_confidence and days_since_confirmed > stability_period_days + 180
+
+        return round(decayed_confidence, 3), is_expired
+
+    async def apply_decay_to_features(self, user_id: str) -> Dict[str, Any]:
+        """对用户的所有特征应用时间衰减
+
+        Returns:
+            包含更新和过期特征的统计
+        """
+        features, _ = await self.get_user_features(user_id, apply_decay=False)
+        updated_count = 0
+        expired_count = 0
+        expired_features = []
+
+        for feature in features:
+            if not feature.decay_enabled:
+                continue
+
+            decayed_confidence, is_expired = self.calculate_confidence_with_decay(
+                feature.confidence,
+                feature.feature_type,
+                feature.created_at,
+                feature.last_confirmed_at
+            )
+
+            if decayed_confidence < feature.confidence:
+                feature.confidence = decayed_confidence
+                feature.updated_at = datetime.utcnow()
+                updated_count += 1
+
+            if is_expired:
+                feature.is_active = False
+                expired_count += 1
+                expired_features.append({
+                    "feature_type": feature.feature_type,
+                    "feature_value": feature.feature_value,
+                    "original_confidence": feature.confidence
+                })
+
+        if updated_count > 0 or expired_count > 0:
+            await self.db.commit()
+
+        return {
+            "updated_count": updated_count,
+            "expired_count": expired_count,
+            "expired_features": expired_features
+        }
+
+    async def confirm_feature(self, user_id: str, feature_type: str, feature_value: str) -> bool:
+        """当用户的言行再次确认了某个特征时，调用此方法提升置信度
+
+        Returns:
+            是否更新成功
+        """
+        result = await self.db.execute(
+            select(FeatureModel).where(
+                and_(
+                    FeatureModel.user_id == user_id,
+                    FeatureModel.feature_type == feature_type,
+                    FeatureModel.feature_value == feature_value,
+                    FeatureModel.is_active == True
+                )
+            )
+        )
+        feature = result.scalar_one_or_none()
+
+        if not feature:
+            return False
+
+        confidence_boost = 0.1
+        max_confidence = 0.95
+
+        new_confidence = min(feature.confidence + confidence_boost, max_confidence)
+
+        feature.confidence = new_confidence
+        feature.last_confirmed_at = datetime.utcnow()
+        feature.updated_at = datetime.utcnow()
+
+        await self.db.commit()
+        return True
+
     async def process_chat(self, user_id: str, message: str,
                            extract_features: bool = True,
                            deep_think: bool = False) -> Dict[str, Any]:
@@ -292,10 +508,14 @@ class ProfileService:
         """获取用户画像详情"""
         user = await self.get_or_create_user(user_id)
         profile = await self.get_profile(user_id)
-        features = await self.get_user_features(user_id)
+        features, metadata = await self.get_user_features(user_id)
         conversations = await self.get_conversation_history(user_id, limit=20)
-        
-        kg_subgraph = knowledge_graph.get_user_subgraph(user_id)
+
+        feature_dicts = [
+            {"feature_type": f.feature_type, "feature_value": f.feature_value, "confidence": f.confidence}
+            for f in features
+        ]
+        kg_subgraph = knowledge_graph.get_user_subgraph(feature_dicts)
         
         summary = ProfileSummary(
             user_id=user_id,
@@ -334,5 +554,6 @@ class ProfileService:
             features=[FeatureResponse.from_orm(f) for f in features],
             recent_conversations=[MessageResponse.from_orm(c) for c in conversations],
             knowledge_graph=kg_subgraph,
-            summary=summary
+            summary=summary,
+            metadata=metadata
         )

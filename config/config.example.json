@@ -32,7 +32,13 @@
         "auto_update_on_new_message": true,
         "max_history_messages": 100,
         "enable_knowledge_graph": true,
-        "enable_multi_agent": true
+        "enable_multi_agent": true,
+        "decay": {
+            "enabled": true,
+            "half_life_days": 30,
+            "min_confidence": 0.3,
+            "comment": "特征置信度时间衰减配置，half_life_days为置信度衰减一半所需天数"
+        }
     },
     "agent": {
         "max_concurrent_agents": 3,

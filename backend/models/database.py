@@ -67,7 +67,12 @@ class FeatureModel(Base):
     evidence = Column(JSON, default=list)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_confirmed_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    decay_enabled = Column(Boolean, default=True)
+    stability_period_days = Column(Integer, default=30)
+    decay_rate = Column(Float, default=0.05)
+    last_stability_eval_at = Column(DateTime, nullable=True)
 
     user = relationship("UserModel", back_populates="features")
 
@@ -84,7 +89,9 @@ class RelationshipModel(Base):
     confidence = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_confirmed_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    decay_enabled = Column(Boolean, default=True)
 
     user = relationship("UserModel", back_populates="relationships")
 

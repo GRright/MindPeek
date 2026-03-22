@@ -39,6 +39,19 @@ Built on LangGraph, an intelligent Agent network where multiple specialized Agen
 - **Hidden Need Mining**: Discover things you didn't say but actually need
 - **Dynamic Profiling**: Profile becomes more accurate as conversations deepen
 
+### 🔄 Intelligent Feature Decay Mechanism
+- **LLM Stability Evaluation**: Each feature's stability is assessed by the LLM
+- **Personalized Decay Curve**: Stable features decay slowly, volatile features decay faster
+- **Lazy Update Strategy**: Decay calculated only when user accesses data, reducing DB writes
+- **Logarithmic Decay Function**:
+  - No decay during stability period
+  - Gradual logarithmic decay after stability period
+  - Converges to minimum threshold (0.3)
+
+```
+C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
+```
+
 ### 🔗 Social Relationship Awareness
 - Auto-recognize people mentioned in conversations (family, friends, colleagues, etc.)
 - Understand your interpersonal interaction patterns
@@ -80,7 +93,7 @@ Built on LangGraph, an intelligent Agent network where multiple specialized Agen
 - **FastAPI** - High-performance async web framework
 - **LangGraph** - Multi-Agent orchestration framework
 - **SQLAlchemy** - Async ORM
-- **NetworkX** - Knowledge graph
+- **Knowledge Graph** - Predefined psychology knowledge base + real-time inference
 - **Pydantic** - Data validation
 
 ### Frontend

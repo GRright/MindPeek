@@ -161,6 +161,7 @@ class UserProfileDetail(BaseModel):
     recent_conversations: List[MessageResponse] = []
     knowledge_graph: Optional[KnowledgeGraphResponse] = None
     summary: Optional[ProfileSummary] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class FeatureExtractionRequest(BaseModel):
