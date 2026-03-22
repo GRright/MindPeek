@@ -2,8 +2,7 @@
 知识图谱模块 - 基于预定义心理学知识的关联推理
 用户特征从数据库实时获取，不再重复存储
 """
-from typing import Dict, List, Optional
-from collections import defaultdict
+from typing import Dict, List
 
 
 class PersonalityKnowledgeBase:

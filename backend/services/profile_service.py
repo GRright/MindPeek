@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc
-from sqlalchemy.orm import selectinload
 
 from ..models.database import UserModel, ProfileModel, ConversationModel, FeatureModel
 from ..models.schemas import (
