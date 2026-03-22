@@ -35,8 +35,9 @@ async def lifespan(app: FastAPI):
     print(f"数据库初始化完成: {db_path}")
     
     print("正在初始化知识图谱...")
-    print(f"知识图谱节点数: {len(knowledge_graph.graph.nodes)}")
-    print(f"知识图谱边数: {len(knowledge_graph.graph.edges)}")
+    from backend.knowledge_graph.graph import PersonalityKnowledgeBase
+    kb = PersonalityKnowledgeBase()
+    print(f"知识图谱预定义类别数: {len(kb.FEATURE_CATEGORIES)}")
     
     yield
     

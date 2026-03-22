@@ -23,7 +23,7 @@ MindPeek 将你的对话转化为对你的深度理解：
 |---------|--------|---------|
 | **FeatureDiscovery Agent** | 自主发现你的性格、习惯、偏好 | 无需手动输入，AI 自动学习 |
 | **LatentIntent Agent** | 识别你的隐性需求和潜在意图 | 比你更早知道你需要什么 |
-| **Relationship Agent** | 发现你的社会关系网络 | 了解你的人际互动模式 |
+| **CorrelationAgent** | 发现特征之间的关联和推断 | 构建完整的用户画像网络 |
 | **DeepThink Agent** | 深度心理分析 | 探索你言行背后的心理动机 |
 
 ## 🚀 为什么选择 MindPeek？
@@ -62,6 +62,10 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 - 用户对话零延迟体验
 - 后台任务自动调度
 
+### 💾 双重存储架构
+- **SQLite 本地存储**：核心用户数据、对话历史、特征信息
+- **MemoBase 远程同步**：跨设备特征同步，云端备份
+
 ## 📊 系统架构
 
 ```
@@ -74,8 +78,8 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Relationship│  │ DeepThink │ │
-│  │ Discovery  │  │   Intent   │  │  Agent     │  │   Agent   │ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │ DeepThink │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   Agent   │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 └──────────────────────────────────────────────────────────────────┘
                                 │
@@ -85,6 +89,13 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 │   💾 SQLite   │    │  📡 MemoBase  │    │  🧠 LLM       │
 │   本地存储    │    │   远程存储    │    │  (DeepSeek等)  │
 └───────────────┘    └───────────────┘    └───────────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  🧠 知识图谱           │
+                    │  预定义心理学知识库   │
+                    │  + 实时推理引擎       │
+                    └───────────────────────┘
 ```
 
 ## 🛠️ 技术栈
@@ -174,33 +185,33 @@ MindPeek/
 ├── requirements.txt            # Python 依赖
 ├── config/
 │   ├── config.json             # 运行时配置
-│   └── config.example.json    # 配置模板
+│   └── config.example.json     # 配置模板
 ├── backend/
 │   ├── api/
-│   │   └── routes.py          # API 路由
+│   │   └── routes.py           # API 路由
 │   ├── models/
 │   │   ├── database.py         # 数据库模型
-│   │   └── schemas.py         # Pydantic 模型
+│   │   └── schemas.py          # Pydantic 模型
 │   ├── services/
-│   │   ├── llm_provider.py    # 多 Provider 支持
-│   │   ├── profile_service.py # 用户画像服务
+│   │   ├── llm_provider.py     # 多 Provider 支持
+│   │   ├── profile_service.py  # 用户画像服务
 │   │   └── memo_base_service.py # 远程存储
 │   ├── agents/
-│   │   ├── chat_graph.py      # 🤖 LangGraph 聊天图
+│   │   ├── chat_graph.py       # 🤖 LangGraph 聊天图
 │   │   ├── feature_discovery.py # 🔮 特征发现 Agent
 │   │   ├── async_orchestrator.py # ⚡ 异步任务编排
-│   │   └── agent_engine.py    # Agent 引擎
+│   │   └── agent_engine.py     # Agent 引擎
 │   └── knowledge_graph/
-│       └── graph.py           # 🔗 知识图谱
+│       └── graph.py            # 🔗 知识图谱（实时推理）
 ├── frontend/
 │   ├── src/
-│   │   ├── views/             # 页面组件
-│   │   ├── stores/            # Pinia 状态
-│   │   ├── api/               # API 调用
-│   │   └── router/            # 路由配置
+│   │   ├── views/              # 页面组件
+│   │   ├── stores/             # Pinia 状态
+│   │   ├── api/                # API 调用
+│   │   └── router/             # 路由配置
 │   └── package.json
 └── data/
-    └── permir.db              # SQLite 数据库
+    └── permir.db               # SQLite 数据库
 ```
 
 ## 🎨 功能展示
@@ -217,9 +228,9 @@ MindPeek/
 - 隐性需求发现
 
 ### 🔗 知识图谱
+- 基于预定义心理学知识库的实时推理
 - 特征关联可视化
-- 社会关系网络
-- 动态更新图谱
+- 动态推断潜在特征
 
 ### 🔮 Agent 工作台
 - 实时查看 Agent 任务状态

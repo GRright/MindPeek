@@ -1,4 +1,4 @@
-# MindPeek - Your AI Partner That Understands You 🎯
+# MindPeek - Your AI Partner Who Understands You 🎯
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
 </p>
 
-> *MindPeek is not an ordinary chatbot — it's an AI partner that truly understands you. Through multi-turn conversations and advanced AI Agent technology, MindPeek gets to know you better over time, becoming an indispensable intelligent assistant.*
+> *MindPeek is not an ordinary chatbot —— it's an AI partner that truly understands you. Through multi-turn conversations and advanced AI Agent technology, MindPeek gets to know you better over time, becoming an indispensable intelligent assistant.*
 
 ---
 
@@ -15,67 +15,71 @@
 
 ---
 
-## ✨ Key Features
+## ✨ Core Features
 
-MindPeek transforms your conversations into deep self-understanding:
+MindPeek transforms your conversations into deep understanding of you:
 
 | 🔮 Agent | 💡 Function | 🎯 Value |
-|---------|--------|---------|
-| **FeatureDiscovery Agent** | Auto-discover personality, habits, preferences | No manual input, AI learns automatically |
-| **LatentIntent Agent** | Identify hidden needs and potential intentions | Know what you need before you do |
-| **Relationship Agent** | Discover your social network | Understand your interpersonal patterns |
+|----------|-------------|-----------|
+| **FeatureDiscovery Agent** | Automatically discover your personality, habits, preferences | No manual input needed, AI learns automatically |
+| **LatentIntent Agent** | Identify your hidden needs and latent intentions | Know what you need before you do |
+| **CorrelationAgent** | Discover correlations between features | Build a complete user profile network |
 | **DeepThink Agent** | Deep psychological analysis | Explore the psychology behind your words |
 
 ## 🚀 Why Choose MindPeek?
 
 ### 🤖 Multi-Agent Collaboration System
-Built on LangGraph, an intelligent Agent network where multiple specialized Agents work together:
-- **Async Processing**: Smooth conversations, background tasks auto-execute
-- **Smart Routing**: Auto-decide when to use personalization vs. general responses
+Intelligent Agent network built on LangGraph, with multiple specialized agents working together:
+- **Async Processing**: Smooth conversations, background tasks execute automatically
+- **Smart Routing**: Automatically decide when to use personalization vs. general responses
 - **Parallel Analysis**: Feature extraction, correlation analysis, and need discovery run simultaneously
 
 ### 🧠 Knows You Better Than You Know Yourself
-- **Active Learning**: Auto-discover your MBTI, behavioral habits, interests through conversation
-- **Hidden Need Mining**: Discover things you didn't say but actually need
+- **Active Learning**: Automatically discover your MBTI, behavioral habits, and interests through conversation
+- **Hidden Need Mining**: Discover what you don't say but actually need
 - **Dynamic Profiling**: Profile becomes more accurate as conversations deepen
 
 ### 🔄 Intelligent Feature Decay Mechanism
-- **LLM Stability Evaluation**: Each feature's stability is assessed by the LLM
-- **Personalized Decay Curve**: Stable features decay slowly, volatile features decay faster
-- **Lazy Update Strategy**: Decay calculated only when user accesses data, reducing DB writes
+- **LLM-Evaluated Stability**: Each feature's stability is judged by the large model
+- **Personalized Decay Curve**: Stable features decay slowly, volatile features decay fast
+- **Lazy Update Strategy**: Calculate decay only when user accesses, reducing database writes
 - **Logarithmic Decay Function**:
   - No decay during stability period
-  - Gradual logarithmic decay after stability period
-  - Converges to minimum threshold (0.3)
+  - Slow logarithmic decay after stability period
+  - Eventually converges to minimum threshold (0.3)
 
 ```
 C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ```
 
 ### 🔗 Social Relationship Awareness
-- Auto-recognize people mentioned in conversations (family, friends, colleagues, etc.)
+- Automatically identify people mentioned in conversations (family, friends, colleagues, etc.)
 - Understand your interpersonal interaction patterns
-- Build a complete social relationship graph
+- Build a complete social relationship map
 
 ### ⚡ Production-Grade Performance
-- Async task queue, up to 3 Agents running in parallel
+- Async task queue with up to 3 agents executing in parallel
 - Zero-latency user conversation experience
-- Background task auto-scheduling
+- Automatic background task scheduling
+
+### 💾 Dual Storage Architecture
+- **SQLite Local Storage**: Core user data, conversation history, feature information
+- **MemoBase Remote Sync**: Cross-device feature sync, cloud backup
 
 ## 📊 System Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                         MindPeek Frontend                        │
-│    💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features │
+│    💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features  │  ⚙️ Settings   │
 └──────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Relationship│  │ DeepThink │ │
-│  │ Discovery  │  │   Intent   │  │  Agent     │  │   Agent   │ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │ DeepThink │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   Agent   │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 └──────────────────────────────────────────────────────────────────┘
                                 │
@@ -83,8 +87,16 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
         ▼                       ▼                       ▼
 ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
 │   💾 SQLite   │    │  📡 MemoBase  │    │  🧠 LLM       │
-│   Local Store │    │  Remote Store │    │  (DeepSeek等)  │
+│   Local Store │    │   Remote Sync │    │  (DeepSeek等)  │
 └───────────────┘    └───────────────┘    └───────────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  🧠 Knowledge Graph   │
+                    │  Predefined Psychology│
+                    │  Knowledge Base +     │
+                    │  Real-time Inference  │
+                    └───────────────────────┘
 ```
 
 ## 🛠️ Tech Stack
@@ -124,7 +136,7 @@ cd frontend && npm install
 copy config\config.example.json config\config.json
 ```
 
-Edit `config/config.json` with your settings:
+Edit `config/config.json` with your configuration:
 
 ```json
 {
@@ -144,7 +156,7 @@ Edit `config/config.json` with your settings:
     },
     "agent": {
         "max_concurrent_agents": 3,
-        "comment": "Controls the maximum number of parallel Agents, adjust based on server performance, recommended value 1-5"
+        "comment": "Max concurrent agents, adjust based on server performance, recommended 1-5"
     }
 }
 ```
@@ -174,30 +186,30 @@ MindPeek/
 ├── requirements.txt            # Python dependencies
 ├── config/
 │   ├── config.json             # Runtime configuration
-│   └── config.example.json    # Configuration template
+│   └── config.example.json     # Configuration template
 ├── backend/
 │   ├── api/
-│   │   └── routes.py          # API routes
+│   │   └── routes.py           # API routes
 │   ├── models/
 │   │   ├── database.py         # Database models
-│   │   └── schemas.py         # Pydantic models
+│   │   └── schemas.py          # Pydantic models
 │   ├── services/
-│   │   ├── llm_provider.py    # Multi-Provider support
-│   │   ├── profile_service.py # User profiling service
+│   │   ├── llm_provider.py     # Multi-provider support
+│   │   ├── profile_service.py  # User profiling service
 │   │   └── memo_base_service.py # Remote storage
 │   ├── agents/
-│   │   ├── chat_graph.py      # 🤖 LangGraph chat graph
-│   │   ├── feature_discovery.py # 🔮 Feature discovery Agent
+│   │   ├── chat_graph.py       # 🤖 LangGraph chat graph
+│   │   ├── feature_discovery.py # 🔮 Feature discovery agent
 │   │   ├── async_orchestrator.py # ⚡ Async task orchestration
-│   │   └── agent_engine.py    # Agent engine
+│   │   └── agent_engine.py     # Agent engine
 │   └── knowledge_graph/
-│       └── graph.py           # 🔗 Knowledge graph
+│       └── graph.py           # 🔗 Knowledge graph (real-time inference)
 ├── frontend/
 │   ├── src/
 │   │   ├── views/             # Page components
 │   │   ├── stores/            # Pinia state
 │   │   ├── api/               # API calls
-│   │   └── router/            # Router config
+│   │   └── router/            # Route configuration
 │   └── package.json
 └── data/
     └── permir.db              # SQLite database
@@ -205,9 +217,9 @@ MindPeek/
 
 ## 🎨 Features
 
-### 💬 Intelligent Chat
-- Multi-turn conversation with automatic context understanding
-- Personalized responses tailored to your profile
+### 💬 Smart Chat
+- Multi-turn conversations with automatic context understanding
+- Personalized responses based on your features
 - Optional deep thinking mode
 
 ### 👤 User Profile
@@ -217,12 +229,12 @@ MindPeek/
 - Hidden need discovery
 
 ### 🔗 Knowledge Graph
+- Real-time inference based on predefined psychology knowledge base
 - Feature correlation visualization
-- Social relationship network
-- Dynamic updated graph
+- Dynamic inference of potential features
 
-### 🔮 Agent Dashboard
-- Real-time Agent task status
+### 🔮 Agent Workbench
+- View agent task status in real-time
 - Async task management
 - Insight reports
 
@@ -235,5 +247,5 @@ See [LICENSE](LICENSE) for full license text.
 ---
 
 <p align="center">
-  <strong>MindPeek</strong> - Let AI Truly Understand You
+  <strong>MindPeek</strong> - Let AI truly understand you
 </p>
