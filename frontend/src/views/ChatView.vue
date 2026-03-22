@@ -183,13 +183,23 @@ async function sendMessage() {
     messages.value.push({
       id: Date.now() + 1,
       role: 'assistant',
-      content: '消息已处理，特征已更新',
+      content: result.response || '消息已处理',
       timestamp: new Date().toISOString()
     })
 
+    if (result.think_content) {
+      try {
+        const thinkData = JSON.parse(result.think_content)
+        ElMessage.success(`深度分析完成`)
+      } catch {
+      }
+    }
+
     extractedFeatures.value = result.features_extracted || []
 
-    ElMessage.success(`提取了 ${extractedFeatures.value.length} 个特征`)
+    if (result.features_extracted && result.features_extracted.length > 0) {
+      ElMessage.success(`提取了 ${result.features_extracted.length} 个特征`)
+    }
     scrollToBottom()
   } catch (e) {
     ElMessage.error('发送失败: ' + e.message)

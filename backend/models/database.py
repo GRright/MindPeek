@@ -15,16 +15,17 @@ class Base(DeclarativeBase):
 
 class UserModel(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(100), unique=True, nullable=False, index=True)
     username = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     profile = relationship("ProfileModel", back_populates="user", uselist=False)
     conversations = relationship("ConversationModel", back_populates="user")
     features = relationship("FeatureModel", back_populates="user")
+    relationships = relationship("RelationshipModel", back_populates="user")
 
 
 class ProfileModel(Base):
@@ -55,7 +56,7 @@ class ConversationModel(Base):
 
 class FeatureModel(Base):
     __tablename__ = "features"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True)
     feature_type = Column(String(50), nullable=False, index=True)
@@ -67,8 +68,25 @@ class FeatureModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
-    
+
     user = relationship("UserModel", back_populates="features")
+
+
+class RelationshipModel(Base):
+    __tablename__ = "relationships"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True)
+    person_name = Column(String(200), nullable=False)
+    relationship_type = Column(String(50), nullable=False)
+    interaction_pattern = Column(Text, nullable=True)
+    evidence = Column(JSON, default=list)
+    confidence = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+    user = relationship("UserModel", back_populates="relationships")
 
 
 class KnowledgeNodeModel(Base):

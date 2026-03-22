@@ -1,209 +1,226 @@
-# MindPeek - 智能用户画像生成系统
+# MindPeek - 懂你的 AI 伙伴 🎯
 
-基于 LLM 的多轮对话用户画像生成系统。通过自然对话，MindPeek 能够深入分析用户的隐性特征，包括性格类型、行为习惯、潜在想法等，为用户研究和个性化服务提供强大支持。
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/Vue-3-green.svg" alt="Vue">
+  <img src="https://img.shields.io/badge/License-GPL--3.0-orange.svg" alt="License">
+  <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
+</p>
+
+> *MindPeek 不是普通的聊天机器人 —— 它是一个能够真正理解你的 AI 伙伴。通过多轮对话和先进的 AI Agent 技术，MindPeek 会越来越懂你，成为你不可或缺的智能助手。*
 
 ---
 
-**🌐 Language / 语言 / 言語**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
+**🌐 Language**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
 
 ---
 
-## 核心特性
+## ✨ 核心亮点
 
-- **智能特征提取**：从多轮对话中自动识别 MBTI 性格类型、大五人格特征、行为习惯、潜在想法等
-- **实时画像更新**：随着对话深入，系统持续学习和更新用户画像
-- **知识图谱可视化**：以图形化方式展示用户特征之间的关联关系
-- **多后端存储支持**：支持 SQLite 本地存储和 MemoBase 远程存储
-- **OpenAI 兼容接口**：支持对接任何 OpenAI 兼容 API 的大模型服务
-- **现代化前端界面**：参考 Open WebUI 风格设计的深色主题界面
+MindPeek 将你的对话转化为对你的深度理解：
 
-## 技术架构
+| 🔮 智能体 | 💡 功能 | 🎯 价值 |
+|---------|--------|---------|
+| **FeatureDiscovery Agent** | 自主发现你的性格、习惯、偏好 | 无需手动输入，AI 自动学习 |
+| **LatentIntent Agent** | 识别你的隐性需求和潜在意图 | 比你更早知道你需要什么 |
+| **Relationship Agent** | 发现你的社会关系网络 | 了解你的人际互动模式 |
+| **DeepThink Agent** | 深度心理分析 | 探索你言行背后的心理动机 |
 
-### 后端技术栈
+## 🚀 为什么选择 MindPeek？
 
-- **FastAPI** - 高性能 Python Web 框架
-- **SQLAlchemy** - 异步 ORM 数据库访问
-- **httpx** - 异步 HTTP 客户端
-- **Pydantic** - 数据验证和模型定义
-- **NetworkX** - 知识图谱构建
+### 🤖 多 Agent 协作系统
+基于 LangGraph 构建的智能 Agent 网络，多个专业 Agent 协同工作：
+- **异步处理**：对话流畅不卡顿，后台任务自动执行
+- **智能路由**：自动判断何时使用个性化，何时通用回复
+- **并行分析**：特征提取、关联分析、需求发现同时进行
 
-### 前端技术栈
+### 🧠 比你更懂你自己
+- **主动学习**：通过对话自动发现你的 MBTI、行为习惯、兴趣爱好
+- **隐性需求挖掘**：发现你没说出口但实际需要的东西
+- **动态画像**：随着对话深入，画像越来越精确
 
-- **Vue 3** - 渐进式 JavaScript 框架
+### 🔗 社会关系感知
+- 自动识别对话中的人物关系（家人、朋友、同事等）
+- 理解你的人际互动模式
+- 构建完整的社会关系图谱
+
+### ⚡ 生产级性能
+- 异步任务队列，最多 3 个 Agent 并行执行
+- 用户对话零延迟体验
+- 后台任务自动调度
+
+## 📊 系统架构
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         MindPeek 前端                            │
+│    💬 聊天  │  👤 画像  │  🔗 知识图谱  │  ✨ 特征  │  ⚙️ 设置   │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     🤖 LangGraph Orchestrator                     │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
+│  │  Feature   │  │  Latent    │  │Relationship│  │ DeepThink │ │
+│  │ Discovery  │  │   Intent   │  │  Agent     │  │   Agent   │ │
+│  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│   💾 SQLite   │    │  📡 MemoBase  │    │  🧠 LLM       │
+│   本地存储    │    │   远程存储    │    │  (DeepSeek等)  │
+└───────────────┘    └───────────────┘    └───────────────┘
+```
+
+## 🛠️ 技术栈
+
+### 后端
+- **FastAPI** - 高性能异步 Web 框架
+- **LangGraph** - 多 Agent 编排框架
+- **SQLAlchemy** - 异步 ORM
+- **NetworkX** - 知识图谱
+- **Pydantic** - 数据验证
+
+### 前端
+- **Vue 3** - 组合式 API
 - **Element Plus** - UI 组件库
 - **Pinia** - 状态管理
+- **ECharts** - 数据可视化
 - **vis-network** - 知识图谱可视化
-- **ECharts** - 数据可视化图表
 
-### 支持的大模型
+### AI 能力
+- **OpenAI 兼容接口** - 支持所有主流大模型
+- **DeepSeek** - 默认配置
+- **通义千问 / 智谱 AI / Ollama** - 全部支持
 
-本系统通过 OpenAI 兼容接口连接大模型，支持：
-
-- DeepSeek（默认配置）
-- 通义千问
-- 智谱 AI
-- Ollama（本地模型）
-- OpenAI GPT 系列
-- 以及任何提供 OpenAI 兼容 API 的服务
-
-## 环境要求
-
-- Python 3.9+
-- Node.js 18+
-- 网络连接（调用 LLM 需要）
-
-## 快速开始
+## 🚀 快速开始
 
 ### 1. 安装依赖
 
 ```bash
 cd MindPeek
 pip install -r requirements.txt
-cd frontend
-npm install
-cd ..
+cd frontend && npm install
 ```
 
 ### 2. 配置系统
-
-> ⚠️ **重要提醒**：请从 `config.example.json` 复制该文件并命名为 `config.json`，并填写你自己的配置信息。
-
-复制配置文件模板并编辑：
 
 ```bash
 copy config\config.example.json config\config.json
 ```
 
-编辑 `config/config.json`，填入你的 LLM 和 MemoBase 信息：
+编辑 `config/config.json`，填入你的配置：
 
 ```json
 {
     "llm_providers": {
         "deepseek": {
             "enabled": true,
-            "api_key": "your_api_key_here",
-            "api_url": "your_llm_api_url_here",
-            "model": "your_llm_model_name"
+            "api_key": "your_api_key",
+            "api_url": "https://api.deepseek.com/v1",
+            "model": "deepseek-chat"
         }
     },
     "default_provider": "deepseek",
     "memo_base": {
         "enabled": true,
-        "project_url": "http://your_memobase_server:8019",
-        "api_key": "your_memobase_api_key_here"
+        "project_url": "http://your-memobase:8019",
+        "api_key": "your_memobase_key"
+    },
+    "agent": {
+        "max_concurrent_agents": 3,
+        "comment": "控制并行Agent的最大数量，根据服务器性能调整，建议值为1-5"
     }
 }
 ```
 
-**配置说明：**
-- `api_key`: 你的 API 密钥（本地部署的 LLM 服务可用任意字符串如 `dummy_key`）
-- `api_url`: LLM/MemoBase 服务的地址
-- `model`: 使用的模型名称
-
 ### 3. 启动服务
 
-启动后端（终端 1）：
-
 ```bash
+# 后端 (终端 1)
 cd MindPeek
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
 
-启动前端（终端 2）：
-
-```bash
+# 前端 (终端 2)
 cd MindPeek/frontend
 npm run dev
 ```
 
-### 4. 访问系统
+### 4. 开始探索
 
-- 前端界面：http://localhost:3000
-- API 文档：http://localhost:8000/docs
-- 健康检查：http://localhost:8000/health
+- 🌐 前端界面：http://localhost:3000
+- 📖 API 文档：http://localhost:8000/docs
 
-## 配置说明
-
-### LLM Provider 配置
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `enabled` | 是否启用该 provider | `true` |
-| `api_key` | API 密钥（本地部署可用 dummy_key） | `dummy_key` |
-| `api_url` | API 地址（OpenAI 兼容格式） | `http://172.16.5.147:8000/v1` |
-| `model` | 模型名称 | `deepseek-chat` |
-| `temperature` | 生成温度（0-1） | `0.7` |
-| `max_tokens` | 最大 token 数 | `2000` |
-
-### MemoBase 配置
-
-MemoBase 用于远程存储用户画像和对话历史：
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `enabled` | 是否启用 MemoBase | `true` |
-| `project_url` | MemoBase 服务地址 | `http://172.16.5.147:8019` |
-| `api_key` | MemoBase API Key | `GdyztMemobase2025` |
-
-## 功能模块
-
-### 聊天分析
-
-在聊天界面与 AI 进行自然对话，系统会实时分析对话内容，提取用户特征。
-
-### 用户画像
-
-查看图形化的用户画像，包括：
-- MBTI 性格四宫格分析
-- 特征雷达图
-- 置信度展示
-
-### 知识图谱
-
-以节点和边的形式展示特征之间的关联关系，帮助理解用户特征的内在联系。
-
-### 特征管理
-
-查看、筛选和管理已提取的用户特征。
-
-## 项目结构
+## 📁 项目结构
 
 ```
 MindPeek/
-├── main.py                     # FastAPI 应用入口
+├── main.py                     # FastAPI 入口
 ├── requirements.txt            # Python 依赖
 ├── config/
-│   ├── config.json             # 运行时配置文件
+│   ├── config.json             # 运行时配置
 │   └── config.example.json    # 配置模板
 ├── backend/
 │   ├── api/
-│   │   └── routes.py          # API 路由定义
-│   ├── core/
-│   │   └── config.py          # 配置管理模块
+│   │   └── routes.py          # API 路由
 │   ├── models/
-│   │   ├── database.py         # SQLAlchemy 模型
+│   │   ├── database.py         # 数据库模型
 │   │   └── schemas.py         # Pydantic 模型
 │   ├── services/
-│   │   ├── llm_provider.py    # LLM 提供者（多provider支持）
-│   │   ├── profile_service.py  # 用户画像服务
-│   │   └── memo_base_service.py # MemoBase 存储服务
+│   │   ├── llm_provider.py    # 多 Provider 支持
+│   │   ├── profile_service.py # 用户画像服务
+│   │   └── memo_base_service.py # 远程存储
 │   ├── agents/
-│   │   └── agent_engine.py    # 多 Agent 协调引擎
+│   │   ├── chat_graph.py      # 🤖 LangGraph 聊天图
+│   │   ├── feature_discovery.py # 🔮 特征发现 Agent
+│   │   ├── async_orchestrator.py # ⚡ 异步任务编排
+│   │   └── agent_engine.py    # Agent 引擎
 │   └── knowledge_graph/
-│       └── graph.py           # 知识图谱模块
-├── frontend/                   # Vue 3 前端
+│       └── graph.py           # 🔗 知识图谱
+├── frontend/
 │   ├── src/
 │   │   ├── views/             # 页面组件
-│   │   ├── stores/            # Pinia 状态管理
-│   │   ├── api/               # API 调用封装
-│   │   └── router/            # Vue Router 配置
+│   │   ├── stores/            # Pinia 状态
+│   │   ├── api/               # API 调用
+│   │   └── router/            # 路由配置
 │   └── package.json
-└── data/                       # 数据存储目录
+└── data/
     └── permir.db              # SQLite 数据库
 ```
 
-## License
+## 🎨 功能展示
+
+### 💬 智能对话
+- 多轮对话，自动上下文理解
+- 个性化回复，根据你的特征定制
+- 深度思考模式可选
+
+### 👤 用户画像
+- MBTI 性格分析
+- 大五人格雷达图
+- 行为习惯洞察
+- 隐性需求发现
+
+### 🔗 知识图谱
+- 特征关联可视化
+- 社会关系网络
+- 动态更新图谱
+
+### 🔮 Agent 工作台
+- 实时查看 Agent 任务状态
+- 异步任务管理
+- 洞察报告
+
+## 📜 License
 
 GNU General Public License v3.0 (GPL-3.0)
 
 See [LICENSE](LICENSE) for full license text.
+
+---
+
+<p align="center">
+  <strong>MindPeek</strong> - 让 AI 真正理解你
+</p>

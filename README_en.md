@@ -1,209 +1,226 @@
-# MindPeek - Intelligent User Profile Generation System
+# MindPeek - Your AI Partner That Understands You 🎯
 
-A multi-turn conversation-based user profile generation system powered by LLM. Through natural dialogue, MindPeek can deeply analyze users' implicit characteristics, including personality types, behavioral habits, hidden thoughts, etc., providing powerful support for user research and personalized services.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/Vue-3-green.svg" alt="Vue">
+  <img src="https://img.shields.io/badge/License-GPL--3.0-orange.svg" alt="License">
+  <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
+</p>
+
+> *MindPeek is not an ordinary chatbot — it's an AI partner that truly understands you. Through multi-turn conversations and advanced AI Agent technology, MindPeek gets to know you better over time, becoming an indispensable intelligent assistant.*
 
 ---
 
-**🌐 Language / 语言 / 言語**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
+**🌐 Language**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-- **Intelligent Feature Extraction**: Automatically identify MBTI personality types, Big Five personality traits, behavioral habits, hidden thoughts, etc. from multi-turn conversations
-- **Real-time Profile Updates**: As conversations deepen, the system continuously learns and updates user profiles
-- **Knowledge Graph Visualization**: Display the relationships between user characteristics in a graphical format
-- **Multi-backend Storage Support**: Supports SQLite local storage and MemoBase remote storage
-- **OpenAI Compatible Interface**: Supports any LLM service with OpenAI-compatible API
-- **Modern Frontend Interface**: Dark theme interface inspired by Open WebUI
+MindPeek transforms your conversations into deep self-understanding:
 
-## Tech Stack
+| 🔮 Agent | 💡 Function | 🎯 Value |
+|---------|--------|---------|
+| **FeatureDiscovery Agent** | Auto-discover personality, habits, preferences | No manual input, AI learns automatically |
+| **LatentIntent Agent** | Identify hidden needs and potential intentions | Know what you need before you do |
+| **Relationship Agent** | Discover your social network | Understand your interpersonal patterns |
+| **DeepThink Agent** | Deep psychological analysis | Explore the psychology behind your words |
+
+## 🚀 Why Choose MindPeek?
+
+### 🤖 Multi-Agent Collaboration System
+Built on LangGraph, an intelligent Agent network where multiple specialized Agents work together:
+- **Async Processing**: Smooth conversations, background tasks auto-execute
+- **Smart Routing**: Auto-decide when to use personalization vs. general responses
+- **Parallel Analysis**: Feature extraction, correlation analysis, and need discovery run simultaneously
+
+### 🧠 Knows You Better Than You Know Yourself
+- **Active Learning**: Auto-discover your MBTI, behavioral habits, interests through conversation
+- **Hidden Need Mining**: Discover things you didn't say but actually need
+- **Dynamic Profiling**: Profile becomes more accurate as conversations deepen
+
+### 🔗 Social Relationship Awareness
+- Auto-recognize people mentioned in conversations (family, friends, colleagues, etc.)
+- Understand your interpersonal interaction patterns
+- Build a complete social relationship graph
+
+### ⚡ Production-Grade Performance
+- Async task queue, up to 3 Agents running in parallel
+- Zero-latency user conversation experience
+- Background task auto-scheduling
+
+## 📊 System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         MindPeek Frontend                        │
+│    💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     🤖 LangGraph Orchestrator                     │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
+│  │  Feature   │  │  Latent    │  │Relationship│  │ DeepThink │ │
+│  │ Discovery  │  │   Intent   │  │  Agent     │  │   Agent   │ │
+│  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│   💾 SQLite   │    │  📡 MemoBase  │    │  🧠 LLM       │
+│   Local Store │    │  Remote Store │    │  (DeepSeek等)  │
+└───────────────┘    └───────────────┘    └───────────────┘
+```
+
+## 🛠️ Tech Stack
 
 ### Backend
-
-- **FastAPI** - High-performance Python Web framework
-- **SQLAlchemy** - Async ORM database access
-- **httpx** - Async HTTP client
-- **Pydantic** - Data validation and model definition
-- **NetworkX** - Knowledge graph construction
+- **FastAPI** - High-performance async web framework
+- **LangGraph** - Multi-Agent orchestration framework
+- **SQLAlchemy** - Async ORM
+- **NetworkX** - Knowledge graph
+- **Pydantic** - Data validation
 
 ### Frontend
-
-- **Vue 3** - Progressive JavaScript framework
+- **Vue 3** - Composition API
 - **Element Plus** - UI component library
 - **Pinia** - State management
+- **ECharts** - Data visualization
 - **vis-network** - Knowledge graph visualization
-- **ECharts** - Data visualization charts
 
-### Supported LLMs
+### AI Capabilities
+- **OpenAI Compatible Interface** - Supports all major LLMs
+- **DeepSeek** - Default configuration
+- **Qwen / Zhipu AI / Ollama** - All supported
 
-This system connects to LLMs through OpenAI-compatible interfaces, supporting:
-
-- DeepSeek (default configuration)
-- Tongyi Qianwen
-- Zhipu AI
-- Ollama (local models)
-- OpenAI GPT series
-- Any service providing OpenAI-compatible API
-
-## Requirements
-
-- Python 3.9+
-- Node.js 18+
-- Internet connection (required for LLM calls)
-
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
 cd MindPeek
 pip install -r requirements.txt
-cd frontend
-npm install
-cd ..
+cd frontend && npm install
 ```
 
-### 2. Configure the System
-
-> :warning: **Important**: Copy `config.example.json` to `config.json` and fill in your configuration information.
-
-Copy and edit the configuration template:
+### 2. Configure System
 
 ```bash
 copy config\config.example.json config\config.json
 ```
 
-Edit `config/config.json` with your LLM and MemoBase information:
+Edit `config/config.json` with your settings:
 
 ```json
 {
     "llm_providers": {
         "deepseek": {
             "enabled": true,
-            "api_key": "your_api_key_here",
-            "api_url": "your_llm_api_url_here",
-            "model": "your_llm_model_name"
+            "api_key": "your_api_key",
+            "api_url": "https://api.deepseek.com/v1",
+            "model": "deepseek-chat"
         }
     },
     "default_provider": "deepseek",
     "memo_base": {
         "enabled": true,
-        "project_url": "http://your_memobase_server:8019",
-        "api_key": "your_memobase_api_key_here"
+        "project_url": "http://your-memobase:8019",
+        "api_key": "your_memobase_key"
+    },
+    "agent": {
+        "max_concurrent_agents": 3,
+        "comment": "Controls the maximum number of parallel Agents, adjust based on server performance, recommended value 1-5"
     }
 }
 ```
 
-**Configuration Notes:**
-- `api_key`: Your API key (local LLM deployments can use any string like `dummy_key`)
-- `api_url`: LLM/MemoBase service address
-- `model`: Model name to use
-
 ### 3. Start Services
 
-Start backend (Terminal 1):
-
 ```bash
+# Backend (Terminal 1)
 cd MindPeek
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
 
-Start frontend (Terminal 2):
-
-```bash
+# Frontend (Terminal 2)
 cd MindPeek/frontend
 npm run dev
 ```
 
-### 4. Access the System
+### 4. Start Exploring
 
-- Frontend UI: http://localhost:3000
-- API Docs: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
+- 🌐 Frontend: http://localhost:3000
+- 📖 API Docs: http://localhost:8000/docs
 
-## Configuration Details
-
-### LLM Provider Configuration
-
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `enabled` | Whether to enable this provider | `true` |
-| `api_key` | API key (use dummy_key for local deployment) | `dummy_key` |
-| `api_url` | API address (OpenAI-compatible format) | `http://172.16.5.147:8000/v1` |
-| `model` | Model name | `deepseek-chat` |
-| `temperature` | Generation temperature (0-1) | `0.7` |
-| `max_tokens` | Maximum tokens | `2000` |
-
-### MemoBase Configuration
-
-MemoBase is used for remote storage of user profiles and conversation history:
-
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `enabled` | Whether to enable MemoBase | `true` |
-| `project_url` | MemoBase service address | `http://172.16.5.147:8019` |
-| `api_key` | MemoBase API Key | `GdyztMemobase2025` |
-
-## Features
-
-### Chat Analysis
-
-Have natural conversations with AI in the chat interface. The system analyzes conversation content in real-time and extracts user characteristics.
-
-### User Profile
-
-View graphical user profiles including:
-- MBTI personality quadrant analysis
-- Feature radar chart
-- Confidence display
-
-### Knowledge Graph
-
-Display the relationships between characteristics as nodes and edges, helping understand the intrinsic connections between user characteristics.
-
-### Feature Management
-
-View, filter, and manage extracted user characteristics.
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 MindPeek/
-├── main.py                     # FastAPI application entry
+├── main.py                     # FastAPI entry point
 ├── requirements.txt            # Python dependencies
 ├── config/
-│   ├── config.json             # Runtime configuration file
+│   ├── config.json             # Runtime configuration
 │   └── config.example.json    # Configuration template
 ├── backend/
 │   ├── api/
-│   │   └── routes.py          # API route definitions
-│   ├── core/
-│   │   └── config.py          # Configuration management module
+│   │   └── routes.py          # API routes
 │   ├── models/
-│   │   ├── database.py         # SQLAlchemy models
+│   │   ├── database.py         # Database models
 │   │   └── schemas.py         # Pydantic models
 │   ├── services/
-│   │   ├── llm_provider.py    # LLM provider (multi-provider support)
-│   │   ├── profile_service.py  # User profile service
-│   │   └── memo_base_service.py # MemoBase storage service
+│   │   ├── llm_provider.py    # Multi-Provider support
+│   │   ├── profile_service.py # User profiling service
+│   │   └── memo_base_service.py # Remote storage
 │   ├── agents/
-│   │   └── agent_engine.py    # Multi-agent coordination engine
+│   │   ├── chat_graph.py      # 🤖 LangGraph chat graph
+│   │   ├── feature_discovery.py # 🔮 Feature discovery Agent
+│   │   ├── async_orchestrator.py # ⚡ Async task orchestration
+│   │   └── agent_engine.py    # Agent engine
 │   └── knowledge_graph/
-│       └── graph.py           # Knowledge graph module
-├── frontend/                   # Vue 3 frontend
+│       └── graph.py           # 🔗 Knowledge graph
+├── frontend/
 │   ├── src/
 │   │   ├── views/             # Page components
-│   │   ├── stores/            # Pinia state management
-│   │   ├── api/               # API call wrappers
-│   │   └── router/            # Vue Router configuration
+│   │   ├── stores/            # Pinia state
+│   │   ├── api/               # API calls
+│   │   └── router/            # Router config
 │   └── package.json
-└── data/                       # Data storage directory
+└── data/
     └── permir.db              # SQLite database
 ```
 
-## License
+## 🎨 Features
+
+### 💬 Intelligent Chat
+- Multi-turn conversation with automatic context understanding
+- Personalized responses tailored to your profile
+- Optional deep thinking mode
+
+### 👤 User Profile
+- MBTI personality analysis
+- Big Five personality radar chart
+- Behavioral habit insights
+- Hidden need discovery
+
+### 🔗 Knowledge Graph
+- Feature correlation visualization
+- Social relationship network
+- Dynamic updated graph
+
+### 🔮 Agent Dashboard
+- Real-time Agent task status
+- Async task management
+- Insight reports
+
+## 📜 License
 
 GNU General Public License v3.0 (GPL-3.0)
 
 See [LICENSE](LICENSE) for full license text.
+
+---
+
+<p align="center">
+  <strong>MindPeek</strong> - Let AI Truly Understand You
+</p>

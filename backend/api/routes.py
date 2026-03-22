@@ -42,7 +42,7 @@ async def chat(
         )
 
         return ChatResponse(
-            response="消息已处理",
+            response=result.get("response", "消息已处理"),
             features_extracted=result["extracted_features"],
             profile_updated=True,
             session_id=request.session_id,

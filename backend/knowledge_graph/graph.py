@@ -204,7 +204,54 @@ class KnowledgeGraph:
                             })
         
         return conflicts
-    
+
+    def add_social_relationship(self, user_id: str, person_name: str,
+                               relationship_type: str, confidence: float = 0.8,
+                               evidence: List[str] = None):
+        """添加社会关系"""
+        user_node = self._get_or_create_node(f"user_{user_id}", "user")
+        person_node = self._get_or_create_node(f"person:{person_name}", "person")
+        relation_node = self._get_or_create_node(f"relation:{relationship_type}", relationship_type)
+
+        self.graph.add_edge(
+            user_node, relation_node,
+            relation="has_relationship",
+            weight=confidence,
+            person=person_name,
+            evidence=evidence or [],
+            created_at=datetime.now().isoformat()
+        )
+
+        self.graph.add_edge(
+            relation_node, person_node,
+            relation="to",
+            weight=confidence,
+            created_at=datetime.now().isoformat()
+        )
+
+    def get_user_relationships(self, user_id: str) -> List[Dict]:
+        """获取用户的社会关系"""
+        user_node = self._get_or_create_node(f"user_{user_id}", "user")
+        relationships = []
+
+        for neighbor in self.graph.successors(user_node):
+            edge_data = self.graph.get_edge_data(user_node, neighbor)
+            if edge_data and edge_data.get("relation") == "has_relationship":
+                person = edge_data.get("person", "")
+                relation_type = self.graph.nodes[neighbor].get("type", "")
+
+                for second_neighbor in self.graph.successors(neighbor):
+                    second_edge_data = self.graph.get_edge_data(neighbor, second_neighbor)
+                    if second_edge_data and second_edge_data.get("relation") == "to":
+                        relationships.append({
+                            "person_name": self.graph.nodes[second_neighbor].get("name", ""),
+                            "relationship_type": relation_type,
+                            "confidence": edge_data.get("weight", 0),
+                            "evidence": edge_data.get("evidence", [])
+                        })
+
+        return relationships
+
     def get_feature_correlations(self, feature_value: str, max_depth: int = 2) -> Dict:
         """获取特征相关性"""
         feature_node = self._get_or_create_node(feature_value)

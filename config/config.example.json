@@ -33,5 +33,9 @@
         "max_history_messages": 100,
         "enable_knowledge_graph": true,
         "enable_multi_agent": true
+    },
+    "agent": {
+        "max_concurrent_agents": 3,
+        "comment": "控制并行Agent的最大数量，根据服务器性能调整，建议值为1-5"
     }
 }

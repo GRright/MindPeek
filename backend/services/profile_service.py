@@ -137,7 +137,65 @@ class ProfileService:
         
         result = await self.db.execute(query.order_by(desc(FeatureModel.confidence)))
         return list(result.scalars().all())
-    
+
+    async def add_relationship(self, user_id: str, person_name: str,
+                              relationship_type: str, interaction_pattern: str = None,
+                              confidence: float = 0.5, evidence: List[str] = None) -> Any:
+        """添加社会关系"""
+        from ..models.database import RelationshipModel
+
+        existing = await self.db.execute(
+            select(RelationshipModel).where(
+                and_(
+                    RelationshipModel.user_id == user_id,
+                    RelationshipModel.person_name == person_name
+                )
+            )
+        )
+        existing_rel = existing.scalar_one_or_none()
+
+        if existing_rel:
+            existing_rel.relationship_type = relationship_type
+            existing_rel.interaction_pattern = interaction_pattern
+            existing_rel.confidence = max(confidence, existing_rel.confidence)
+            existing_rel.evidence = evidence or existing_rel.evidence
+            existing_rel.updated_at = datetime.utcnow()
+            await self.db.commit()
+            await self.db.refresh(existing_rel)
+            return existing_rel
+
+        relationship = RelationshipModel(
+            user_id=user_id,
+            person_name=person_name,
+            relationship_type=relationship_type,
+            interaction_pattern=interaction_pattern,
+            confidence=confidence,
+            evidence=evidence or []
+        )
+        self.db.add(relationship)
+        await self.db.commit()
+        await self.db.refresh(relationship)
+
+        knowledge_graph.add_social_relationship(
+            user_id, person_name, relationship_type, confidence, evidence
+        )
+
+        return relationship
+
+    async def get_user_relationships(self, user_id: str) -> List[Any]:
+        """获取用户社会关系"""
+        from ..models.database import RelationshipModel
+
+        result = await self.db.execute(
+            select(RelationshipModel).where(
+                and_(
+                    RelationshipModel.user_id == user_id,
+                    RelationshipModel.is_active == True
+                )
+            ).order_by(desc(RelationshipModel.confidence))
+        )
+        return list(result.scalars().all())
+
     async def get_profile(self, user_id: str) -> Optional[ProfileModel]:
         """获取用户画像"""
         result = await self.db.execute(
@@ -209,129 +267,27 @@ class ProfileService:
             summary_parts.append(f"潜在想法: {', '.join(intents)}")
         
         return " | ".join(summary_parts)
-    
-    async def extract_features_from_conversation(self, user_id: str, 
-                                                   new_message: str) -> List[FeatureCreate]:
-        """从对话中提取特征"""
-        conversations = await self.get_conversation_history(user_id, limit=10)
-        
-        messages = [{"role": c.role, "content": c.content} for c in conversations]
-        messages.append({"role": "user", "content": new_message})
-        
-        existing_features = {}
-        features = await self.get_user_features(user_id)
-        for f in features:
-            if f.feature_type not in existing_features:
-                existing_features[f.feature_type] = []
-            existing_features[f.feature_type].append({
-                "value": f.feature_value,
-                "confidence": f.confidence
-            })
-        
-        extracted_features = await self.agent_orchestrator.extract_features(
-            messages, existing_features
-        )
-        
-        feature_creates = []
-        for f in extracted_features:
-            feature_create = FeatureCreate(
-                feature_type=f["type"],
-                feature_value=f["value"],
-                confidence=f["confidence"],
-                source_message=new_message,
-                reasoning=f.get("reasoning", ""),
-                evidence=f.get("details", [])
-            )
-            feature_creates.append(feature_create)
-        
-        return feature_creates
-    
+
     async def process_chat(self, user_id: str, message: str,
                            extract_features: bool = True,
                            deep_think: bool = False) -> Dict[str, Any]:
-        """处理聊天消息"""
-        await self.add_conversation(user_id, MessageCreate(
-            role="user",
-            content=message
-        ))
+        """使用LangGraph处理聊天消息"""
+        from ..agents.chat_graph import ChatGraph
 
-        extracted_features = []
-        think_content = None
-
-        if deep_think:
-            think_content = await self._deep_think_analysis(user_id, message)
-
-        if extract_features:
-            extracted_features = await self.extract_features_from_conversation(user_id, message)
-
-            for feature in extracted_features:
-                await self.add_feature(user_id, feature)
-
-        await self.update_profile(user_id)
-
-        correlation_result = await self.agent_orchestrator.update_with_correlation(
-            user_id,
-            [{"type": f.feature_type, "value": f.feature_value, "confidence": f.confidence}
-             for f in extracted_features],
-            {}
+        chat_graph = ChatGraph(
+            llm_provider=self.agent_orchestrator.provider,
+            profile_service=self
         )
 
-        for inferred in correlation_result.get("inferred_features", []):
-            await self.add_feature(user_id, FeatureCreate(
-                feature_type=inferred["type"],
-                feature_value=inferred["value"],
-                confidence=inferred["confidence"],
-                source_message="知识图谱推断",
-                reasoning=inferred["reasoning"]
-            ))
+        result = await chat_graph.ainvoke(user_id, message, deep_think)
 
         return {
-            "extracted_features": extracted_features,
-            "inferred_features": correlation_result.get("inferred_features", []),
-            "conflicts": correlation_result.get("conflicts", []),
-            "think_content": think_content
+            "response": result["response"],
+            "extracted_features": result["extracted_features"],
+            "think_content": result.get("think_content"),
+            "profile_updated": result.get("profile_updated", False)
         }
 
-    async def _deep_think_analysis(self, user_id: str, new_message: str) -> str:
-        """深度思考分析用户心理"""
-        conversations = await self.get_conversation_history(user_id, limit=20)
-
-        messages_for_analysis = [{"role": c.role, "content": c.content} for c in conversations]
-        messages_for_analysis.append({"role": "user", "content": new_message})
-
-        system_prompt = """你是一个专业的心理分析师。请对用户的最新消息进行深度思考分析。
-
-## 分析要求
-1. 深入分析用户言语背后的心理状态和潜在需求
-2. 识别用户的情绪变化和隐含意图
-3. 推断用户可能的人格特质和价值观
-4. 用简洁专业的语言输出分析结果
-
-## 输出格式
-请用JSON格式输出：
-{
-    "deep_analysis": "深度分析内容...",
-    "emotional_state": "当前情绪状态",
-    "potential_needs": ["潜在需求1", "潜在需求2"],
-    "personality_insights": "人格洞察..."
-}
-
-请直接输出JSON，不要有其他内容。"""
-
-        all_messages = [{"role": "system", "content": system_prompt}]
-        all_messages.extend(messages_for_analysis)
-
-        try:
-            response = await self.agent_orchestrator.provider.chat(all_messages)
-            import json
-            try:
-                result = json.loads(response)
-                return json.dumps(result, ensure_ascii=False)
-            except json.JSONDecodeError:
-                return response
-        except Exception as e:
-            return f"深度思考分析失败: {str(e)}"
-    
     async def get_user_profile_detail(self, user_id: str) -> UserProfileDetail:
         """获取用户画像详情"""
         user = await self.get_or_create_user(user_id)
