@@ -66,7 +66,7 @@ class KnowledgeGraph:
         edges = []
         node_id_map = {}
 
-        nodes.append({"id": 1, "label": "用户", "type": "user"})
+        nodes.append({"id": 1, "node_name": "用户", "node_type": "user", "properties": {}})
         node_id_map["user"] = 1
         next_id = 2
 
@@ -80,14 +80,15 @@ class KnowledgeGraph:
         for feature_type in feature_types:
             nodes.append({
                 "id": next_id,
-                "label": feature_type,
-                "type": "feature_type"
+                "node_name": feature_type,
+                "node_type": "feature_type",
+                "properties": {}
             })
             node_id_map[feature_type] = next_id
             edges.append({
-                "source": 1,
-                "target": next_id,
-                "relation": "has_feature_type",
+                "source_id": 1,
+                "target_id": next_id,
+                "relation_type": "has_feature_type",
                 "weight": 1.0
             })
             next_id += 1
@@ -104,13 +105,14 @@ class KnowledgeGraph:
 
             nodes.append({
                 "id": next_id,
-                "label": feature_value,
-                "type": "feature_value"
+                "node_name": feature_value,
+                "node_type": "feature_value",
+                "properties": {}
             })
             edges.append({
-                "source": type_node_id,
-                "target": next_id,
-                "relation": "is_a",
+                "source_id": type_node_id,
+                "target_id": next_id,
+                "relation_type": "is_a",
                 "weight": 0.8
             })
             next_id += 1
@@ -119,13 +121,14 @@ class KnowledgeGraph:
             for inferred in inferred_features:
                 nodes.append({
                     "id": next_id,
-                    "label": inferred,
-                    "type": "inferred"
+                    "node_name": inferred,
+                    "node_type": "inferred",
+                    "properties": {}
                 })
                 edges.append({
-                    "source": next_id - 1,
-                    "target": next_id,
-                    "relation": "implies",
+                    "source_id": next_id - 1,
+                    "target_id": next_id,
+                    "relation_type": "implies",
                     "weight": 0.7
                 })
                 next_id += 1

@@ -1,189 +1,249 @@
-"""
-FastAPI路由定义
-"""
+from fastapi import APIRouter, HTTPException
+from typing import Optional, List
+from pydantic import BaseModel
 import json
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from backend.services.profile_service import ProfileService
+from backend.models.schemas import ChatRequest, ChatResponse
+from backend.models.database import FeatureModel
+from backend.agents.async_orchestrator import get_orchestrator
+from backend.knowledge_graph.graph import knowledge_graph
+from backend.services.feature_merger import feature_merger
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from ..utils.database import get_async_session
-from ..models.schemas import (
-    ChatRequest, ChatResponse, FeatureCreate, FeatureResponse,
-    MessageCreate, MessageResponse, ProfileResponse, ProfileSummary,
-    LLMConfigRequest, LLMConfigResponse, UserProfileDetail,
-    KnowledgeGraphResponse, AgentTaskRequest, AgentTaskResponse
-)
-from ..services.profile_service import ProfileService
-from ..services.llm_provider import LLMProviderFactory
-from ..knowledge_graph.graph import knowledge_graph
-from ..core.config import config_manager
-
 
 router = APIRouter()
 
+class ChatStreamRequest(BaseModel):
+    user_id: str
+    message: str
+    extract_features: bool = False
+    deep_think: bool = True
 
-async def get_profile_service(db: AsyncSession = Depends(get_async_session)) -> ProfileService:
-    return ProfileService(db)
+@router.post("/stream")
+async def chat_stream(
+    request: ChatStreamRequest,
+) -> StreamingResponse:
+    async def event_generator():
+        try:
+            yield f"data: {json.dumps({'type': 'start'})}\n\n"
+
+            orchestrator = get_orchestrator()
+            llm = orchestrator.llm
+            if not llm:
+                yield f"data: {json.dumps({'type': 'error', 'content': 'LLM 服务未初始化'})}\n\n"
+                return
+
+            system_prompt = f"""你是一个友善的AI助手，正在与用户进行对话。"""
+            messages = [{"role": "system", "content": system_prompt}]
+
+            messages.append({"role": "user", "content": request.message})
+
+            full_response = ""
+            async for chunk_text in llm.chat_stream(messages):
+                full_response += chunk_text
+
+            think_content = None
+            display_content = full_response
+
+            think_end_tag = '</think>'
+            think_pos = full_response.find(think_end_tag)
+
+            if think_pos != -1:
+                think_content = full_response[:think_pos].strip()
+                display_content = full_response[think_pos + len(think_end_tag):].strip()
+            else:
+                rich_start = full_response.find('<RichMediaReference>')
+                rich_end = full_response.find('superscript:')
+                if rich_start != -1 and rich_end != -1 and rich_start < rich_end:
+                    think_content = full_response[rich_start + 20:rich_end].strip()
+                    display_content = full_response[:rich_start] + full_response[rich_end + 11:]
+
+            display_content = display_content.strip()
+
+            if think_content:
+                yield f"data: {json.dumps({'type': 'think', 'content': think_content})}\n\n"
+
+            for i in range(0, len(display_content), 15):
+                chunk = display_content[i:i+15]
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
+
+            yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
+
+        except Exception as e:
+            import traceback
+            error_msg = str(e)
+            print(f"Stream error: {error_msg}")
+            print(traceback.format_exc())
+            yield f"data: {json.dumps({'type': 'error', 'content': f'错误: {error_msg}'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    service: ProfileService = Depends(get_profile_service)
 ):
-    """发送聊天消息并提取特征"""
-    try:
-        result = await service.process_chat(
-            user_id=request.user_id,
-            message=request.message,
-            extract_features=request.extract_features,
-            deep_think=request.deep_think
-        )
+    orchestrator = get_orchestrator()
 
-        return ChatResponse(
-            response=result.get("response", "消息已处理"),
-            features_extracted=result["extracted_features"],
-            profile_updated=True,
-            session_id=request.session_id,
-            think_content=result.get("think_content")
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    messages = [{"role": "system", "content": "你是一个友善的AI助手，正在与用户进行对话。"}]
+    messages.append({"role": "user", "content": request.message})
 
+    full_response = ""
+    async for chunk_text in orchestrator.llm.chat_stream(messages):
+        full_response += chunk_text
 
-@router.get("/profile/{user_id}", response_model=UserProfileDetail)
-async def get_profile(
-    user_id: str,
-    service: ProfileService = Depends(get_profile_service)
-):
-    """获取用户画像详情"""
-    try:
-        return await service.get_user_profile_detail(user_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    think_content = None
+    display_content = full_response
 
+    think_end_tag = '</think>'
+    think_pos = full_response.find(think_end_tag)
 
-@router.get("/profile/{user_id}/summary", response_model=ProfileSummary)
-async def get_profile_summary(
-    user_id: str,
-    service: ProfileService = Depends(get_profile_service)
-):
-    """获取用户画像摘要"""
-    try:
-        detail = await service.get_user_profile_detail(user_id)
-        return detail.summary
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if think_pos != -1:
+        think_content = full_response[:think_pos].strip()
+        display_content = full_response[think_pos + len(think_end_tag):].strip()
+    else:
+        rich_start = full_response.find('<RichMediaReference>')
+        rich_end = full_response.find('superscript:')
+        if rich_start != -1 and rich_end != -1 and rich_start < rich_end:
+            think_content = full_response[rich_start + 20:rich_end].strip()
+            display_content = full_response[:rich_start] + full_response[rich_end + 11:]
 
+    return ChatResponse(response=display_content.strip(), think_content=think_content)
 
-@router.get("/profile/{user_id}/features", response_model=List[FeatureResponse])
-async def get_features(
-    user_id: str,
-    feature_type: Optional[str] = Query(None),
-    service: ProfileService = Depends(get_profile_service)
-):
-    """获取用户特征列表"""
-    try:
-        features = await service.get_user_features(user_id, feature_type)
-        return [FeatureResponse.from_orm(f) for f in features]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/profile/{user_id}/features", response_model=FeatureResponse)
-async def add_feature(
-    user_id: str,
-    feature: FeatureCreate,
-    service: ProfileService = Depends(get_profile_service)
-):
-    """手动添加特征"""
-    try:
-        result = await service.add_feature(user_id, feature)
-        return FeatureResponse.from_orm(result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/profile/{user_id}/conversations", response_model=List[MessageResponse])
+@router.get("/profile/{user_id}/conversations")
 async def get_conversations(
     user_id: str,
-    limit: int = Query(50, ge=1, le=200),
-    service: ProfileService = Depends(get_profile_service)
+    limit: int = 20,
 ):
-    """获取对话历史"""
-    try:
-        conversations = await service.get_conversation_history(user_id, limit)
-        return [MessageResponse.from_orm(c) for c in conversations]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    from backend.utils.database import DatabaseSession
+    async with DatabaseSession() as session:
+        service = ProfileService(session)
+        conversations = await service.get_conversation_history(user_id, limit=limit)
+        return conversations
 
+@router.delete("/profile/{user_id}/conversations")
+async def delete_conversation(
+    user_id: str,
+):
+    from backend.utils.database import DatabaseSession
+    async with DatabaseSession() as session:
+        service = ProfileService(session)
+        await service.clear_conversation_history(user_id)
+        return {"status": "success", "message": "对话历史已清除"}
 
-@router.get("/knowledge-graph", response_model=KnowledgeGraphResponse)
-async def get_knowledge_graph():
-    """获取人格心理学知识库"""
-    try:
-        from ..knowledge_graph.graph import PersonalityKnowledgeBase
-        kb = PersonalityKnowledgeBase()
-        return KnowledgeGraphResponse(
-            nodes=[{"id": 1, "label": "人格心理学知识库", "type": "root"}],
-            edges=[]
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/knowledge-graph/{user_id}", response_model=KnowledgeGraphResponse)
-async def get_user_knowledge_graph(user_id: str, db: AsyncSession = Depends(get_async_session)):
-    """获取用户相关知识图谱（基于用户特征实时计算）"""
-    try:
-        profile_service = ProfileService(db)
-        features = await profile_service.get_user_features(user_id)
-        feature_dicts = [
-            {"feature_type": f.feature_type, "feature_value": f.feature_value}
-            for f in features
-        ]
-        graph_data = knowledge_graph.get_user_subgraph(feature_dicts)
-        return KnowledgeGraphResponse(**graph_data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/llm/providers", response_model=List[LLMConfigResponse])
-async def get_llm_providers():
-    """获取可用的LLM提供者列表"""
-    providers = LLMProviderFactory.get_available_providers()
-    result = []
-    
-    for provider in providers:
-        config = config_manager.get_llm_config(provider)
-        result.append(LLMConfigResponse(
-            provider=provider,
-            enabled=config.enabled,
-            model=config.model,
-            configured=bool(config.api_key) or provider == "ollama"
-        ))
-    
-    return result
-
-
-@router.post("/llm/config")
-async def update_llm_config(request: LLMConfigRequest):
-    """更新LLM配置"""
-    try:
-        config_manager.update_llm_config(
-            provider=request.provider,
-            api_key=request.api_key,
-            model=request.model,
-            api_url=request.api_url
-        )
-        LLMProviderFactory.clear_instances()
-        return {"message": "配置更新成功"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+@router.get("/profile/{user_id}")
+async def get_profile(
+    user_id: str,
+):
+    from backend.utils.database import DatabaseSession
+    async with DatabaseSession() as session:
+        service = ProfileService(session)
+        try:
+            profile = await service.get_user_profile_detail(user_id)
+            if not profile:
+                raise HTTPException(status_code=404, detail="用户画像不存在")
+            return profile
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/health")
 async def health_check():
-    """健康检查"""
-    return {"status": "healthy", "service": "perMIR"}
+    return {"status": "healthy"}
+
+@router.post("/features/{user_id}/merge-duplicates")
+async def merge_duplicate_features(user_id: str, threshold: float = 0.75):
+    """智能合并用户的重复特征"""
+    from backend.utils.database import DatabaseSession
+    async with DatabaseSession() as session:
+        service = ProfileService(session)
+        try:
+            user_features, _ = await service.get_user_features(user_id)
+            
+            feature_dicts = []
+            for f in user_features:
+                feature_dicts.append({
+                    "id": f.id,
+                    "feature_type": f.feature_type,
+                    "feature_value": f.feature_value,
+                    "confidence": f.confidence,
+                    "notes": f.notes
+                })
+            
+            duplicates = feature_merger.detect_duplicates(feature_dicts, threshold)
+            
+            merged_count = 0
+            for feat1, feat2, similarity in duplicates:
+                existing_feature = None
+                for f in user_features:
+                    if f.id == feat1["id"]:
+                        existing_feature = f
+                        break
+                
+                if existing_feature:
+                    existing_confidence = existing_feature.confidence
+                    new_confidence = (existing_confidence + feat2.get("confidence", 0.5)) / 2
+                    
+                    existing_notes = existing_feature.notes or ""
+                    if existing_notes:
+                        existing_notes += f"\n合并: {feat2['feature_value']} (相似度: {similarity:.2f})"
+                    else:
+                        existing_notes = f"合并: {feat2['feature_value']} (相似度: {similarity:.2f})"
+                    
+                    existing_feature.confidence = new_confidence
+                    existing_feature.notes = existing_notes
+                    
+                    from sqlalchemy import select
+                    feat2_to_delete = await session.execute(
+                        select(FeatureModel).where(FeatureModel.id == feat2["id"])
+                    )
+                    feat2_obj = feat2_to_delete.scalar_one_or_none()
+                    if feat2_obj:
+                        feat2_obj.is_active = False
+                    
+                    merged_count += 1
+            
+            await session.commit()
+            
+            return {
+                "status": "success",
+                "duplicates_found": len(duplicates),
+                "merged_count": merged_count
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/knowledge-graph/{user_id}")
+async def get_knowledge_graph(user_id: str):
+    from backend.utils.database import DatabaseSession
+    async with DatabaseSession() as session:
+        service = ProfileService(session)
+        try:
+            user_features, _ = await service.get_user_features(user_id)
+            feature_dicts = []
+            for feature in user_features:
+                feature_dicts.append({
+                    "feature_type": feature.feature_type,
+                    "feature_value": feature.feature_value
+                })
+            
+            graph_data = knowledge_graph.get_user_subgraph(feature_dicts)
+            
+            nodes = []
+            edges = []
+            for node in graph_data.get("nodes", []):
+                nodes.append({
+                    "id": node["id"],
+                    "label": node["node_name"],
+                    "type": node["node_type"]
+                })
+            
+            for edge in graph_data.get("edges", []):
+                edges.append({
+                    "source": edge["source_id"],
+                    "target": edge["target_id"],
+                    "relation": edge["relation_type"],
+                    "inferred": edge.get("weight", 1.0) < 1.0
+                })
+            
+            return {"nodes": nodes, "edges": edges}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))

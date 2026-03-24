@@ -1,31 +1,12 @@
 {
-    "llm_providers": {
-        "deepseek": {
-            "enabled": true,
-            "api_key": "your_api_key_here",
-            "api_url": "http://your_llm_server:8000/v1",
-            "model": "deepseek-chat",
-            "temperature": 0.7,
-            "max_tokens": 2000
-        },
-        "openai": {
-            "enabled": false,
-            "api_key": "your_api_key_here",
-            "api_url": "https://api.openai.com/v1/chat/completions",
-            "model": "gpt-4"
-        },
-        "openrouter": {
-            "enabled": false,
-            "api_key": "your_api_key_here",
-            "api_url": "https://openrouter.ai/api/v1/chat/completions",
-            "model": "stepfun/step-3.5-flash:free"
-        }
+    "llm_provider": {
+        "api_url": "your_api_url_here",
+        "api_key": "your_api_key_here",
+        "model": "model_name_here"
     },
-    "default_provider": "deepseek",
     "memo_base": {
-        "enabled": true,
-        "project_url": "http://your_memobase_server:8019",
-        "api_key": "your_memobase_api_key_here"
+        "project_url": "memo_base_url_here",
+        "api_key": "your_memobase_key_here"
     },
     "feature_extraction": {
         "confidence_threshold": 0.6,
@@ -36,12 +17,10 @@
         "decay": {
             "enabled": true,
             "half_life_days": 30,
-            "min_confidence": 0.3,
-            "comment": "特征置信度时间衰减配置，half_life_days为置信度衰减一半所需天数"
+            "min_confidence": 0.3
         }
     },
     "agent": {
-        "max_concurrent_agents": 3,
-        "comment": "控制并行Agent的最大数量，根据服务器性能调整，建议值为1-5"
+        "max_concurrent_agents": 3
     }
 }

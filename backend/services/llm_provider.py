@@ -45,7 +45,7 @@ class QwenProvider(BaseLLMProvider):
             "max_tokens": kwargs.get("max_tokens", self.config.max_tokens)
         }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 self.config.api_url or "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
                 headers=headers,
@@ -71,7 +71,7 @@ class QwenProvider(BaseLLMProvider):
             "stream": True
         }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             async with client.stream(
                 "POST",
                 self.config.api_url or "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
@@ -108,7 +108,7 @@ class YiProvider(BaseLLMProvider):
             "max_tokens": kwargs.get("max_tokens", self.config.max_tokens)
         }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 self.config.api_url or "https://api.lingyiwanwu.com/v1/chat/completions",
                 headers=headers,
@@ -301,9 +301,14 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": kwargs.get("max_tokens", self.config.max_tokens)
         }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            api_url = self.config.api_url or "https://api.openai.com/v1"
+            # 确保 URL 以 /chat/completions 结尾
+            if not api_url.endswith("/chat/completions"):
+                api_url = f"{api_url}/chat/completions"
+            
             response = await client.post(
-                self.config.api_url or "https://api.openai.com/v1/chat/completions",
+                api_url,
                 headers=headers,
                 json=payload
             )
@@ -313,12 +318,12 @@ class OpenAIProvider(BaseLLMProvider):
     
     async def chat_stream(self, messages: List[Dict[str, str]], **kwargs):
         api_key = self.config.api_key or os.getenv("OPENAI_API_KEY")
-        
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
-        
+
         payload = {
             "model": self.config.model or "gpt-4",
             "messages": messages,
@@ -326,11 +331,16 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
             "stream": True
         }
-        
+
         async with httpx.AsyncClient(timeout=60.0) as client:
+            api_url = self.config.api_url or "https://api.openai.com/v1"
+            # 确保 URL 以 /chat/completions 结尾
+            if not api_url.endswith("/chat/completions"):
+                api_url = f"{api_url}/chat/completions"
+
             async with client.stream(
                 "POST",
-                self.config.api_url or "https://api.openai.com/v1/chat/completions",
+                api_url,
                 headers=headers,
                 json=payload
             ) as response:
@@ -432,8 +442,13 @@ class DeepSeekProvider(BaseLLMProvider):
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
+            api_url = self.config.api_url or "http://172.16.5.147:8000/v1"
+            # 确保 URL 以 /chat/completions 结尾
+            if not api_url.endswith("/chat/completions"):
+                api_url = f"{api_url}/chat/completions"
+            
             response = await client.post(
-                self.config.api_url or "http://172.16.5.147:8000/v1/chat/completions",
+                api_url,
                 headers=headers,
                 json=payload
             )

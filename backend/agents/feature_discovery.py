@@ -39,7 +39,8 @@ class FeatureDiscoveryAgent:
     PREDEFINED_CATEGORIES = [
         "MBTI", "大五人格", "行为习惯", "潜在想法",
         "兴趣爱好", "价值观", "情感状态", "生活偏好",
-        "沟通风格", "思维模式", "社交特点", "工作风格"
+        "沟通风格", "思维模式", "社交特点", "工作风格",
+        "个人信息", "社会关系"
     ]
 
     def _build_analysis_prompt(self, state: FeatureDiscoveryState) -> str:

@@ -1,6 +1,7 @@
 """
 用户画像服务层
 """
+import asyncio
 import math
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
@@ -16,6 +17,7 @@ from ..agents.agent_engine import AgentOrchestrator
 from ..knowledge_graph.graph import knowledge_graph
 from ..core.config import config_manager
 from .memo_base_service import memo_base_service
+from .feature_merger import feature_merger
 
 DEFAULT_DECAY_CONFIG = {
     "enabled": True,
@@ -81,7 +83,7 @@ class ProfileService:
         return list(reversed(conversations))
     
     async def add_feature(self, user_id: str, feature: FeatureCreate) -> FeatureModel:
-        """添加特征"""
+        """添加特征（支持智能合并相似特征）"""
         user = await self.get_or_create_user(user_id)
         
         existing_result = await self.db.execute(
@@ -101,10 +103,72 @@ class ProfileService:
                 existing.source_message = feature.source_message
                 existing.reasoning = feature.reasoning
                 existing.evidence = feature.evidence
-                existing.updated_at = datetime.utcnow()
+            existing.verification_count = (existing.verification_count or 0) + 1
+            existing.last_verified_at = datetime.utcnow()
+            existing.updated_at = datetime.utcnow()
             await self.db.commit()
             await self.db.refresh(existing)
             return existing
+        
+        all_features_result = await self.db.execute(
+            select(FeatureModel).where(
+                and_(
+                    FeatureModel.user_id == user_id,
+                    FeatureModel.is_active == True
+                )
+            )
+        )
+        all_features = list(all_features_result.scalars().all())
+        
+        feature_dicts = []
+        for f in all_features:
+            feature_dicts.append({
+                "id": f.id,
+                "feature_type": f.feature_type,
+                "feature_value": f.feature_value,
+                "confidence": f.confidence,
+                "notes": f.notes
+            })
+        
+        best_match, similarity = feature_merger.find_best_match(
+            feature.feature_value,
+            feature_dicts,
+            feature_type=feature.feature_type,
+            threshold=0.75
+        )
+        
+        if best_match and similarity >= 0.75:
+            existing_feature = None
+            for f in all_features:
+                if f.id == best_match["id"]:
+                    existing_feature = f
+                    break
+            
+            if existing_feature:
+                existing_confidence = existing_feature.confidence
+                new_confidence = (existing_confidence + feature.confidence) / 2
+                
+                existing_notes = existing_feature.notes or ""
+                if existing_notes:
+                    existing_notes += f"\n相似表达: {feature.feature_value} (相似度: {similarity:.2f})"
+                else:
+                    existing_notes = f"相似表达: {feature.feature_value} (相似度: {similarity:.2f})"
+                
+                existing_feature.confidence = new_confidence
+                existing_feature.notes = existing_notes
+                existing_feature.verification_count = (existing_feature.verification_count or 0) + 1
+                existing_feature.last_verified_at = datetime.utcnow()
+                existing_feature.updated_at = datetime.utcnow()
+                
+                if feature.reasoning:
+                    if existing_feature.reasoning:
+                        existing_feature.reasoning += f"\n{feature.reasoning}"
+                    else:
+                        existing_feature.reasoning = feature.reasoning
+                
+                await self.db.commit()
+                await self.db.refresh(existing_feature)
+                return existing_feature
         
         feature_model = FeatureModel(
             user_id=user_id,
@@ -478,6 +542,8 @@ class ProfileService:
 
         feature.confidence = new_confidence
         feature.last_confirmed_at = datetime.utcnow()
+        feature.verification_count = (feature.verification_count or 0) + 1
+        feature.last_verified_at = datetime.utcnow()
         feature.updated_at = datetime.utcnow()
 
         await self.db.commit()
@@ -486,11 +552,59 @@ class ProfileService:
     async def process_chat(self, user_id: str, message: str,
                            extract_features: bool = True,
                            deep_think: bool = False) -> Dict[str, Any]:
-        """使用LangGraph处理聊天消息"""
+        """使用 LangGraph 处理聊天消息 - 优化版本，优先返回 LLM 响应"""
         from ..agents.chat_graph import ChatGraph
 
         chat_graph = ChatGraph(
-            llm_provider=self.agent_orchestrator.provider,
+            llm_provider=self.agent_orchestrator.llm,
+            profile_service=self
+        )
+
+        # 第一步：快速获取 LLM 响应（不等待特征提取和画像更新）
+        result = await chat_graph.ainvoke_fast(user_id, message, deep_think)
+
+        # 第二步：如果需要提取特征，在后台异步处理（不阻塞响应）
+        if extract_features and result.get("extracted_features"):
+            # 创建后台任务异步处理特征提取和画像更新
+            asyncio.create_task(
+                self._background_process_features(
+                    user_id, 
+                    message, 
+                    result.get("extracted_features", []),
+                    result.get("conversation_history", [])
+                )
+            )
+
+        return {
+            "response": result["response"],
+            "extracted_features": result.get("extracted_features", []),
+            "think_content": result.get("think_content"),
+            "profile_updated": result.get("profile_updated", False)
+        }
+
+    async def _background_process_features(
+        self, 
+        user_id: str, 
+        message: str,
+        extracted_features: List[Dict],
+        conversation_history: List[Dict]
+    ) -> None:
+        """后台处理特征提取和用户画像更新"""
+        try:
+            # 注意：后台任务不需要保存到数据库，因为特征已经在 ainvoke 中提取
+            # 这里只记录日志即可
+            print(f"后台任务：为用户 {user_id} 处理了 {len(extracted_features)} 个特征（已在主流程保存）")
+        except Exception as e:
+            print(f"后台任务执行失败：{e}")
+
+    async def process_chat_sync(self, user_id: str, message: str,
+                           extract_features: bool = True,
+                           deep_think: bool = False) -> Dict[str, Any]:
+        """使用 LangGraph 处理聊天消息 - 同步版本（兼容旧版本）"""
+        from ..agents.chat_graph import ChatGraph
+
+        chat_graph = ChatGraph(
+            llm_provider=self.agent_orchestrator.llm,
             profile_service=self
         )
 

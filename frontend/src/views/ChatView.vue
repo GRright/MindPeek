@@ -37,6 +37,13 @@
           </div>
           <div class="message-content">
             <div class="message-bubble">
+              <div v-if="msg.think_content && !msg.is_streaming" class="think-content">
+                <el-collapse v-model="msg.activeCollapse" accordion>
+                  <el-collapse-item title="💭 深度思考过程" :name="msg.id">
+                    <div class="think-text">{{ formatThinkContent(msg.think_content) }}</div>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
               <div v-if="msg.content" class="message-text">{{ msg.content }}</div>
             </div>
             <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
@@ -146,6 +153,20 @@ const loading = ref(false)
 const messagesContainer = ref(null)
 const deepThink = ref(false)
 
+// 格式化深度思考内容，移除 think 标签
+function formatThinkContent(content) {
+  if (!content) return ''
+  // 移除 <think> 和 </think> 标签 - 使用字符串操作避免正则表达式转义问题
+  let result = content
+  while (result.includes('<end_of_thought>')) {
+    result = result.substring(0, result.indexOf('<end_of_thought>')) + result.substring(result.indexOf('<end_of_thought>') + '<end_of_thought>'.length)
+  }
+  while (result.includes('<start_of_thought>')) {
+    result = result.substring(0, result.indexOf('<start_of_thought>')) + result.substring(result.indexOf('<start_of_thought>') + '<start_of_thought>'.length)
+  }
+  return result.trim()
+}
+
 onMounted(async () => {
   await loadConversations()
 })
@@ -153,7 +174,10 @@ onMounted(async () => {
 async function loadConversations() {
   try {
     const data = await store.loadConversations()
-    messages.value = data || []
+    messages.value = (data || []).map(msg => ({
+      ...msg,
+      is_streaming: false
+    }))
     scrollToBottom()
   } catch (e) {
     console.error('Failed to load conversations:', e)
@@ -166,8 +190,9 @@ async function sendMessage() {
   const message = inputMessage.value
   inputMessage.value = ''
 
+  const userMsgId = Date.now()
   messages.value.push({
-    id: Date.now(),
+    id: userMsgId,
     role: 'user',
     content: message,
     deepThink: deepThink.value,
@@ -178,28 +203,82 @@ async function sendMessage() {
 
   loading.value = true
   try {
-    const result = await store.sendMessage(message, deepThink.value)
-
+    const assistantMsgId = Date.now() + 1
     messages.value.push({
-      id: Date.now() + 1,
+      id: assistantMsgId,
       role: 'assistant',
-      content: result.response || '消息已处理',
+      content: '',
+      think_content: null,
+      activeCollapse: [],
+      is_streaming: true,
       timestamp: new Date().toISOString()
     })
 
-    if (result.think_content) {
-      try {
-        const thinkData = JSON.parse(result.think_content)
-        ElMessage.success(`深度分析完成`)
-      } catch {
+    const response = await fetch('http://localhost:8000/api/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: 'demo_user',
+        message: message,
+        extract_features: true,
+        deep_think: deepThink.value
+      })
+    })
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let fullResponse = ''
+    let thinkContent = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.substring(6))
+            if (data.type === 'chunk') {
+              fullResponse += data.content
+              const msg = messages.value.find(m => m.id === assistantMsgId)
+              if (msg) {
+                msg.content = fullResponse
+              }
+              scrollToBottom()
+            } else if (data.type === 'think' && data.content) {
+              thinkContent = data.content
+              const msg = messages.value.find(m => m.id === assistantMsgId)
+              if (msg) {
+                msg.think_content = thinkContent
+              }
+            } else if (data.type === 'done') {
+              thinkContent = data.think_content
+              const msg = messages.value.find(m => m.id === assistantMsgId)
+              if (msg) {
+                msg.think_content = thinkContent
+                msg.content = data.content
+                msg.is_streaming = false
+              }
+            } else if (data.type === 'error') {
+              ElMessage.error(data.content)
+            }
+          } catch (e) {
+            console.error('Parse error:', e)
+          }
+        }
       }
     }
 
-    extractedFeatures.value = result.features_extracted || []
-
-    if (result.features_extracted && result.features_extracted.length > 0) {
-      ElMessage.success(`提取了 ${result.features_extracted.length} 个特征`)
+    if (thinkContent) {
+      ElMessage.success('深度思考完成')
     }
+
+    extractedFeatures.value = []
     scrollToBottom()
   } catch (e) {
     ElMessage.error('发送失败: ' + e.message)
@@ -399,6 +478,46 @@ function getFeatureTagType(type) {
 }
 
 .message-text {
+  white-space: pre-wrap;
+}
+
+.think-content {
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.think-content :deep(.el-collapse) {
+  border: none;
+  background: transparent;
+}
+
+.think-content :deep(.el-collapse-item__header) {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.think-content :deep(.el-collapse-item__header:hover) {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.think-content :deep(.el-collapse-item__content) {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.think-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
   white-space: pre-wrap;
 }
 

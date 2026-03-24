@@ -483,6 +483,11 @@ global_orchestrator: Optional[AsyncAgentOrchestrator] = None
 def get_orchestrator(llm_provider: BaseLLMProvider = None) -> AsyncAgentOrchestrator:
     """获取全局编排器实例"""
     global global_orchestrator
-    if global_orchestrator is None and llm_provider is not None:
+    if global_orchestrator is None:
+        if llm_provider is None:
+            from ..services.llm_provider import LLMProviderFactory
+            from ..core.config import config_manager
+            default_provider = config_manager.get_default_provider()
+            llm_provider = LLMProviderFactory.get_provider(default_provider)
         global_orchestrator = AsyncAgentOrchestrator(llm_provider)
     return global_orchestrator

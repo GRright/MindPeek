@@ -114,7 +114,11 @@ class ConfigManager:
             }
         }
 
-    def get_llm_config(self, provider: str) -> LLMProviderConfig:
+    def get_llm_config(self, provider: str = None) -> LLMProviderConfig:
+        # 兼容简化后的配置格式
+        if "llm_provider" in self._config:
+            return LLMProviderConfig(**self._config["llm_provider"])
+        # 兼容旧格式
         providers = self._config.get("llm_providers", {})
         config = providers.get(provider, {})
         return LLMProviderConfig(**config)
@@ -128,6 +132,9 @@ class ConfigManager:
         return FeatureExtractionConfig(**config)
 
     def get_default_provider(self) -> str:
+        # 兼容简化后的配置格式
+        if "llm_provider" in self._config:
+            return "deepseek"
         return self._config.get("default_provider", "deepseek")
 
     def update_llm_config(self, provider: str, api_key: str = None, **kwargs) -> None:

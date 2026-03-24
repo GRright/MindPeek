@@ -41,6 +41,9 @@ class FeatureResponse(FeatureBase):
     created_at: datetime
     updated_at: datetime
     is_active: bool = True
+    notes: Optional[str] = None
+    verification_count: Optional[int] = 0
+    last_verified_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True

@@ -76,21 +76,40 @@
         <div class="features-card">
           <div class="card-header">
             <span class="card-title">详细特征</span>
-            <span class="feature-count">{{ allFeatures.length }} 个特征</span>
+            <span class="feature-count">{{ filteredFeatures.length }} 个特征</span>
           </div>
 
-          <div class="features-timeline">
+          <div class="search-container">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索特征类型或内容..."
+              clearable
+              prefix-icon="Search"
+              class="search-input"
+            />
+          </div>
+
+          <div 
+            ref="timelineContainer" 
+            class="features-timeline"
+            @scroll="handleScroll"
+          >
             <div
-              v-for="(feature, index) in allFeatures"
-              :key="index"
+              v-for="(feature, index) in displayedFeatures"
+              :key="feature.id || index"
               class="timeline-item"
             >
               <div class="timeline-dot" :style="{ background: getFeatureColor(feature.feature_type) }"></div>
               <div class="timeline-content">
                 <div class="feature-header">
-                  <el-tag :type="getFeatureTagType(feature.feature_type)" size="small">
-                    {{ feature.feature_type }}
-                  </el-tag>
+                  <div class="feature-tags">
+                    <el-tag :type="getFeatureTagType(feature.feature_type)" size="small">
+                      {{ feature.feature_type }}
+                    </el-tag>
+                    <el-tag v-if="feature.verification_count > 0" type="success" size="small" effect="dark">
+                      已验证 {{ feature.verification_count }} 次
+                    </el-tag>
+                  </div>
                   <span class="confidence">{{ (feature.confidence * 100).toFixed(0) }}%</span>
                 </div>
                 <div class="feature-value">{{ feature.feature_value }}</div>
@@ -100,9 +119,14 @@
               </div>
             </div>
 
-            <div v-if="allFeatures.length === 0" class="empty-features">
+            <div v-if="hasMore && filteredFeatures.length > 0" class="loading-more">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>加载中...</span>
+            </div>
+
+            <div v-if="filteredFeatures.length === 0" class="empty-features">
               <el-icon :size="48"><Document /></el-icon>
-              <p>暂无特征数据</p>
+              <p>{{ searchQuery ? '未找到匹配的特征' : '暂无特征数据' }}</p>
             </div>
           </div>
         </div>
@@ -115,13 +139,18 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useProfileStore } from '@/stores/profile'
 import * as echarts from 'echarts'
-import { Refresh, Document } from '@element-plus/icons-vue'
+import { Refresh, Document, Loading, Search } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
 const activeTab = ref('radar')
 const profileSummary = ref(null)
 const allFeatures = ref([])
+
+const searchQuery = ref('')
+const timelineContainer = ref(null)
+const itemsPerLoad = 10
+const displayedCount = ref(itemsPerLoad)
 
 const userId = computed(() => store.currentUserId)
 
@@ -138,6 +167,26 @@ const mbtiActive = ref([false, false, false, false])
 const confidencePercent = computed(() => {
   if (!profileSummary.value?.confidence_score) return 0
   return (profileSummary.value.confidence_score * 100).toFixed(0)
+})
+
+const filteredFeatures = computed(() => {
+  if (!searchQuery.value) {
+    return allFeatures.value
+  }
+  const query = searchQuery.value.toLowerCase()
+  return allFeatures.value.filter(feature => 
+    feature.feature_type.toLowerCase().includes(query) ||
+    feature.feature_value.toLowerCase().includes(query) ||
+    (feature.reasoning && feature.reasoning.toLowerCase().includes(query))
+  )
+})
+
+const displayedFeatures = computed(() => {
+  return filteredFeatures.value.slice(0, displayedCount.value)
+})
+
+const hasMore = computed(() => {
+  return displayedCount.value < filteredFeatures.value.length
 })
 
 onMounted(async () => {
@@ -157,6 +206,7 @@ async function loadProfile() {
     const data = await store.loadProfile()
     profileSummary.value = data.summary
     allFeatures.value = data.features || []
+    displayedCount.value = itemsPerLoad
     await nextTick()
     renderRadarChart()
   } catch (e) {
@@ -166,6 +216,26 @@ async function loadProfile() {
 
 async function refreshProfile() {
   await loadProfile()
+}
+
+watch(searchQuery, () => {
+  displayedCount.value = itemsPerLoad
+  nextTick(() => {
+    if (timelineContainer.value) {
+      timelineContainer.value.scrollTop = 0
+    }
+  })
+})
+
+function handleScroll() {
+  if (!timelineContainer.value || !hasMore.value) return
+  
+  const container = timelineContainer.value
+  const { scrollTop, scrollHeight, clientHeight } = container
+  
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    displayedCount.value += itemsPerLoad
+  }
 }
 
 function renderRadarChart() {
@@ -194,22 +264,26 @@ function renderRadarChart() {
   ]
 
   const option = {
-    backgroundColor: 'transparent',
+    backgroundColor: '#ffffff',
     animation: true,
     animationDuration: 1500,
     animationEasing: 'cubicOut',
     tooltip: {
       trigger: 'item',
-      backgroundColor: 'var(--bg-tertiary)',
-      borderColor: 'var(--border-color)',
-      textStyle: { color: 'var(--text-primary)' }
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      borderColor: '#333333',
+      textStyle: { color: '#ffffff', fontSize: 14 }
     },
     radar: {
       indicator: indicators,
       radius: '65%',
       axisName: {
-        color: 'var(--text-secondary)',
-        fontSize: 12
+        color: '#000000',
+        fontSize: 18,
+        fontWeight: 900,
+        padding: [10, 10, 10, 10],
+        textShadowColor: 'rgba(255, 255, 255, 0.9)',
+        textShadowBlur: 3
       },
       splitArea: {
         areaStyle: {
@@ -217,10 +291,10 @@ function renderRadarChart() {
         }
       },
       splitLine: {
-        lineStyle: { color: 'var(--border-color)' }
+        lineStyle: { color: '#666666', width: 1.5 }
       },
       axisLine: {
-        lineStyle: { color: 'var(--border-color)' }
+        lineStyle: { color: '#333333', width: 2 }
       }
     },
     series: [{
@@ -233,10 +307,20 @@ function renderRadarChart() {
         },
         lineStyle: {
           color: '#6366f1',
-          width: 2
+          width: 3
         },
         itemStyle: {
-          color: '#6366f1'
+          color: '#6366f1',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          color: '#000000',
+          fontSize: 14,
+          fontWeight: 900,
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          padding: [2, 6, 2, 6],
+          borderRadius: 4
         }
       }]
     }]
@@ -253,19 +337,22 @@ function renderGraphChart() {
   }
   graphChart = echarts.init(graphContainer.value)
 
-  const categories = ['MBTI', '大五人格', '行为习惯', '潜在想法', '兴趣爱好']
+  const existingTypes = [...new Set(allFeatures.value.map(f => f.feature_type))]
+  
+  const allCategories = ['MBTI', '大五人格', '行为习惯', '潜在想法', '兴趣爱好']
+  const categories = allCategories.filter(c => existingTypes.includes(c))
 
   const nodes = allFeatures.value.slice(0, 15).map((f, idx) => ({
     name: f.feature_value,
-    category: categories.indexOf(f.feature_type) >= 0 ? categories.indexOf(f.feature_type) : 4,
+    category: categories.indexOf(f.feature_type),
     value: f.confidence,
-    symbolSize: 30 + f.confidence * 40
+    symbolSize: 15 + f.confidence * 20
   }))
 
   nodes.unshift({
     name: userId.value,
-    category: 5,
-    symbolSize: 60,
+    category: categories.length,
+    symbolSize: 30,
     value: 1
   })
 
@@ -273,7 +360,7 @@ function renderGraphChart() {
     source: userId.value,
     target: f.feature_value,
     lineStyle: {
-      width: f.confidence * 3,
+      width: f.confidence * 2,
       color: {
         type: 'linear',
         x: 0, y: 0, x2: 1, y2: 0,
@@ -285,6 +372,8 @@ function renderGraphChart() {
     }
   }))
 
+  const allCategoriesWithUser = [...categories, '用户']
+  
   const option = {
     backgroundColor: 'transparent',
     animation: true,
@@ -296,10 +385,10 @@ function renderGraphChart() {
       borderColor: 'var(--border-color)',
       textStyle: { color: 'var(--text-primary)' }
     },
-    legend: [{
-      data: categories,
-      textStyle: { color: 'var(--text-secondary)', fontSize: 10 }
-    }],
+    legend: categories.length > 0 ? [{
+      data: allCategoriesWithUser,
+      textStyle: { color: 'var(--text-primary)', fontSize: 12 }
+    }] : undefined,
     series: [{
       type: 'graph',
       layout: 'force',
@@ -308,10 +397,10 @@ function renderGraphChart() {
       label: {
         show: true,
         position: 'right',
-        fontSize: 10,
+        fontSize: 11,
         color: 'var(--text-primary)'
       },
-      categories: categories.map((name, idx) => ({ name, itemStyle: { color: getCategoryColor(idx) } })),
+      categories: allCategoriesWithUser.map((name, idx) => ({ name, itemStyle: { color: idx < categories.length ? getCategoryColor(allCategories.indexOf(name)) : '#ec4899' } })),
       nodes: nodes,
       links: links,
       lineStyle: {
@@ -322,8 +411,8 @@ function renderGraphChart() {
         focus: 'adjacency'
       },
       force: {
-        repulsion: 100,
-        edgeLength: [50, 150]
+        repulsion: 150,
+        edgeLength: [60, 180]
       }
     }]
   }
@@ -694,6 +783,16 @@ function getMbtiCharLabel(char) {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-container {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
 }
 
 .feature-count {
@@ -705,6 +804,37 @@ function getMbtiCharLabel(char) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.features-timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.features-timeline::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.features-timeline::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.features-timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .timeline-item {
@@ -733,6 +863,13 @@ function getMbtiCharLabel(char) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  gap: 12px;
+}
+
+.feature-tags {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .confidence {
