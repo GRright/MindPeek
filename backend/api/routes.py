@@ -5,7 +5,7 @@ import json
 from backend.services.profile_service import ProfileService
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.models.database import FeatureModel
-from backend.agents.async_orchestrator import get_orchestrator
+from backend.agents.async_orchestrator import get_orchestrator, TaskType
 from backend.knowledge_graph.graph import knowledge_graph
 from backend.services.feature_merger import feature_merger
 from fastapi.responses import StreamingResponse
@@ -32,15 +32,19 @@ async def chat_stream(
                 yield f"data: {json.dumps({'type': 'error', 'content': 'LLM 服务未初始化'})}\n\n"
                 return
 
-            system_prompt = f"""你是一个友善的AI助手，正在与用户进行对话。"""
+            system_prompt = f"""你是一个友善的 AI 助手，正在与用户进行对话。"""
             messages = [{"role": "system", "content": system_prompt}]
 
             messages.append({"role": "user", "content": request.message})
 
             full_response = ""
+            # 真正的流式输出，逐块返回
             async for chunk_text in llm.chat_stream(messages):
                 full_response += chunk_text
+                # 立即返回每一块
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk_text})}\n\n"
 
+            # 提取 think 内容
             think_content = None
             display_content = full_response
 
@@ -59,21 +63,34 @@ async def chat_stream(
 
             display_content = display_content.strip()
 
+            # 如果有 think 内容，在流式结束后发送
             if think_content:
                 yield f"data: {json.dumps({'type': 'think', 'content': think_content})}\n\n"
 
-            for i in range(0, len(display_content), 15):
-                chunk = display_content[i:i+15]
-                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
-
+            # 发送完成信号
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
+
+            # 特征提取作为后台任务，不阻塞响应
+            if request.extract_features and orchestrator:
+                asyncio.create_task(
+                    orchestrator.submit_task(
+                        task_type=TaskType.FEATURE_EXTRACTION,
+                        user_id=request.user_id,
+                        input_data={
+                            "message": request.message,
+                            "conversation_history": messages,
+                            "response": display_content
+                        },
+                        priority=0
+                    )
+                )
 
         except Exception as e:
             import traceback
             error_msg = str(e)
             print(f"Stream error: {error_msg}")
             print(traceback.format_exc())
-            yield f"data: {json.dumps({'type': 'error', 'content': f'错误: {error_msg}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'content': f'错误：{error_msg}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
