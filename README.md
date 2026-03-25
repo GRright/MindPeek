@@ -55,6 +55,11 @@ MindPeek 将你的对话转化为对你的深度理解：
 - 理解你的人际互动模式
 - 构建完整的社会关系图谱
 
+### 🎯 个人信息提取
+- 自动提取用户姓名、职业、居住地等基本信息
+- 识别并记录用户透露的个人情况
+- 智能分析并存储社会关系网络
+
 ### ⚡ 生产级性能
 - 异步任务队列，最多 3 个 Agent 并行执行
 - 用户对话零延迟体验
@@ -104,6 +109,7 @@ MindPeek 将你的对话转化为对你的深度理解：
 - **SQLAlchemy** - 异步 ORM
 - **知识图谱** - 预定义心理学知识库 + 实时推理
 - **Pydantic** - 数据验证
+- **vis-network** - 图可视化
 
 ### 前端
 - **Vue 3** - 组合式 API
@@ -197,8 +203,14 @@ MindPeek/
 │   ├── agents/
 │   │   ├── chat_graph.py       # 🤖 LangGraph 聊天图
 │   │   ├── feature_discovery.py # 🔮 特征发现 Agent
+│   │   ├── personal_info_agent.py # 🎯 个人信息提取
 │   │   ├── async_orchestrator.py # ⚡ 异步任务编排
 │   │   └── agent_engine.py     # Agent 引擎
+│   ├── services/
+│   │   ├── profile_service.py  # 用户画像服务
+│   │   ├── feature_merger.py   # ✨ 特征智能合并
+│   │   ├── llm_provider.py     # 多 Provider 支持
+│   │   └── memo_base_service.py # 远程存储
 │   └── knowledge_graph/
 │       └── graph.py            # 🔗 知识图谱（实时推理）
 ├── frontend/
@@ -218,12 +230,15 @@ MindPeek/
 - 多轮对话，自动上下文理解
 - 个性化回复，根据你的特征定制
 - 深度思考模式可选
+- 流式输出，实时显示思考过程
 
 ### 👤 用户画像
 - MBTI 性格分析
 - 大五人格雷达图
 - 行为习惯洞察
 - 隐性需求发现
+- 个人信息追踪（姓名、职业、居住地等）
+- 社会关系管理
 
 ### 🔗 知识图谱
 - 基于预定义心理学知识库的实时推理
@@ -234,6 +249,13 @@ MindPeek/
 - 实时查看 Agent 任务状态
 - 异步任务管理
 - 洞察报告
+
+### 🔍 特征管理
+- 智能特征去重和合并
+- 特征搜索功能，快速定位
+- 无限滚动加载，流畅体验
+- 特征验证次数追踪
+- 特征衰减可视化
 
 ## 📜 License
 
