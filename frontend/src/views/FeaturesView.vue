@@ -5,11 +5,38 @@
         <el-icon :size="20"><Document /></el-icon>
         <span class="header-title">特征管理</span>
       </div>
+      <div class="header-actions">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索特征..."
+          clearable
+          class="search-input"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select
+          v-model="selectedTypes"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="筛选类型"
+          class="filter-select"
+        >
+          <el-option
+            v-for="type in featureTypes"
+            :key="type"
+            :label="type"
+            :value="type"
+          />
+        </el-select>
+      </div>
     </div>
 
     <div class="features-content">
       <el-table
-        :data="features"
+        :data="filteredFeatures"
         style="width: 100%"
         v-loading="loading"
         class="features-table"
@@ -130,10 +157,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
-import { Document } from '@element-plus/icons-vue'
+import { Document, Search } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
 
@@ -142,6 +169,8 @@ const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
+const searchQuery = ref('')
+const selectedTypes = ref([])
 
 const showAddDialog = ref(false)
 const adding = ref(false)
@@ -151,6 +180,30 @@ const newFeature = ref({
   confidence: 0.7,
   source_message: '',
   reasoning: ''
+})
+
+const featureTypes = computed(() => {
+  const types = new Set(features.value.map(f => f.feature_type))
+  return Array.from(types).sort()
+})
+
+const filteredFeatures = computed(() => {
+  let result = features.value
+  
+  if (selectedTypes.value.length > 0) {
+    result = result.filter(f => selectedTypes.value.includes(f.feature_type))
+  }
+  
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(f => 
+      f.feature_type.toLowerCase().includes(query) ||
+      f.feature_value.toLowerCase().includes(query) ||
+      (f.reasoning && f.reasoning.toLowerCase().includes(query))
+    )
+  }
+  
+  return result
 })
 
 onMounted(async () => {
@@ -283,17 +336,31 @@ function tableRowClassName({ rowIndex }) {
   gap: 12px;
 }
 
-.user-input {
+.search-input {
   width: 200px;
 }
 
-.user-input :deep(.el-input__wrapper) {
+.search-input :deep(.el-input__wrapper) {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   box-shadow: none;
 }
 
-.user-input :deep(.el-input__inner) {
+.search-input :deep(.el-input__inner) {
+  color: var(--text-primary);
+}
+
+.filter-select {
+  width: 180px;
+}
+
+.filter-select :deep(.el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.filter-select :deep(.el-input__inner) {
   color: var(--text-primary);
 }
 
@@ -341,6 +408,15 @@ function tableRowClassName({ rowIndex }) {
 .features-table :deep(.el-table__row td) {
   border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
+  background: var(--bg-secondary) !important;
+}
+
+.features-table :deep(.el-table__row.even-row td) {
+  background: var(--bg-tertiary) !important;
+}
+
+.features-table :deep(.el-table__row:hover > td) {
+  background: var(--bg-hover) !important;
 }
 
 .feature-value-cell {

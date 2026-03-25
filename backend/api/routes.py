@@ -39,14 +39,17 @@ async def chat_stream(
             messages.append({"role": "user", "content": request.message})
 
             full_response = ""
-            # 真正的流式输出，逐块返回
-            async for chunk_text in llm.chat_stream(messages):
-                full_response += chunk_text
-                # 立即返回每一块
-                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk_text})}\n\n"
+            llm_error = None
+            
+            try:
+                async for chunk_text in llm.chat_stream(messages):
+                    full_response += chunk_text
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk_text})}\n\n"
+            except Exception as e:
+                llm_error = str(e)
+                full_response = ""
+                yield f"data: {json.dumps({'type': 'error', 'content': f'AI服务暂时不可用：{llm_error}'})}\n\n"
 
-            # 提取 think 内容
-            think_content = None
             display_content = full_response
 
             think_end_tag = '</think>'
@@ -71,45 +74,45 @@ async def chat_stream(
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
 
-            # 保存对话到数据库
+            # 保存对话并提取特征
             from backend.utils.database import DatabaseSession
             async with DatabaseSession() as session:
                 from backend.services.profile_service import ProfileService
                 from backend.models.schemas import MessageCreate, MessageRole
+                from backend.agents.chat_graph import ChatGraph
+                
                 service = ProfileService(session)
                 
                 # 保存用户消息
                 user_msg = MessageCreate(
-                    user_id=request.user_id,
                     role=MessageRole.USER,
                     content=request.message,
                     session_id="default"
                 )
                 await service.add_conversation(request.user_id, user_msg)
-                
+
                 # 保存助手回复
                 assistant_msg = MessageCreate(
-                    user_id=request.user_id,
                     role=MessageRole.ASSISTANT,
                     content=display_content,
                     session_id="default"
                 )
                 await service.add_conversation(request.user_id, assistant_msg)
-
-            # 特征提取作为后台任务，不阻塞响应
-            if request.extract_features and orchestrator:
-                asyncio.create_task(
-                    orchestrator.submit_task(
-                        task_type=TaskType.FEATURE_EXTRACTION,
-                        user_id=request.user_id,
-                        input_data={
-                            "message": request.message,
-                            "conversation_history": messages,
-                            "response": display_content
-                        },
-                        priority=0
+                
+                # 调用 ChatGraph 进行特征提取
+                try:
+                    print(f"开始特征提取 for user_id: {request.user_id}")
+                    chat_graph = ChatGraph(
+                        llm_provider=orchestrator.llm,
+                        profile_service=service
                     )
-                )
+                    print(f"ChatGraph created, calling ainvoke...")
+                    result = await chat_graph.ainvoke(request.user_id, request.message, False)
+                    print(f"特征提取完成, result: {result}")
+                except Exception as fe_error:
+                    import traceback
+                    print(f"特征提取失败: {fe_error}")
+                    print(traceback.format_exc())
 
         except Exception as e:
             import traceback

@@ -136,12 +136,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onActivated, watch, nextTick } from 'vue'
 import { useProfileStore } from '@/stores/profile'
+import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import * as echarts from 'echarts'
 import { Refresh, Document, Loading, Search } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
+const route = useRoute()
 
 const activeTab = ref('radar')
 const profileSummary = ref(null)
@@ -191,6 +193,21 @@ const hasMore = computed(() => {
 
 onMounted(async () => {
   await loadProfile()
+
+  const handleRefresh = (event) => {
+    if (event.detail && event.detail.userId === userId.value) {
+      loadProfile()
+    }
+  }
+  window.addEventListener('profileNeedsRefresh', handleRefresh)
+})
+
+onActivated(async () => {
+  await loadProfile()
+})
+
+onBeforeRouteUpdate(async (to, from) => {
+  await loadProfile()
 })
 
 watch(activeTab, () => {
@@ -200,6 +217,16 @@ watch(activeTab, () => {
     else if (activeTab.value === 'pie' && allFeatures.value.length) renderPieChart()
   })
 })
+
+watch(allFeatures, () => {
+  nextTick(() => {
+    if (profileSummary.value) renderRadarChart()
+    if (allFeatures.value.length) {
+      renderGraphChart()
+      renderPieChart()
+    }
+  })
+}, { deep: true })
 
 async function loadProfile() {
   try {
@@ -217,7 +244,7 @@ async function loadProfile() {
 async function refreshProfile() {
   try {
     // 先触发分析任务
-    const analyzeResponse = await fetch(`http://localhost:8000/api/profile/${userId.value}/analyze`, {
+    const analyzeResponse = await fetch(`/api/profile/${userId.value}/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

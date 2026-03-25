@@ -2,6 +2,7 @@
 PersonalInfoAgent - 从对话中提取用户个人信息和关系信息
 包括：姓名、年龄、职业、个人情况、与他人/事物的关系等
 """
+import asyncio
 import json
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
@@ -117,7 +118,11 @@ class PersonalInfoAgent:
         """提取个人信息"""
         try:
             prompt = self._build_personal_info_prompt(conversation_history, message)
-            response = await self.llm.chat(prompt)
+            messages = [
+                {"role": "system", "content": "你是一个专业的个人信息提取专家。请分析以下对话，提取用户的个人信息。只返回JSON格式的结果。"},
+                {"role": "user", "content": prompt}
+            ]
+            response = await self.llm.chat(messages)
 
             try:
                 start = response.find('{')
@@ -137,7 +142,11 @@ class PersonalInfoAgent:
         """提取关系信息"""
         try:
             prompt = self._build_relationship_prompt(conversation_history, message)
-            response = await self.llm.chat(prompt)
+            messages = [
+                {"role": "system", "content": "你是一个专业的关系信息提取专家。请分析以下对话，提取用户与他人或事物的关系。只返回JSON格式的结果。"},
+                {"role": "user", "content": prompt}
+            ]
+            response = await self.llm.chat(messages)
 
             try:
                 start = response.find('{')
@@ -165,8 +174,6 @@ class PersonalInfoAgent:
             "relationships": relationships.dict()
         }
 
-
-import asyncio
 
 personal_info_agent = None
 

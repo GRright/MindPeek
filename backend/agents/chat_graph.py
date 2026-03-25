@@ -223,7 +223,7 @@ class ChatGraph:
         return await self.generate_personalized_response(state)
 
     async def extract_features(self, state: ChatState) -> ChatState:
-        """使用FeatureDiscovery Agent提取用户特征"""
+        """使用 FeatureDiscovery Agent 和个人信息 Agent 提取用户特征"""
         try:
             existing_features, feature_metadata = await self.profile_service.get_user_features(state.user_id)
             existing_features_data = [
@@ -235,6 +235,9 @@ class ChatGraph:
                 for f in existing_features
             ]
 
+            extracted_features = []
+
+            # 1. 使用 FeatureDiscovery Agent 提取一般特征
             try:
                 discovery_result = await self.feature_discovery_agent.discover(
                     user_id=state.user_id,
@@ -242,10 +245,10 @@ class ChatGraph:
                     conversation_history=state.conversation_history,
                     existing_features=existing_features_data
                 )
-                state.extracted_features = discovery_result.get("discovered_features", [])
+                extracted_features.extend(discovery_result.get("discovered_features", []))
             except Exception as fe_error:
                 state.errors.append(f"FeatureDiscovery 调用失败: {str(fe_error)}, 使用模拟特征")
-                state.extracted_features = [
+                extracted_features = [
                     {
                         "feature_type": "行为习惯",
                         "feature_value": "喜欢阅读",
@@ -254,6 +257,71 @@ class ChatGraph:
                     }
                 ]
 
+            # 2. 使用 PersonalInfo Agent 提取个人信息和关系
+            try:
+                personal_info_result = await self.personal_info_agent.extract_all(
+                    conversation_history=state.conversation_history,
+                    message=state.message
+                )
+
+                # 提取个人信息
+                personal_info = personal_info_result.get("personal_info", {})
+                if personal_info.get("name"):
+                    extracted_features.append({
+                        "feature_type": "个人信息",
+                        "feature_value": f"姓名：{personal_info['name']}",
+                        "confidence": 0.9,
+                        "reasoning": "用户在对话中透露了自己的姓名",
+                        "evidence": [state.message]
+                    })
+
+                if personal_info.get("occupation"):
+                    extracted_features.append({
+                        "feature_type": "个人信息",
+                        "feature_value": f"职业：{personal_info['occupation']}",
+                        "confidence": 0.85,
+                        "reasoning": "用户在对话中透露了自己的职业",
+                        "evidence": [state.message]
+                    })
+
+                if personal_info.get("location"):
+                    extracted_features.append({
+                        "feature_type": "个人信息",
+                        "feature_value": f"居住地：{personal_info['location']}",
+                        "confidence": 0.85,
+                        "reasoning": "用户在对话中透露了自己的居住地",
+                        "evidence": [state.message]
+                    })
+
+                for other_info in personal_info.get("other_info", []):
+                    if other_info.get("confidence", 0) >= 0.7:
+                        extracted_features.append({
+                            "feature_type": "个人信息",
+                            "feature_value": f"{other_info.get('type', '其他')}: {other_info.get('value', '')}",
+                            "confidence": other_info.get("confidence", 0.7),
+                            "reasoning": "用户在对话中透露的个人信息",
+                            "evidence": [state.message]
+                        })
+
+                # 提取关系信息
+                relationships = personal_info_result.get("relationships", {}).get("relationships", [])
+                for rel in relationships:
+                    if rel.get("confidence", 0) >= 0.7:
+                        await self.profile_service.add_relationship(
+                            user_id=state.user_id,
+                            person_name=rel.get("person_name", ""),
+                            relationship_type=rel.get("relationship_type", "其他"),
+                            interaction_pattern=rel.get("description"),
+                            confidence=rel.get("confidence", 0.7),
+                            evidence=[state.message]
+                        )
+
+            except Exception as pi_error:
+                state.errors.append(f"个人信息提取失败: {str(pi_error)}")
+
+            state.extracted_features = extracted_features
+
+            # 3. 保存所有提取的特征到数据库
             for feature in state.extracted_features:
                 from ..models.schemas import FeatureCreate
                 feature_create = FeatureCreate(
@@ -277,9 +345,6 @@ class ChatGraph:
                         },
                         priority=-1
                     )
-
-            if len(state.extracted_features) > 0 and "new_category_suggestions" not in locals():
-                pass
 
         except Exception as e:
             state.errors.append(f"提取特征失败: {str(e)}")
