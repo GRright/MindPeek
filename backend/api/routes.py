@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Optional, List
 from pydantic import BaseModel
 import json
+import asyncio
 from backend.services.profile_service import ProfileService
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.models.database import FeatureModel
