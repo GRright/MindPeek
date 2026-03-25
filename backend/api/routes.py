@@ -70,6 +70,31 @@ async def chat_stream(
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
 
+            # 保存对话到数据库
+            from backend.utils.database import DatabaseSession
+            async with DatabaseSession() as session:
+                from backend.services.profile_service import ProfileService
+                from backend.models.schemas import MessageCreate, MessageRole
+                service = ProfileService(session)
+                
+                # 保存用户消息
+                user_msg = MessageCreate(
+                    user_id=request.user_id,
+                    role=MessageRole.USER,
+                    content=request.message,
+                    session_id="default"
+                )
+                await service.add_conversation(request.user_id, user_msg)
+                
+                # 保存助手回复
+                assistant_msg = MessageCreate(
+                    user_id=request.user_id,
+                    role=MessageRole.ASSISTANT,
+                    content=display_content,
+                    session_id="default"
+                )
+                await service.add_conversation(request.user_id, assistant_msg)
+
             # 特征提取作为后台任务，不阻塞响应
             if request.extract_features and orchestrator:
                 asyncio.create_task(
@@ -264,3 +289,50 @@ async def get_knowledge_graph(user_id: str):
             return {"nodes": nodes, "edges": edges}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/profile/{user_id}/analyze")
+async def analyze_user_profile(user_id: str):
+    """触发用户画像分析（懒加载 Agent）"""
+    try:
+        orchestrator = get_orchestrator()
+        
+        # 提交多个分析任务
+        tasks = []
+        
+        # 1. MBTI 分析
+        tasks.append(orchestrator.submit_task(
+            task_type=TaskType.MBTI_ANALYSIS,
+            user_id=user_id,
+            input_data={"user_id": user_id},
+            priority=1
+        ))
+        
+        # 2. 大五人格分析
+        tasks.append(orchestrator.submit_task(
+            task_type=TaskType.BIG_FIVE_ANALYSIS,
+            user_id=user_id,
+            input_data={"user_id": user_id},
+            priority=1
+        ))
+        
+        # 3. 特征相关性分析
+        tasks.append(orchestrator.submit_task(
+            task_type=TaskType.FEATURE_CORRELATION,
+            user_id=user_id,
+            input_data={"user_id": user_id},
+            priority=1
+        ))
+        
+        # 等待所有任务提交
+        await asyncio.gather(*tasks)
+        
+        return {
+            "status": "success",
+            "message": "已触发用户画像分析任务",
+            "tasks_submitted": len(tasks)
+        }
+    except Exception as e:
+        import traceback
+        print(f"分析任务提交失败：{e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))

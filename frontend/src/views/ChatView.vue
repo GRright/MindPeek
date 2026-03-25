@@ -39,7 +39,10 @@
             <div class="message-bubble">
               <div v-if="msg.think_content && !msg.is_streaming" class="think-content">
                 <el-collapse v-model="msg.activeCollapse" accordion>
-                  <el-collapse-item title="💭 深度思考过程" :name="msg.id">
+                  <el-collapse-item :name="msg.id">
+                    <template #title>
+                      <span style="font-weight: 600">💭 深度思考过程</span>
+                    </template>
                     <div class="think-text">{{ formatThinkContent(msg.think_content) }}</div>
                   </el-collapse-item>
                 </el-collapse>
@@ -495,10 +498,30 @@ function getFeatureTagType(type) {
 
 .markdown-content {
   white-space: pre-wrap;
+  line-height: 1.6;
 }
 
 .markdown-content :deep(p) {
   margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+.markdown-content :deep(ol), .markdown-content :deep(ul) {
+  padding-left: 2em;
+  margin: 0.5em 0;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.3em 0;
+  line-height: 1.6;
+}
+
+.markdown-content :deep(ol li), .markdown-content :deep(ul li) {
+  display: list-item;
+}
+
+.markdown-content :deep(strong) {
+  font-weight: 600;
 }
 
 .markdown-content :deep(code) {
@@ -506,6 +529,7 @@ function getFeatureTagType(type) {
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
 }
 
 .markdown-content :deep(pre) {
@@ -519,6 +543,13 @@ function getFeatureTagType(type) {
 .markdown-content :deep(pre code) {
   background: transparent;
   padding: 0;
+}
+
+.markdown-content :deep(blockquote) {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 16px;
+  margin: 8px 0;
+  color: var(--text-secondary);
 }
 
 .message-time {

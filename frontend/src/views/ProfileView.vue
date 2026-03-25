@@ -215,7 +215,26 @@ async function loadProfile() {
 }
 
 async function refreshProfile() {
-  await loadProfile()
+  try {
+    // 先触发分析任务
+    const analyzeResponse = await fetch(`http://localhost:8000/api/profile/${userId.value}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (analyzeResponse.ok) {
+      ElMessage.success('已触发用户画像分析任务，后台处理中...')
+    }
+    
+    // 然后重新加载数据
+    await loadProfile()
+    ElMessage.success('用户画像已更新')
+  } catch (e) {
+    console.error('刷新失败:', e)
+    ElMessage.error('刷新失败：' + e.message)
+  }
 }
 
 watch(searchQuery, () => {
