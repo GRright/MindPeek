@@ -1,444 +1,966 @@
 <template>
   <div class="knowledge-graph-view">
-    <div class="graph-main">
-      <div class="graph-header">
-        <div class="header-left">
-          <el-icon :size="20"><Connection /></el-icon>
-          <span class="header-title">知识图谱</span>
-        </div>
-        <div class="header-actions">
-          <el-button size="small" @click="loadGraph">刷新</el-button>
-        </div>
-      </div>
-
-      <div class="graph-container" ref="graphContainer">
-        <div v-if="!graphData" class="empty-state">
-          <div class="empty-icon">
-            <el-icon :size="64"><Share /></el-icon>
-          </div>
-          <p class="empty-title">知识图谱</p>
-          <p class="empty-desc">正在加载用户特征关系网络...</p>
-        </div>
-        <div v-else ref="networkContainer" class="network-container"></div>
+    <div class="graph-header">
+      <h1 class="page-title">
+        <span class="title-icon">🔮</span>
+        <span class="title-text">用户画像知识图谱</span>
+      </h1>
+      <div class="header-actions">
+        <el-button class="action-btn" @click="refreshGraph">
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
+        <el-button class="action-btn" @click="fitView">
+          <el-icon><FullScreen /></el-icon>
+          适应视图
+        </el-button>
       </div>
     </div>
 
-    <aside class="graph-sidebar">
-      <div class="stats-card">
-        <div class="card-title">节点统计</div>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value">{{ graphData?.nodes?.length || 0 }}</span>
-            <span class="stat-label">总节点数</span>
+    <div class="graph-content">
+      <aside class="graph-sidebar">
+        <div class="user-profile-card">
+          <div class="user-avatar">
+            <div class="avatar-ring">
+              <div class="avatar-inner">
+                {{ (userId?.charAt(0) || 'U').toUpperCase() }}
+              </div>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-value">{{ graphData?.edges?.length || 0 }}</span>
-            <span class="stat-label">总边数</span>
+          <h2 class="user-name">{{ userId || '用户画像' }}</h2>
+          
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-value">{{ featureCount }}</div>
+              <div class="stat-label">特征总数</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">{{ verifiedCount }}</div>
+              <div class="stat-label">已证实</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value inferred">{{ inferredCount }}</div>
+              <div class="stat-label">推断特征</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">{{ typeCount }}</div>
+              <div class="stat-label">特征类型</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="types-card">
-        <div class="card-title">节点图例</div>
-        <div class="types-list">
-          <div v-for="(item, index) in legendItems" :key="index" class="type-item">
-            <div class="type-dot" :style="{ background: item.color }"></div>
-            <span class="type-name">{{ item.label }}</span>
+        <div class="feature-types-card">
+          <div class="card-title">特征类型分布</div>
+          <div class="type-bars">
+            <div v-for="(count, type) in typeDistribution" :key="type" class="type-bar-item">
+              <div class="type-name">{{ type }}</div>
+              <div class="type-bar">
+                <div 
+                  class="type-bar-fill" 
+                  :style="{ 
+                    width: (count / featureCount * 100) + '%',
+                    background: getTypeColor(type)
+                  }"
+                ></div>
+              </div>
+              <div class="type-count">{{ count }}</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="relations-card">
-        <div class="card-title">关系说明</div>
-        <div class="relations-list">
-          <div class="relation-item">
-            <div class="relation-line solid"></div>
-            <span class="relation-name">has_feature_type</span>
-            <span class="relation-desc">用户拥有的特征类型</span>
-          </div>
-          <div class="relation-item">
-            <div class="relation-line dashed"></div>
-            <span class="relation-name">is_a</span>
-            <span class="relation-desc">属于该类型的特征值</span>
-          </div>
-          <div class="relation-item">
-            <div class="relation-line dashed" style="border-color: #f59e0b;"></div>
-            <span class="relation-name">implies</span>
-            <span class="relation-desc">推理得到的关联</span>
+        <div class="legend-card">
+          <div class="card-title">节点图例</div>
+          <div class="legend-list">
+            <div class="legend-item">
+              <div class="legend-dot user"></div>
+              <span class="legend-text">用户</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot type"></div>
+              <span class="legend-text">特征类型</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot feature"></div>
+              <span class="legend-text">特征值</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot inferred"></div>
+              <span class="legend-text">推断特征</span>
+            </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <div class="features-card" v-if="featureValues.length > 0">
-        <div class="card-title">用户特征</div>
-        <div class="features-list">
-          <div
-            v-for="(feature, index) in featureValues"
-            :key="index"
-            class="feature-item"
-          >
-            <div class="feature-type">{{ feature.type }}</div>
-            <div class="feature-value">{{ feature.value }}</div>
+      <main class="graph-main">
+        <div class="graph-card">
+          <div class="card-header">
+            <span class="card-title">🌀 知识图谱</span>
+            <div class="graph-controls">
+              <el-button size="small" class="mini-btn" @click="zoomIn">+</el-button>
+              <el-button size="small" class="mini-btn" @click="zoomOut">-</el-button>
+            </div>
+          </div>
+          <div class="graph-tip">💡 拖动节点到任意位置，滚轮缩放画布</div>
+          <div ref="graphContainer" class="graph-container"></div>
+        </div>
+      </main>
+
+      <aside class="features-sidebar">
+        <div class="features-detail-card">
+          <div class="card-header">
+            <span class="card-title">📋 详细特征</span>
+            <span class="feature-count">{{ filteredFeatures.length }} 个</span>
+          </div>
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索特征..."
+            clearable
+            prefix-icon="Search"
+            class="search-input"
+            size="small"
+          />
+          <div class="features-list">
+            <div
+              v-for="(feature, index) in filteredFeatures"
+              :key="index"
+              class="feature-item"
+              :style="{ animationDelay: (index * 0.03) + 's' }"
+            >
+              <div class="feature-type-badge" :style="{ background: getFeatureDisplayType(feature).color }">
+                {{ getFeatureDisplayType(feature).label }}
+              </div>
+              <div class="feature-content">
+                <div class="feature-value">{{ feature.feature_value }}</div>
+                <div class="feature-meta">
+                  <span class="feature-confidence">置信度: {{ (feature.confidence * 100).toFixed(0) }}%</span>
+                  <span class="feature-verification" v-if="feature.verification_count > 0">
+                    已证实 {{ feature.verification_count }} 次
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useProfileStore } from '@/stores/profile'
-import { Network } from 'vis-network/standalone'
-import { Connection, Share } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
+import { Refresh, FullScreen } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
+const userId = computed(() => store.user_id)
+const allFeatures = computed(() => store.features)
 
-const loading = ref(false)
-const graphData = ref(null)
+const searchQuery = ref('')
 const graphContainer = ref(null)
-const networkContainer = ref(null)
-let network = null
+let chart = null
 
-const nodeTypeStats = computed(() => {
-  if (!graphData.value?.nodes) return {}
-  const stats = {}
-  graphData.value.nodes.forEach(node => {
-    const type = node.type || 'unknown'
-    stats[type] = (stats[type] || 0) + 1
-  })
-  return stats
+const featureCount = computed(() => allFeatures.value?.length || 0)
+
+const verifiedCount = computed(() => {
+  if (!allFeatures.value) return 0
+  return allFeatures.value.filter(f => f.verification_count > 0).length
 })
 
-const legendItems = [
-  { label: '用户', type: 'user', color: '#ec4899' },
-  { label: '特征类型', type: 'feature_type', color: '#6366f1' },
-  { label: '特征值', type: 'feature_value', color: '#22c55e' },
-  { label: '推理特征', type: 'inferred', color: '#f59e0b' }
-]
+const inferredCount = computed(() => {
+  if (!allFeatures.value) return 0
+  return allFeatures.value.filter(f => f.feature_type === '推断' || isFeatureInferred(f)).length
+})
 
-const featureValues = computed(() => {
-  if (!graphData.value?.nodes) return []
-  const values = []
-  graphData.value.nodes.forEach(node => {
-    if (node.type === 'feature_value') {
-      const typeNode = graphData.value.nodes.find(n => {
-        const edge = graphData.value.edges.find(e => 
-          e.target === node.id && e.source === n.id && e.relation === 'is_a'
-        )
-        return edge !== undefined
-      })
-      values.push({
-        value: node.label,
-        type: typeNode?.label || '未知'
-      })
+const typeCount = computed(() => {
+  if (!allFeatures.value) return 0
+  return [...new Set(allFeatures.value.map(f => f.feature_type))].length
+})
+
+const typeDistribution = computed(() => {
+  const dist = {}
+  if (!allFeatures.value) return dist
+  allFeatures.value.forEach(f => {
+    dist[f.feature_type] = (dist[f.feature_type] || 0) + 1
+  })
+  return dist
+})
+
+const filteredFeatures = computed(() => {
+  if (!allFeatures.value) return []
+  if (!searchQuery.value) return allFeatures.value
+  const query = searchQuery.value.toLowerCase()
+  return allFeatures.value.filter(f => 
+    f.feature_type?.toLowerCase().includes(query) ||
+    f.feature_value?.toLowerCase().includes(query)
+  )
+})
+
+const TYPE_COLORS = {
+  'MBTI': 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+  '大五人格': 'linear-gradient(135deg, #2196f3, #64b5f6)',
+  '行为习惯': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  '潜在想法': 'linear-gradient(135deg, #ef4444, #f87171)',
+  '兴趣爱好': 'linear-gradient(135deg, #22c55e, #4ade80)',
+  '用户信息': 'linear-gradient(135deg, #ec4899, #f472b6)',
+  '价值观': 'linear-gradient(135deg, #14b8a6, #2dd4bf)',
+  '个人': 'linear-gradient(135deg, #6b7280, #9ca3af)',
+  '推断': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  '未知': 'linear-gradient(135deg, #6b7280, #9ca3af)'
+}
+
+function getTypeColor(type) {
+  return TYPE_COLORS[type] || TYPE_COLORS['未知']
+}
+
+function isFeatureInferred(feature) {
+  return feature.is_inferred || feature.confidence < 0.7
+}
+
+function formatTypeLabel(type) {
+  const labelMap = {
+    'MBTI': 'MBTI',
+    '大五人格': '大五',
+    '行为习惯': '习惯',
+    '潜在想法': '想法',
+    '兴趣爱好': '爱好',
+    '用户信息': '信息',
+    '价值观': '价值',
+    '个人': '个人',
+    '推断': '推断'
+  }
+  return labelMap[type] || type?.slice(0, 2) || '未知'
+}
+
+function getFeatureDisplayType(feature) {
+  if (feature.feature_type === '推断') {
+    return { type: '推断', label: '推断', color: getTypeColor('推断') }
+  }
+  return { type: feature.feature_type, label: formatTypeLabel(feature.feature_type), color: getTypeColor(feature.feature_type) }
+}
+
+function buildGraphData() {
+  const features = allFeatures.value || []
+  const nodes = []
+  const links = []
+  
+  nodes.push({
+    id: 'user',
+    name: userId.value || '用户',
+    category: 0,
+    symbolSize: 65,
+    draggable: true,
+    itemStyle: {
+      color: {
+        type: 'radial',
+        x: 0.5,
+        y: 0.5,
+        r: 0.5,
+        colorStops: [{
+          offset: 0, color: '#6366f1'
+        }, {
+          offset: 1, color: '#4f46e5'
+        }]
+      },
+      shadowColor: 'rgba(99, 102, 241, 0.5)',
+      shadowBlur: 15
+    },
+    label: {
+      show: true,
+      position: 'bottom',
+      fontSize: 15,
+      fontWeight: 'bold',
+      color: '#1f2937'
     }
   })
-  return values
-})
+  
+  const types = [...new Set(features.map(f => f.feature_type))]
+  types.forEach((type, idx) => {
+    const colorHex = extractHexFromGradient(TYPE_COLORS[type])
+    nodes.push({
+      id: `type_${type}`,
+      name: type,
+      category: 1,
+      symbolSize: 50,
+      draggable: true,
+      itemStyle: {
+        color: colorHex,
+        shadowColor: `rgba(${hexToRgb(colorHex)}, 0.4)`,
+        shadowBlur: 12
+      },
+      label: {
+        show: true,
+        position: 'bottom',
+        fontSize: 13,
+        fontWeight: 600,
+        color: '#374151'
+      }
+    })
+    
+    links.push({
+      source: 'user',
+      target: `type_${type}`,
+      value: 1,
+      lineStyle: {
+        width: 4,
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 1,
+          y2: 0,
+          colorStops: [{
+            offset: 0, color: '#6366f1'
+          }, {
+            offset: 1, color: colorHex
+          }]
+        },
+        curveness: 0.2,
+        opacity: 0.7
+      }
+    })
+  })
+  
+  features.forEach((feature, idx) => {
+    const isInferred = feature.feature_type === '推断' || isFeatureInferred(feature)
+    const color = isInferred ? '#f59e0b' : '#22c55e'
+    nodes.push({
+      id: `feature_${idx}`,
+      name: feature.feature_value,
+      category: isInferred ? 3 : 2,
+      symbolSize: 32 + (feature.confidence * 18),
+      draggable: true,
+      itemStyle: {
+        color: color,
+        shadowColor: `rgba(${hexToRgb(color)}, 0.4)`,
+        shadowBlur: 10,
+        opacity: 0.95
+      },
+      label: {
+        show: true,
+        position: 'right',
+        fontSize: 11,
+        color: '#374151',
+        formatter: (params) => {
+          return params.name.length > 10 ? params.name.slice(0, 10) + '...' : params.name
+        }
+      },
+      value: feature.confidence
+    })
+    
+    links.push({
+      source: `type_${feature.feature_type}`,
+      target: `feature_${idx}`,
+      value: feature.confidence,
+      lineStyle: {
+        width: Math.max(1, feature.confidence * 4),
+        color: color,
+        curveness: 0.3,
+        type: isInferred ? 'dashed' : 'solid',
+        opacity: isInferred ? 0.6 : 0.8
+      }
+    })
+  })
+  
+  return { nodes, links }
+}
+
+function extractHexFromGradient(gradient) {
+  const match = gradient?.match(/#[a-f0-9]{6}/i)
+  return match ? match[0] : '#6366f1'
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result 
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '99, 102, 241'
+}
+
+function renderChart() {
+  if (!graphContainer.value) return
+  
+  if (chart) {
+    chart.dispose()
+  }
+  
+  chart = echarts.init(graphContainer.value)
+  
+  const { nodes, links } = buildGraphData()
+  
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      show: true,
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151'
+      },
+      formatter: (params) => {
+        if (params.dataType === 'edge') {
+          return `<div style="padding: 8px;">
+            <div style="color: #6366f1; font-weight: 600; margin-bottom: 8px;">连接关系</div>
+            <div>${params.data.source} → ${params.data.target}</div>
+            <div style="color: #6b7280; margin-top: 4px;">置信度: ${((params.data.value || 0) * 100).toFixed(0)}%</div>
+          </div>`
+        }
+        let content = `<div style="padding: 8px;">`
+        content += `<div style="color: #6366f1; font-weight: 600; font-size: 14px; margin-bottom: 8px;">${params.name}</div>`
+        if (params.data.value !== undefined) {
+          content += `<div style="color: #6b7280;">置信度: <span style="color: #22c55e; font-weight: 600;">${(params.data.value * 100).toFixed(0)}%</span></div>`
+        }
+        content += '</div>'
+        return content
+      }
+    },
+    animationDurationUpdate: 2000,
+    animationEasingUpdate: 'cubicOut',
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      data: nodes,
+      links: links,
+      categories: [
+        { name: '用户' },
+        { name: '特征类型' },
+        { name: '特征值' },
+        { name: '推断特征' }
+      ],
+      roam: true,
+      label: {
+        show: true,
+        position: 'right',
+        formatter: '{b}'
+      },
+      lineStyle: {
+        color: 'source',
+        curveness: 0.3
+      },
+      force: {
+        repulsion: 500,
+        gravity: 0.1,
+        edgeLength: 160,
+        layoutAnimation: true
+      },
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: {
+          width: 8
+        },
+        label: {
+          fontSize: 14,
+          fontWeight: 'bold'
+        }
+      }
+    }]
+  }
+  
+  chart.setOption(option)
+  
+  window.addEventListener('resize', handleResize)
+}
+
+function handleResize() {
+  if (chart) {
+    chart.resize()
+  }
+}
+
+function fitView() {
+  if (chart) {
+    const option = chart.getOption()
+    if (option.series?.[0]) {
+      option.series[0].roam = false
+      chart.setOption(option)
+      setTimeout(() => {
+        option.series[0].roam = true
+        chart.setOption(option)
+      }, 300)
+    }
+  }
+}
+
+function zoomIn() {
+  if (chart) {
+    chart.dispatchAction({
+      type: 'dataZoom',
+      start: 0,
+      end: 100
+    })
+  }
+}
+
+function zoomOut() {
+  if (chart) {
+    chart.dispatchAction({
+      type: 'dataZoom',
+      start: 0,
+      end: 100
+    })
+  }
+}
+
+async function refreshGraph() {
+  try {
+    await store.loadProfile()
+    await nextTick()
+    renderChart()
+  } catch (e) {
+    console.error('Failed to refresh:', e)
+  }
+}
 
 onMounted(async () => {
-  await loadGraph()
+  await store.loadProfile()
+  await nextTick()
+  renderChart()
 })
 
-async function loadGraph() {
-  loading.value = true
-  try {
-    graphData.value = await store.loadKnowledgeGraph()
-    await nextTick()
-    renderGraph()
-  } catch (e) {
-    console.error('Failed to load graph:', e)
-  } finally {
-    loading.value = false
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (chart) {
+    chart.dispose()
   }
-}
-
-function renderGraph() {
-  if (!networkContainer.value || !graphData.value) return
-
-  if (network) {
-    network.destroy()
-  }
-
-  const nodes = graphData.value.nodes.map(node => {
-    const bgColor = getNodeColor(node.type)
-    const textColor = getContrastTextColor(bgColor)
-    return {
-      id: node.id,
-      label: node.label,
-      group: node.type,
-      color: { background: bgColor, border: bgColor },
-      font: { color: textColor, size: 16, bold: true },
-      borderWidth: 3,
-      shadow: true,
-      shape: 'dot'
-    }
-  })
-
-  const edges = graphData.value.edges.map(edge => ({
-    from: edge.source,
-    to: edge.target,
-    label: edge.relation,
-    arrows: 'to',
-    color: { color: edge.inferred ? '#f59e0b' : '#6366f1' },
-    dashes: edge.inferred,
-    font: { color: '#a0a1ad', size: 11 }
-  }))
-
-  const data = { nodes, edges }
-
-  const options = {
-    nodes: {
-      shape: 'dot',
-      size: 25,
-      font: {
-        size: 12,
-        face: 'Inter, sans-serif'
-      },
-      borderWidth: 3,
-      shadow: true
-    },
-    edges: {
-      width: 3,
-      shadow: true,
-      font: {
-        size: 10,
-        align: 'middle',
-        color: '#a0a1ad'
-      }
-    },
-    physics: {
-      stabilization: true,
-      barnesHut: {
-        gravitationalConstant: -3000,
-        springConstant: 0.05
-      }
-    },
-    interaction: {
-      hover: true,
-      tooltipDelay: 200,
-      zoomView: true,
-      navigationButtons: false
-    }
-  }
-
-  network = new Network(networkContainer.value, data, options)
-}
-
-function getNodeColor(type) {
-  const colors = {
-    'user': '#ec4899',
-    'feature_type': '#6366f1',
-    'feature_value': '#22c55e',
-    'inferred': '#f59e0b'
-  }
-  return colors[type] || '#6b6c7d'
-}
-
-function getContrastTextColor(backgroundColor) {
-  const hex = backgroundColor.replace('#', '')
-  const r = parseInt(hex.substr(0, 2), 16)
-  const g = parseInt(hex.substr(2, 2), 16)
-  const b = parseInt(hex.substr(4, 2), 16)
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000
-  return brightness > 128 ? '#000000' : '#ffffff'
-}
+})
 </script>
 
 <style scoped>
 .knowledge-graph-view {
-  display: flex;
-  gap: 20px;
-  height: calc(100vh - 112px);
-}
-
-.graph-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  min-height: calc(100vh - 112px);
+  padding: 20px;
+  background: var(--bg-primary);
 }
 
 .graph-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-.header-left {
+.page-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  font-size: 26px;
+  font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
-.header-title {
-  font-size: 16px;
-  font-weight: 600;
+.title-icon {
+  font-size: 28px;
 }
 
-.graph-container {
-  flex: 1;
+.action-btn {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-}
-
-.network-container {
-  width: 100%;
-  height: 100%;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
   color: var(--text-secondary);
-  gap: 16px;
+  transition: all 0.3s ease;
 }
 
-.empty-icon {
-  color: var(--text-tertiary);
+.action-btn:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
 }
 
-.empty-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
+.graph-content {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 20px;
+  height: calc(100vh - 180px);
 }
 
-.empty-desc {
-  color: var(--text-secondary);
-}
-
-.graph-sidebar {
-  width: 320px;
+.graph-sidebar,
+.features-sidebar {
   display: flex;
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
+  padding-right: 8px;
 }
 
-.stats-card,
-.types-card,
-.relations-card,
-.features-card {
+.graph-sidebar::-webkit-scrollbar,
+.features-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.graph-sidebar::-webkit-scrollbar-track,
+.features-sidebar::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.graph-sidebar::-webkit-scrollbar-thumb,
+.features-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.user-profile-card,
+.feature-types-card,
+.legend-card,
+.features-detail-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.user-avatar {
+  margin-bottom: 16px;
+}
+
+.avatar-ring {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  padding: 4px;
+  margin: 0 auto;
+}
+
+.avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.user-name {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-value.inferred {
+  color: #f59e0b;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .card-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.stat-item {
+.type-bars {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
+  gap: 10px;
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--accent-color);
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.types-list,
-.relations-list,
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.type-item,
-.relation-item,
-.feature-item {
+.type-bar-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-}
-
-.type-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .type-name {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.relation-line {
-  width: 30px;
-  height: 3px;
-  border-radius: 2px;
-  background: #6366f1;
+  width: 70px;
+  font-size: 11px;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
-.relation-line.dashed {
-  background: transparent;
-  border: 2px dashed #6366f1;
-}
-
-.relation-name {
-  font-size: 12px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.relation-desc {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-left: auto;
-}
-
-.feature-type {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  background: var(--bg-primary);
-  padding: 2px 8px;
+.type-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-tertiary);
   border-radius: 4px;
+  overflow: hidden;
+}
+
+.type-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.type-count {
+  width: 24px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s ease;
+}
+
+.legend-item:hover {
+  transform: translateX(4px);
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.legend-dot.user {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.legend-dot.type {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.legend-dot.feature {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.legend-dot.inferred {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.legend-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.graph-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.graph-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.graph-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-color);
+}
+
+.graph-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.mini-btn:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+.graph-container {
+  width: 100%;
+  flex: 1;
+  min-height: 500px;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+}
+
+.features-detail-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.feature-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.search-input {
+  margin-bottom: 12px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  border-color: var(--accent-color);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+.features-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.features-list::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.features-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  animation: fadeInUp 0.4s ease both;
+  transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+  border-color: var(--accent-color);
+  transform: translateX(3px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  width: fit-content;
+}
+
+.feature-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .feature-value {
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-primary);
-  flex: 1;
+  line-height: 1.4;
+}
+
+.feature-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.feature-meta span {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.feature-confidence {
+  color: #22c55e !important;
+}
+
+.feature-verification {
+  color: #3b82f6 !important;
 }
 </style>
