@@ -17,7 +17,7 @@
 
           <div class="user-stats">
             <div class="stat-item">
-              <span class="stat-value">{{ profileSummary?.total_features || 0 }}</span>
+              <span class="stat-value">{{ profileSummary?.feature_count || 0 }}</span>
               <span class="stat-label">特征数</span>
             </div>
             <div class="stat-divider"></div>
@@ -33,19 +33,24 @@
           </div>
         </div>
 
-        <div class="mbti-card card-animate" v-if="profileSummary?.mbti">
-          <div class="card-title">MBTI 性格解析</div>
-          <div class="mbti-chars">
-            <div
-              v-for="(char, idx) in profileSummary.mbti.split('')"
-              :key="idx"
-              class="mbti-char-item"
-              @mouseenter="highlightMbti(idx)"
-              @mouseleave="resetMbti"
-              :class="{ active: mbtiActive[idx] }"
-            >
-              <span class="mbti-char">{{ char }}</span>
-              <span class="mbti-label">{{ getMbtiCharLabel(char) }}</span>
+        <div class="overview-card card-animate">
+          <div class="card-title">用户画像概述</div>
+          <div class="overview-content">
+            <div class="overview-item">
+              <span class="overview-label">职业</span>
+              <span class="overview-value">{{ getFeatureValueByType('职业') || '未知' }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">性格</span>
+              <span class="overview-value">{{ getMbtiSummary() }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">兴趣</span>
+              <span class="overview-value">{{ getTopInterests() }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">生活方式</span>
+              <span class="overview-value">{{ getLifestyleSummary() }}</span>
             </div>
           </div>
         </div>
@@ -190,6 +195,43 @@ const displayedFeatures = computed(() => {
 const hasMore = computed(() => {
   return displayedCount.value < filteredFeatures.value.length
 })
+
+// 获取指定类型的特征值
+function getFeatureValueByType(type) {
+  const feature = allFeatures.value.find(f => f.feature_type === type)
+  return feature ? feature.feature_value : null
+}
+
+// 获取 MBTI 总结
+function getMbtiSummary() {
+  const mbtiFeature = allFeatures.value.find(f => f.feature_type === 'MBTI')
+  if (mbtiFeature) {
+    const value = mbtiFeature.feature_value
+    // 提取 MBTI 类型（如 INFP、INTP）
+    const match = value.match(/[A-Z]{4}/)
+    if (match) return match[0]
+    return value.slice(0, 10) + (value.length > 10 ? '...' : '')
+  }
+  return '未知'
+}
+
+// 获取主要兴趣
+function getTopInterests() {
+  const interests = allFeatures.value
+    .filter(f => f.feature_type === '兴趣爱好')
+    .slice(0, 3)
+    .map(f => f.feature_value)
+  return interests.length ? interests.join('、') : '暂无'
+}
+
+// 获取生活方式总结
+function getLifestyleSummary() {
+  const habits = allFeatures.value
+    .filter(f => f.feature_type === '行为习惯')
+    .slice(0, 2)
+    .map(f => f.feature_value)
+  return habits.length ? habits.join('、') : '暂无'
+}
 
 onMounted(async () => {
   await loadProfile()
@@ -383,12 +425,37 @@ function renderGraphChart() {
   }
   graphChart = echarts.init(graphContainer.value)
 
-  const existingTypes = [...new Set(allFeatures.value.map(f => f.feature_type))]
+  const displayFeatures = allFeatures.value.filter(f => f.confidence > 0)
   
-  const allCategories = ['MBTI', '大五人格', '行为习惯', '潜在想法', '兴趣爱好']
-  const categories = allCategories.filter(c => existingTypes.includes(c))
+  if (displayFeatures.length === 0) {
+    const option = {
+      backgroundColor: 'transparent',
+      title: {
+        text: '暂无特征数据',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: 'var(--text-muted)', fontSize: 14 }
+      }
+    }
+    graphChart.setOption(option)
+    return
+  }
 
-  const nodes = allFeatures.value.slice(0, 15).map((f, idx) => ({
+  const existingTypes = [...new Set(displayFeatures.map(f => f.feature_type))]
+  const categories = existingTypes
+
+  // 使用 Map 去重，确保节点名称唯一
+  const uniqueFeatures = []
+  const seenValues = new Set()
+  displayFeatures.forEach(f => {
+    if (!seenValues.has(f.feature_value)) {
+      seenValues.add(f.feature_value)
+      uniqueFeatures.push(f)
+    }
+  })
+  
+  const nodes = uniqueFeatures.slice(0, 15).map((f, idx) => ({
+    id: `feature_${idx}`,
     name: f.feature_value,
     category: categories.indexOf(f.feature_type),
     value: f.confidence,
@@ -396,15 +463,16 @@ function renderGraphChart() {
   }))
 
   nodes.unshift({
+    id: 'user',
     name: userId.value,
     category: categories.length,
     symbolSize: 30,
     value: 1
   })
 
-  const links = allFeatures.value.slice(0, 10).map(f => ({
-    source: userId.value,
-    target: f.feature_value,
+  const links = uniqueFeatures.slice(0, 10).map((f, idx) => ({
+    source: 'user',
+    target: `feature_${idx}`,
     lineStyle: {
       width: f.confidence * 2,
       color: {
@@ -446,7 +514,7 @@ function renderGraphChart() {
         fontSize: 11,
         color: 'var(--text-primary)'
       },
-      categories: allCategoriesWithUser.map((name, idx) => ({ name, itemStyle: { color: idx < categories.length ? getCategoryColor(allCategories.indexOf(name)) : '#ec4899' } })),
+      categories: allCategoriesWithUser.map((name, idx) => ({ name, itemStyle: { color: idx < categories.length ? getFeatureColor(name) : '#ec4899' } })),
       nodes: nodes,
       links: links,
       lineStyle: {
@@ -533,31 +601,44 @@ function renderPieChart() {
   pieChart.setOption(option)
 }
 
-function getCategoryColor(idx) {
-  const colors = ['#8b5cf6', '#2196f3', '#f59e0b', '#ef4444', '#22c55e', '#ec4899']
-  return colors[idx] || '#6b6c7d'
-}
-
 function getFeatureColor(type) {
-  const colors = {
+  const predefinedColors = {
     'MBTI': '#8b5cf6',
     '大五人格': '#2196f3',
     '行为习惯': '#f59e0b',
     '潜在想法': '#ef4444',
-    '兴趣爱好': '#22c55e'
+    '兴趣爱好': '#22c55e',
+    '用户信息': '#ec4899'
   }
-  return colors[type] || '#6b6c7d'
+  if (predefinedColors[type]) {
+    return predefinedColors[type]
+  }
+  const colors = ['#8b5cf6', '#2196f3', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#a855f7']
+  let hash = 0
+  for (let i = 0; i < type.length; i++) {
+    hash = type.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
 }
 
 function getFeatureTagType(type) {
-  const types = {
+  const predefinedTypes = {
     'MBTI': 'primary',
     '大五人格': 'success',
     '行为习惯': 'warning',
     '潜在想法': 'danger',
-    '兴趣爱好': 'info'
+    '兴趣爱好': 'info',
+    '用户信息': ''
   }
-  return types[type] || 'info'
+  if (predefinedTypes.hasOwnProperty(type)) {
+    return predefinedTypes[type]
+  }
+  const types = ['primary', 'success', 'warning', 'danger', 'info', '']
+  let hash = 0
+  for (let i = 0; i < type.length; i++) {
+    hash = type.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return types[Math.abs(hash) % types.length]
 }
 
 function highlightMbti(idx) {
@@ -714,6 +795,58 @@ function getMbtiCharLabel(char) {
   color: var(--text-primary);
 }
 
+.overview-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.overview-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.overview-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.overview-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 600;
+  max-width: 60%;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mbti-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -725,13 +858,6 @@ function getMbtiCharLabel(char) {
 .mbti-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
-}
-
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 16px;
 }
 
 .mbti-chars {

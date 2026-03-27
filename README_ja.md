@@ -24,7 +24,7 @@ MindPeekはあなたの対話を深い理解に変換します：
 | **FeatureDiscovery Agent** | 性格、習慣、偏好を自動的に発見 | 手動入力不要、AIが自動学習 |
 | **LatentIntent Agent** | 隠れたニーズと潜在的な意図を識別 | あなたが]~!b[る前にあなたのニーズを知る |
 | **CorrelationAgent** | 特徴間の相関を発見 | 完全なユーザープロファイルネットワークを構築 |
-| **DeepThink Agent** | 深い心理分析 | 言動の背後にある心理的動機を探る |
+| **MBTI/BigFive Agent** | 性格特性分析 | 性格の次元を深く理解 |
 
 ## 🚀 なぜMindPeekを選ぶのか？
 
@@ -78,9 +78,11 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Correlation │  │ DeepThink │ │
-│  │ Discovery  │  │   Intent   │  │   Agent    │  │   Agent   │ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+│                                                                      │
+│              ⚡ DeepThink - タスクモード                              │
 └──────────────────────────────────────────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
@@ -127,7 +129,8 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ```bash
 cd MindPeek
 pip install -r requirements.txt
-cd frontend && npm install
+cd frontend
+npm install
 ```
 
 ### 2. システム設定
@@ -141,22 +144,33 @@ copy config\config.example.json config\config.json
 ```json
 {
     "llm_providers": {
-        "deepseek": {
+        "openai": {
             "enabled": true,
             "api_key": "your_api_key",
-            "api_url": "https://api.deepseek.com/v1",
-            "model": "deepseek-chat"
+            "api_url": "your_url",
+            "model": "your_model_name"
         }
     },
-    "default_provider": "deepseek",
+    "default_provider": "openai",
     "memo_base": {
         "enabled": true,
-        "project_url": "http://your-memobase:8019",
+        "project_url": "your_url",
         "api_key": "your_memobase_key"
     },
+    "feature_extraction": {  # 特徴信頼度設定（デフォルト値を使用推奨）
+        "confidence_threshold": 0.6,
+        "auto_update_on_new_message": true,
+        "max_history_messages": 100,
+        "enable_knowledge_graph": true,
+        "enable_multi_agent": true,
+        "decay": {
+            "enabled": true,
+            "half_life_days": 30,
+            "min_confidence": 0.3
+        }
+    },
     "agent": {
-        "max_concurrent_agents": 3,
-        "comment": "最大並列Agent数、サーバー性能に応じて調整、推奨値1-5"
+        "max_concurrent_agents": 3  # 最大並列Agent数、サーバー性能に応じて調整、推奨値1-5
     }
 }
 ```
@@ -190,18 +204,24 @@ MindPeek/
 ├── backend/
 │   ├── api/
 │   │   └── routes.py           # APIルート
+│   ├── core/
+│   │   └── config.py          # 設定管理
 │   ├── models/
 │   │   ├── database.py         # データベースモデル
 │   │   └── schemas.py          # Pydanticモデル
 │   ├── services/
 │   │   ├── llm_provider.py     # マルチプロバイダーサポート
 │   │   ├── profile_service.py  # ユーザープロファイルサービス
+│   │   ├── feature_merger.py   # ✨ 特徴スマートマージ
 │   │   └── memo_base_service.py # リモートストレージ
 │   ├── agents/
 │   │   ├── chat_graph.py       # 🤖 LangGraphチャットグラフ
 │   │   ├── feature_discovery.py # 🔮 特徴発見Agent
+│   │   ├── personal_info_agent.py # 🎯 個人情報抽出
 │   │   ├── async_orchestrator.py # ⚡ 非同期タスクオーケストレーション
 │   │   └── agent_engine.py     # Agentエンジン
+│   ├── utils/
+│   │   └── database.py         # データベースユーティリティ
 │   └── knowledge_graph/
 │       └── graph.py           # 🔗 ナレッジグラフ（リアルタイム推論）
 ├── frontend/
@@ -209,10 +229,11 @@ MindPeek/
 │   │   ├── views/             # ページコンポーネント
 │   │   ├── stores/            # Pinia状態
 │   │   ├── api/               # API呼び出し
+│   │   ├── components/        # 共通コンポーネント
 │   │   └── router/            # ルート設定
 │   └── package.json
-└── data/
-    └── permir.db              # SQLiteデータベース
+├── tests/
+│   └── test_core.py            # コア機能テスト
 ```
 
 ## 🎨 機能紹介

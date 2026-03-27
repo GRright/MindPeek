@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import api from '@/api'
 
 export const useProfileStore = defineStore('profile', () => {
-  const currentUserId = ref('demo_user')
+  const currentUserId = ref('interactive_test_user')
   const profile = ref(null)
   const features = ref([])
   const conversations = ref([])

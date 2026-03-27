@@ -10,6 +10,8 @@ from backend.agents.async_orchestrator import get_orchestrator, TaskType
 from backend.knowledge_graph.graph import knowledge_graph
 from backend.services.feature_merger import feature_merger
 from fastapi.responses import StreamingResponse
+from backend.utils.sync_database import save_conversation_sync, save_feature_sync
+from backend.utils.sync_feature_extractor import extract_features_sync
 
 router = APIRouter()
 
@@ -48,9 +50,10 @@ async def chat_stream(
             except Exception as e:
                 llm_error = str(e)
                 full_response = ""
-                yield f"data: {json.dumps({'type': 'error', 'content': f'AI服务暂时不可用：{llm_error}'})}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'content': f'AI 服务暂时不可用：{llm_error}'})}\n\n"
 
             display_content = full_response
+            think_content = None  # 初始化 think_content
 
             think_end_tag = '</think>'
             think_pos = full_response.find(think_end_tag)
@@ -74,44 +77,30 @@ async def chat_stream(
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
 
-            # 保存对话并提取特征
-            from backend.utils.database import DatabaseSession
-            async with DatabaseSession() as session:
-                from backend.services.profile_service import ProfileService
-                from backend.models.schemas import MessageCreate, MessageRole
-                from backend.agents.chat_graph import ChatGraph
-                
-                service = ProfileService(session)
-                
-                # 保存用户消息
-                user_msg = MessageCreate(
-                    role=MessageRole.USER,
-                    content=request.message,
-                    session_id="default"
-                )
-                await service.add_conversation(request.user_id, user_msg)
-
-                # 保存助手回复
-                assistant_msg = MessageCreate(
-                    role=MessageRole.ASSISTANT,
-                    content=display_content,
-                    session_id="default"
-                )
-                await service.add_conversation(request.user_id, assistant_msg)
-                
-                # 调用 ChatGraph 进行特征提取
+            # 使用同步方式保存对话（避免异步连接池问题）
+            print(f"\n>>> 开始使用同步方式保存对话 for user_id: {request.user_id}")
+            
+            # 保存用户消息
+            save_conversation_sync(request.user_id, "user", request.message, "default")
+            
+            # 保存助手回复
+            save_conversation_sync(request.user_id, "assistant", display_content if display_content else "(无回复内容)", "default")
+            
+            print(f">>> 同步保存对话完成\n")
+            
+            # 如果需要提取特征 - 在后台执行，不阻塞流式响应
+            if request.extract_features:
+                print(f">>> 开始特征提取 for user_id: {request.user_id}")
                 try:
-                    print(f"开始特征提取 for user_id: {request.user_id}")
-                    chat_graph = ChatGraph(
-                        llm_provider=orchestrator.llm,
-                        profile_service=service
+                    # 使用 asyncio 创建后台任务执行特征提取
+                    import asyncio
+                    asyncio.create_task(
+                        async_extract_features(request.user_id, request.message, display_content if display_content else "(无回复内容)")
                     )
-                    print(f"ChatGraph created, calling ainvoke...")
-                    result = await chat_graph.ainvoke(request.user_id, request.message, False)
-                    print(f"特征提取完成, result: {result}")
+                    print(f">>> 特征提取任务已创建\n")
                 except Exception as fe_error:
+                    print(f">>> 特征提取任务创建失败：{fe_error}")
                     import traceback
-                    print(f"特征提取失败: {fe_error}")
                     print(traceback.format_exc())
 
         except Exception as e:
@@ -124,13 +113,33 @@ async def chat_stream(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+async def async_extract_features(user_id: str, message: str, response: str):
+    """异步执行特征提取，不阻塞流式响应"""
+    try:
+        # 在后台线程中执行同步的特征提取
+        import asyncio
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None, 
+            extract_features_sync, 
+            user_id, 
+            message, 
+            response
+        )
+        print(f">>> 后台特征提取完成")
+    except Exception as e:
+        print(f">>> 后台特征提取失败: {e}")
+        import traceback
+        print(traceback.format_exc())
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
 ):
     orchestrator = get_orchestrator()
 
-    messages = [{"role": "system", "content": "你是一个友善的AI助手，正在与用户进行对话。"}]
+    messages = [{"role": "system", "content": "你是一个友善的 AI 助手，正在与用户进行对话。"}]
     messages.append({"role": "user", "content": request.message})
 
     full_response = ""
@@ -180,16 +189,129 @@ async def delete_conversation(
 async def get_profile(
     user_id: str,
 ):
-    from backend.utils.database import DatabaseSession
-    async with DatabaseSession() as session:
-        service = ProfileService(session)
-        try:
-            profile = await service.get_user_profile_detail(user_id)
-            if not profile:
-                raise HTTPException(status_code=404, detail="用户画像不存在")
-            return profile
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    """使用同步方式获取用户画像"""
+    from backend.utils.sync_database import get_user_features_sync
+    import sqlite3
+    
+    try:
+        # 同步获取特征
+        features = get_user_features_sync(user_id)
+        
+        # 同步获取对话统计
+        conn = sqlite3.connect('C:\\myProject\\MindPeek\\data\\permir.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT COUNT(*) FROM conversations WHERE user_id = ?
+        """, (user_id,))
+        conversation_count = cursor.fetchone()[0]
+        
+        cursor.execute("""
+            SELECT MIN(timestamp), MAX(timestamp) FROM conversations WHERE user_id = ?
+        """, (user_id,))
+        time_range = cursor.fetchone()
+        
+        conn.close()
+        
+        # 按类型分组特征
+        features_by_type = {}
+        for f in features:
+            ftype = f.get('feature_type', '未知')
+            if ftype not in features_by_type:
+                features_by_type[ftype] = []
+            features_by_type[ftype].append(f)
+        
+        # 从特征中计算大五人格分数
+        big_five = calculate_big_five(features)
+        
+        # 尝试从特征中提取 MBTI
+        mbti = extract_mbti_from_features(features)
+        
+        return {
+            "user_id": user_id,
+            "features": features,
+            "summary": {
+                "conversation_count": conversation_count,
+                "feature_count": len(features),
+                "first_conversation": str(time_range[0]) if time_range[0] else None,
+                "last_conversation": str(time_range[1]) if time_range[1] else None,
+                "big_five": big_five,
+                "mbti": mbti
+            },
+            "features_by_type": features_by_type
+        }
+    except Exception as e:
+        import traceback
+        print(f"获取用户画像失败：{e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+def calculate_big_five(features):
+    """根据特征计算大五人格分数"""
+    big_five = {
+        "开放性": 50,
+        "尽责性": 50,
+        "外向性": 50,
+        "宜人性": 50,
+        "神经质": 50
+    }
+
+    openness_keywords = ["看书", "学习", "思考", "创新", "好奇", "艺术"]
+    conscientiousness_keywords = ["规律", "计划", "自律", "坚持", "负责", "加班"]
+    extraversion_keywords = ["社交", "朋友", "聚会", "健谈", "活泼", "开朗"]
+    agreeableness_keywords = ["友善", "随和", "体贴", "合作", "信任"]
+    neuroticism_keywords = ["焦虑", "担忧", "敏感", "情绪化", "孤独", "压力"]
+
+    openness_count = 0
+    conscientiousness_count = 0
+    extraversion_count = 0
+    agreeableness_count = 0
+    neuroticism_count = 0
+
+    for f in features:
+        fvalue = f.get('feature_value', '').lower()
+        ftype = f.get('feature_type', '')
+        confidence = f.get('confidence', 0.5)
+
+        if any(kw in fvalue for kw in openness_keywords):
+            openness_count += confidence
+        elif '内向' in fvalue or '独处' in fvalue or '宅' in fvalue:
+            openness_count += confidence * 0.3
+
+        if any(kw in fvalue for kw in conscientiousness_keywords):
+            conscientiousness_count += confidence
+        elif '拖延' in fvalue or '懒' in fvalue:
+            conscientiousness_count -= confidence * 0.5
+
+        if any(kw in fvalue for kw in extraversion_keywords):
+            extraversion_count += confidence
+        elif '宅' in fvalue or '内向' in fvalue or '朋友较少' in fvalue:
+            extraversion_count -= confidence * 0.5
+
+        if any(kw in fvalue for kw in agreeableness_keywords):
+            agreeableness_count += confidence
+
+        if any(kw in fvalue for kw in neuroticism_keywords):
+            neuroticism_count += confidence
+        elif '随缘' in fvalue or '平淡' in fvalue:
+            neuroticism_count -= confidence * 0.3
+
+    big_five["开放性"] = max(0, min(100, 50 + (openness_count - 1) * 10))
+    big_five["尽责性"] = max(0, min(100, 50 + (conscientiousness_count - 1) * 10))
+    big_five["外向性"] = max(0, min(100, 50 + (extraversion_count - 1) * 10))
+    big_five["宜人性"] = max(0, min(100, 50 + (agreeableness_count - 1) * 10))
+    big_five["神经质"] = max(0, min(100, 50 + (neuroticism_count - 1) * 10))
+
+    return big_five
+
+def extract_mbti_from_features(features):
+    """从特征中提取 MBTI"""
+    for f in features:
+        if f.get('feature_type') == 'MBTI' or f.get('feature_type') == '个人信息':
+            value = f.get('feature_value', '')
+            if 'INT' in value or 'INF' in value or 'IST' in value or 'ISF' in value:
+                return value
+    return None
 
 @router.get("/health")
 async def health_check():
@@ -230,9 +352,9 @@ async def merge_duplicate_features(user_id: str, threshold: float = 0.75):
                     
                     existing_notes = existing_feature.notes or ""
                     if existing_notes:
-                        existing_notes += f"\n合并: {feat2['feature_value']} (相似度: {similarity:.2f})"
+                        existing_notes += f"\n合并：{feat2['feature_value']} (相似度：{similarity:.2f})"
                     else:
-                        existing_notes = f"合并: {feat2['feature_value']} (相似度: {similarity:.2f})"
+                        existing_notes = f"合并：{feat2['feature_value']} (相似度：{similarity:.2f})"
                     
                     existing_feature.confidence = new_confidence
                     existing_feature.notes = existing_notes
@@ -287,56 +409,13 @@ async def get_knowledge_graph(user_id: str):
                     "source": edge["source_id"],
                     "target": edge["target_id"],
                     "relation": edge["relation_type"],
-                    "inferred": edge.get("weight", 1.0) < 1.0
+                    "inferred": edge.get("weight", 1.0) < 1.0,
+                    "weight": edge.get("weight", 1.0)
                 })
             
-            return {"nodes": nodes, "edges": edges}
+            feature_types = list(set([
+                feature.feature_type for feature in user_features
+            ]))
+            return {"nodes": nodes, "edges": edges, "featureTypes": feature_types}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/profile/{user_id}/analyze")
-async def analyze_user_profile(user_id: str):
-    """触发用户画像分析（懒加载 Agent）"""
-    try:
-        orchestrator = get_orchestrator()
-        
-        # 提交多个分析任务
-        tasks = []
-        
-        # 1. MBTI 分析
-        tasks.append(orchestrator.submit_task(
-            task_type=TaskType.MBTI_ANALYSIS,
-            user_id=user_id,
-            input_data={"user_id": user_id},
-            priority=1
-        ))
-        
-        # 2. 大五人格分析
-        tasks.append(orchestrator.submit_task(
-            task_type=TaskType.BIG_FIVE_ANALYSIS,
-            user_id=user_id,
-            input_data={"user_id": user_id},
-            priority=1
-        ))
-        
-        # 3. 特征相关性分析
-        tasks.append(orchestrator.submit_task(
-            task_type=TaskType.FEATURE_CORRELATION,
-            user_id=user_id,
-            input_data={"user_id": user_id},
-            priority=1
-        ))
-        
-        # 等待所有任务提交
-        await asyncio.gather(*tasks)
-        
-        return {
-            "status": "success",
-            "message": "已触发用户画像分析任务",
-            "tasks_submitted": len(tasks)
-        }
-    except Exception as e:
-        import traceback
-        print(f"分析任务提交失败：{e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))

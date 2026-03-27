@@ -1,98 +1,108 @@
 <template>
   <div class="chat-view">
-    <div class="chat-header">
-      <div class="header-content">
-        <div class="logo">
-          <el-icon :size="24"><ChatDotRound /></el-icon>
-          <span class="title">MindPeek Chat</span>
-        </div>
-        <div class="user-selector">
-          <el-icon :size="16"><User /></el-icon>
-          <span class="user-name">{{ userId }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="chat-messages" ref="messagesContainer">
-      <div v-if="messages.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <el-icon :size="64"><ChatDotRound /></el-icon>
-        </div>
-        <h3>开始对话</h3>
-        <p>发送消息开始分析用户特征</p>
-      </div>
-
-      <div class="messages-container">
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          :class="['message-row', msg.role]"
-        >
-          <div class="avatar">
-            <div class="avatar-icon">
-              <el-icon v-if="msg.role === 'user'" :size="20"><User /></el-icon>
-              <el-icon v-else :size="20"><Cpu /></el-icon>
+    <div class="chat-area">
+      <div class="messages-area" ref="messagesContainer">
+        <div v-if="messages.length === 0" class="welcome-screen">
+          <div class="welcome-content">
+            <div class="welcome-logo">
+              <el-icon :size="64"><ChatDotRound /></el-icon>
             </div>
-          </div>
-          <div class="message-content">
-            <div class="message-bubble">
-              <div v-if="msg.think_content && !msg.is_streaming" class="think-content">
-                <el-collapse v-model="msg.activeCollapse" accordion>
-                  <el-collapse-item :name="msg.id">
-                    <template #title>
-                      <span class="think-title">💭 深度思考</span>
-                    </template>
-                    <div class="think-text">{{ formatThinkContent(msg.think_content) }}</div>
-                  </el-collapse-item>
-                </el-collapse>
-              </div>
-              <div v-if="msg.content" v-html="renderMarkdown(msg.content)" class="message-text"></div>
-              <div v-if="msg.is_streaming" class="loading">
-                <span class="loading-dot"></span>
-                <span class="loading-dot"></span>
-                <span class="loading-dot"></span>
-              </div>
-            </div>
-            <div class="message-meta">
-              <span class="time">{{ formatTime(msg.timestamp) }}</span>
-            </div>
+            <h1>MindPeek AI</h1>
+            <p>懂你的 AI 伙伴，通过对话自动理解你</p>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="chat-input">
-      <div class="input-container">
-        <div class="input-actions">
-          <el-tooltip content="深度思考">
-            <button
-              class="action-btn"
-              :class="{ active: deepThink }"
-              @click="deepThink = !deepThink"
-              :disabled="loading"
-            >
-              <el-icon :size="18"><MagicStick /></el-icon>
-            </button>
-          </el-tooltip>
-        </div>
-        <div class="input-wrapper">
-          <textarea
-            v-model="inputMessage"
-            placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
-            :rows="1"
-            :disabled="loading"
-            @keydown.enter.exact.prevent="sendMessage"
-            @input="autoResize"
-            ref="inputTextarea"
-          ></textarea>
-          <button
-            class="send-btn"
-            @click="sendMessage"
-            :disabled="loading || !inputMessage.trim()"
+        <div class="messages-list" v-else>
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message', msg.role]"
           >
-            <el-icon v-if="!loading" :size="20"><Promotion /></el-icon>
-            <el-icon v-else class="is-loading" :size="20"><Loading /></el-icon>
-          </button>
+            <div class="message-avatar">
+              <div class="avatar" :class="msg.role">
+                <el-icon v-if="msg.role === 'user'"><User /></el-icon>
+                <el-icon v-else><Cpu /></el-icon>
+              </div>
+            </div>
+
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-author">{{ msg.role === 'user' ? '用户' : 'MindPeek' }}</span>
+                <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+              </div>
+
+              <div class="message-body">
+                <div v-if="msg.think_content && !msg.is_streaming" class="thinking-box">
+                  <div class="thinking-header" @click="msg.showThinking = !msg.showThinking">
+                    <el-icon v-if="!msg.showThinking"><ArrowRight /></el-icon>
+                    <el-icon v-else><ArrowDown /></el-icon>
+                    <span>深度思考</span>
+                  </div>
+                  <div v-show="msg.showThinking" class="thinking-body">
+                    {{ formatThinkContent(msg.think_content) }}
+                  </div>
+                </div>
+
+                <div v-if="msg.content" v-html="renderMarkdown(msg.content)" class="message-text"></div>
+
+                <div v-if="msg.is_streaming" class="typing-dots">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+              </div>
+
+              <div class="message-actions">
+                <button class="message-action-btn" @click="copyMessage(msg.content)">
+                  <el-icon><DocumentCopy /></el-icon>
+                </button>
+                <button class="message-action-btn" @click="regenerateMessage(msg)">
+                  <el-icon><Refresh /></el-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-container">
+          <div class="input-tools">
+            <button class="tool-btn">
+              <el-icon><Paperclip /></el-icon>
+            </button>
+            <button class="tool-btn">
+              <el-icon><Picture /></el-icon>
+            </button>
+          </div>
+
+          <div class="textarea-wrapper">
+            <textarea
+              v-model="inputMessage"
+              placeholder="发送消息给 MindPeek..."
+              :rows="1"
+              :disabled="loading"
+              @keydown.enter.exact.prevent="sendMessage"
+              @input="autoResize"
+              ref="inputTextarea"
+            ></textarea>
+          </div>
+
+          <div class="send-section">
+            <button
+              class="send-btn"
+              :class="{ loading: loading }"
+              @click="sendMessage"
+              :disabled="loading || !inputMessage.trim()"
+            >
+              <el-icon v-if="!loading"><Promotion /></el-icon>
+              <el-icon v-else class="spinner-icon"><Loading /></el-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="input-footer-text">
+          <span>MindPeek 可能会出错，请仔细检查重要信息</span>
         </div>
       </div>
     </div>
@@ -110,7 +120,12 @@ import {
   ChatDotRound,
   Promotion,
   Loading,
-  MagicStick
+  Paperclip,
+  Picture,
+  Refresh,
+  DocumentCopy,
+  ArrowRight,
+  ArrowDown
 } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
@@ -119,11 +134,9 @@ const md = new MarkdownIt()
 const userId = ref(store.currentUserId)
 const inputMessage = ref('')
 const messages = ref([])
-const extractedFeatures = ref([])
 const loading = ref(false)
 const messagesContainer = ref(null)
 const inputTextarea = ref(null)
-const deepThink = ref(false)
 
 function formatThinkContent(content) {
   if (!content) return ''
@@ -137,8 +150,40 @@ function formatThinkContent(content) {
   return result.trim()
 }
 
+function clearChat() {
+  messages.value = []
+  saveConversations()
+}
+
+function sendSuggestion(text) {
+  inputMessage.value = text
+  sendMessage()
+}
+
+function copyMessage(content) {
+  navigator.clipboard.writeText(content)
+  ElMessage.success('已复制到剪贴板')
+}
+
+function regenerateMessage(msg) {
+  if (msg.role === 'assistant') {
+    const userMsg = messages.value.slice().reverse().find(m => m.role === 'user' && m.id < msg.id)
+    if (userMsg) {
+      const msgIndex = messages.value.findIndex(m => m.id === msg.id)
+      if (msgIndex > -1) {
+        messages.value.splice(msgIndex, 1)
+      }
+      inputMessage.value = userMsg.content
+      sendMessage()
+    }
+  }
+}
+
 onMounted(async () => {
   await loadLocalConversations()
+  nextTick(() => {
+    scrollToBottom()
+  })
 })
 
 async function loadLocalConversations() {
@@ -150,7 +195,7 @@ async function loadLocalConversations() {
         ...msg,
         id: Date.now() + idx,
         is_streaming: false,
-        activeCollapse: [],
+        showThinking: false,
         timestamp: new Date().toISOString()
       }))
     }
@@ -161,9 +206,7 @@ async function loadLocalConversations() {
 }
 
 async function sendMessage() {
-  console.log('sendMessage called, loading:', loading.value)
   if (!inputMessage.value.trim() || loading.value) {
-    console.log('Early return: empty message or loading')
     return
   }
 
@@ -178,14 +221,12 @@ async function sendMessage() {
     id: userMsgId,
     role: 'user',
     content: message,
-    deepThink: deepThink.value,
     timestamp: new Date().toISOString()
   })
 
   scrollToBottom()
 
   loading.value = true
-  console.log('Set loading to true')
   try {
     const assistantMsgId = Date.now() + 1
     messages.value.push({
@@ -193,7 +234,7 @@ async function sendMessage() {
       role: 'assistant',
       content: '',
       think_content: null,
-      activeCollapse: [],
+      showThinking: false,
       is_streaming: true,
       timestamp: new Date().toISOString()
     })
@@ -206,8 +247,7 @@ async function sendMessage() {
       body: JSON.stringify({
         user_id: userId.value,
         message: message,
-        extract_features: true,
-        deep_think: deepThink.value
+        extract_features: true
       })
     })
 
@@ -268,14 +308,12 @@ async function sendMessage() {
         }
       }
     }
-    console.log('Stream complete, setting loading to false')
     loading.value = false
 
     if (thinkContent) {
       ElMessage.success('深度思考完成')
     }
 
-    extractedFeatures.value = []
     scrollToBottom()
   } catch (e) {
     ElMessage.error('发送失败：' + e.message)
@@ -286,7 +324,6 @@ async function sendMessage() {
     }
   } finally {
     loading.value = false
-    console.log('Set loading to false in finally')
   }
 }
 
@@ -296,7 +333,8 @@ async function saveConversations() {
       .filter(msg => msg.role === 'user' || (msg.role === 'assistant' && !msg.is_streaming))
       .map(msg => ({
         role: msg.role,
-        content: msg.content
+        content: msg.content,
+        think_content: msg.think_content
       }))
 
     localStorage.setItem(`chat_${userId.value}`, JSON.stringify(conversationData))
@@ -311,7 +349,7 @@ async function saveConversations() {
 function autoResize(e) {
   const textarea = e.target
   textarea.style.height = 'auto'
-  textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'
+  textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
 }
 
 function scrollToBottom() {
@@ -336,163 +374,190 @@ function renderMarkdown(content) {
 
 <style scoped>
 .chat-view {
+  height: calc(100vh - 112px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-area::-webkit-scrollbar-track {
   background: var(--bg-primary);
 }
 
-.chat-header {
-  flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 12px 20px;
+.messages-area::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--accent-color);
-}
-
-.logo .title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.user-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.chat-messages {
+.welcome-screen {
   flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.empty-state {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: var(--text-muted);
+}
+
+.welcome-content {
   text-align: center;
+  max-width: 700px;
+  padding: 40px;
 }
 
-.empty-icon {
-  opacity: 0.3;
-  margin-bottom: 20px;
+.welcome-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: 0 auto 24px;
 }
 
-.empty-state h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 8px;
+.welcome-content h1 {
+  font-size: 32px;
+  font-weight: 700;
   color: var(--text-primary);
+  margin: 0 0 8px;
 }
 
-.empty-state p {
-  font-size: 14px;
+.welcome-content p {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin: 0 0 40px;
 }
 
-.messages-container {
-  max-width: 900px;
-  margin: 0 auto;
+.messages-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  padding: 24px 0;
 }
 
-.message-row {
+.message {
   display: flex;
-  gap: 16px;
-  animation: fadeIn 0.3s ease;
+  gap: 20px;
+  padding: 24px 60px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.message.user {
+  background: transparent;
 }
 
-.message-row.user {
-  flex-direction: row-reverse;
+.message.assistant {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.message-avatar {
+  flex-shrink: 0;
 }
 
 .avatar {
-  flex-shrink: 0;
-}
-
-.avatar-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  color: white;
 }
 
-.message-row.assistant .avatar-icon {
+.avatar.user {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.avatar.assistant {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-}
-
-.message-row.user .avatar-icon {
-  background: linear-gradient(135deg, #22c55e, #10b981);
-  color: white;
 }
 
 .message-content {
   flex: 1;
-  max-width: 75%;
+  min-width: 0;
+}
+
+.message-header {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.message-row.user .message-content {
-  align-items: flex-end;
-}
-
-.message-bubble {
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+.message-author {
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.5;
 }
 
-.message-row.user .message-bubble {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-  color: white;
+.message-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.message-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+.thinking-box {
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-hover);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background 0.15s ease;
+}
+
+.thinking-header:hover {
+  background: var(--bg-tertiary);
+}
+
+.thinking-body {
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
 }
 
 .message-text {
   font-size: 15px;
+  line-height: 1.8;
 }
 
 .message-text :deep(p) {
@@ -500,7 +565,7 @@ function renderMarkdown(content) {
 }
 
 .message-text :deep(p + p) {
-  margin-top: 0.5em;
+  margin-top: 1em;
 }
 
 .message-text :deep(ol), .message-text :deep(ul) {
@@ -514,80 +579,56 @@ function renderMarkdown(content) {
 
 .message-text :deep(strong) {
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .message-text :deep(code) {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 0.15em 0.4em;
-  border-radius: 3px;
+  background: var(--bg-tertiary);
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
+  color: #ec4899;
 }
 
 .message-text :deep(pre) {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 10px;
-  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  border-radius: 8px;
   overflow-x: auto;
   margin: 0.5em 0;
 }
 
-.message-meta {
+.message-text :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.typing-dots {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 4px;
+  gap: 5px;
+  padding: 10px 0;
 }
 
-.time {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.think-content {
-  margin-bottom: 12px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.think-title {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.think-text {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 6px;
-  white-space: pre-wrap;
-}
-
-.loading {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0;
-}
-
-.loading-dot {
+.typing-dots .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--text-muted);
-  animation: bounce 1.4s infinite ease-in-out both;
+  animation: typing 1.4s infinite ease-in-out both;
 }
 
-.loading-dot:nth-child(1) {
+.typing-dots .dot:nth-child(1) {
   animation-delay: -0.32s;
 }
 
-.loading-dot:nth-child(2) {
+.typing-dots .dot:nth-child(2) {
   animation-delay: -0.16s;
 }
 
-@keyframes bounce {
+@keyframes typing {
   0%, 80%, 100% {
     transform: scale(0);
   }
@@ -596,127 +637,145 @@ function renderMarkdown(content) {
   }
 }
 
-.chat-input {
-  flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
-  padding: 16px 20px;
-}
-
-.input-container {
-  max-width: 900px;
-  margin: 0 auto;
+.message-actions {
   display: flex;
-  gap: 12px;
-  align-items: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.input-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.message:hover .message-actions {
+  opacity: 1;
 }
 
-.action-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+.message-action-btn {
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
   cursor: pointer;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
-.action-btn:hover {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
+.message-action-btn:hover {
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
-.action-btn.active {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-  color: white;
+.input-area {
+  flex-shrink: 0;
+  padding: 20px;
+  background: var(--bg-primary);
 }
 
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.input-wrapper {
-  flex: 1;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  background: var(--bg-tertiary);
+.input-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 4px 4px 4px 16px;
-  transition: border-color 0.2s ease;
-  min-height: 40px;
+  border-radius: 16px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
 }
 
-.input-wrapper:focus-within {
+.input-container:focus-within {
   border-color: var(--accent-color);
 }
 
-.input-wrapper textarea {
+.input-tools {
+  display: flex;
+  padding: 12px 8px;
+}
+
+.tool-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tool-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.textarea-wrapper {
   flex: 1;
+  padding: 12px 0;
+}
+
+.textarea-wrapper textarea {
+  width: 100%;
   border: none;
   background: transparent;
   resize: none;
   font-size: 15px;
   font-family: inherit;
   color: var(--text-primary);
-  line-height: 1.5;
-  padding: 8px 0;
+  line-height: 1.6;
+  padding: 0;
   min-height: 24px;
-  max-height: 120px;
+  max-height: 200px;
   overflow-y: auto;
-  vertical-align: middle;
 }
 
-.input-wrapper textarea::placeholder {
+.textarea-wrapper textarea::placeholder {
   color: var(--text-muted);
-  vertical-align: middle;
-  line-height: 1.5;
 }
 
-.input-wrapper textarea:focus {
+.textarea-wrapper textarea:focus {
   outline: none;
 }
 
+.send-section {
+  display: flex;
+  padding: 12px 12px 12px 8px;
+}
+
 .send-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
   border: none;
+  border-radius: 8px;
   background: var(--accent-color);
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
 .send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: var(--accent-hover);
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-.is-loading {
+.send-btn.loading {
+  background: var(--text-muted);
+}
+
+.spinner-icon {
   animation: spin 1s linear infinite;
 }
 
@@ -727,5 +786,16 @@ function renderMarkdown(content) {
   to {
     transform: rotate(360deg);
   }
+}
+
+.input-footer-text {
+  max-width: 800px;
+  margin: 8px auto 0;
+  text-align: center;
+}
+
+.input-footer-text span {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 </style>

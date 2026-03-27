@@ -35,14 +35,6 @@
               <div class="stat-label">特征总数</div>
             </div>
             <div class="stat-box">
-              <div class="stat-value">{{ verifiedCount }}</div>
-              <div class="stat-label">已证实</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-value inferred">{{ inferredCount }}</div>
-              <div class="stat-label">推断特征</div>
-            </div>
-            <div class="stat-box">
               <div class="stat-value">{{ typeCount }}</div>
               <div class="stat-label">特征类型</div>
             </div>
@@ -68,27 +60,6 @@
           </div>
         </div>
 
-        <div class="legend-card">
-          <div class="card-title">节点图例</div>
-          <div class="legend-list">
-            <div class="legend-item">
-              <div class="legend-dot user"></div>
-              <span class="legend-text">用户</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot type"></div>
-              <span class="legend-text">特征类型</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot feature"></div>
-              <span class="legend-text">特征值</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot inferred"></div>
-              <span class="legend-text">推断特征</span>
-            </div>
-          </div>
-        </div>
       </aside>
 
       <main class="graph-main">
@@ -100,7 +71,6 @@
               <el-button size="small" class="mini-btn" @click="zoomOut">-</el-button>
             </div>
           </div>
-          <div class="graph-tip">💡 拖动节点到任意位置，滚轮缩放画布</div>
           <div ref="graphContainer" class="graph-container"></div>
         </div>
       </main>
@@ -147,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useProfileStore } from '@/stores/profile'
 import * as echarts from 'echarts'
 import { Refresh, FullScreen } from '@element-plus/icons-vue'
@@ -169,7 +139,7 @@ const verifiedCount = computed(() => {
 
 const inferredCount = computed(() => {
   if (!allFeatures.value) return 0
-  return allFeatures.value.filter(f => f.feature_type === '推断' || isFeatureInferred(f)).length
+  return allFeatures.value.filter(f => isFeatureInferred(f)).length
 })
 
 const typeCount = computed(() => {
@@ -196,25 +166,76 @@ const filteredFeatures = computed(() => {
   )
 })
 
+const nodeLegendItems = computed(() => {
+  const items = [
+    { id: 'user', name: '用户', color: NODE_COLORS.user }
+  ]
+  
+  const types = new Set()
+  ;(allFeatures.value || []).forEach(f => {
+    if (f.feature_type && !isFeatureInferred(f)) {
+      types.add(f.feature_type)
+    }
+  })
+  
+  Array.from(types).forEach(type => {
+    items.push({ id: `type_${type}`, name: type, color: getTypeColor(type) })
+  })
+  
+  const hasInferred = (allFeatures.value || []).some(f => isFeatureInferred(f))
+  if (hasInferred) {
+    items.push({ id: 'inferred', name: '推断特征', color: NODE_COLORS.inferred })
+  }
+  
+  return items
+})
+
+const NODE_COLORS = {
+  user: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+  userHex: '#6366f1',
+  feature: 'linear-gradient(135deg, #22c55e, #16a34a)',
+  featureHex: '#22c55e',
+  inferred: 'linear-gradient(135deg, #f59e0b, #d97706)',
+  inferredHex: '#f59e0b'
+}
+
 const TYPE_COLORS = {
   'MBTI': 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+  'MBTIHex': '#8b5cf6',
   '大五人格': 'linear-gradient(135deg, #2196f3, #64b5f6)',
+  '大五人格Hex': '#2196f3',
   '行为习惯': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  '行为习惯Hex': '#f59e0b',
   '潜在想法': 'linear-gradient(135deg, #ef4444, #f87171)',
+  '潜在想法Hex': '#ef4444',
   '兴趣爱好': 'linear-gradient(135deg, #22c55e, #4ade80)',
+  '兴趣爱好Hex': '#22c55e',
   '用户信息': 'linear-gradient(135deg, #ec4899, #f472b6)',
+  '用户信息Hex': '#ec4899',
+  '个人信息': 'linear-gradient(135deg, #ec4899, #f472b6)',
+  '个人信息Hex': '#ec4899',
   '价值观': 'linear-gradient(135deg, #14b8a6, #2dd4bf)',
-  '个人': 'linear-gradient(135deg, #6b7280, #9ca3af)',
+  '价值观Hex': '#14b8a6',
+  '个人': 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
+  '个人Hex': '#0ea5e9',
   '推断': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  '未知': 'linear-gradient(135deg, #6b7280, #9ca3af)'
+  '推断Hex': '#f59e0b',
+  '推断特征': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  '推断特征Hex': '#f59e0b',
+  '未知': 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
+  '未知Hex': '#0ea5e9'
 }
 
 function getTypeColor(type) {
   return TYPE_COLORS[type] || TYPE_COLORS['未知']
 }
 
+function getTypeColorHex(type) {
+  return TYPE_COLORS[`${type}Hex`] || TYPE_COLORS['未知Hex']
+}
+
 function isFeatureInferred(feature) {
-  return feature.is_inferred || feature.confidence < 0.7
+  return feature.feature_type === '推断' || feature.feature_type === '推断特征'
 }
 
 function formatTypeLabel(type) {
@@ -233,8 +254,8 @@ function formatTypeLabel(type) {
 }
 
 function getFeatureDisplayType(feature) {
-  if (feature.feature_type === '推断') {
-    return { type: '推断', label: '推断', color: getTypeColor('推断') }
+  if (isFeatureInferred(feature)) {
+    return { type: '推断', label: '推断', color: NODE_COLORS.inferred }
   }
   return { type: feature.feature_type, label: formatTypeLabel(feature.feature_type), color: getTypeColor(feature.feature_type) }
 }
@@ -251,17 +272,7 @@ function buildGraphData() {
     symbolSize: 65,
     draggable: true,
     itemStyle: {
-      color: {
-        type: 'radial',
-        x: 0.5,
-        y: 0.5,
-        r: 0.5,
-        colorStops: [{
-          offset: 0, color: '#6366f1'
-        }, {
-          offset: 1, color: '#4f46e5'
-        }]
-      },
+      color: NODE_COLORS.userHex,
       shadowColor: 'rgba(99, 102, 241, 0.5)',
       shadowBlur: 15
     },
@@ -274,9 +285,16 @@ function buildGraphData() {
     }
   })
   
-  const types = [...new Set(features.map(f => f.feature_type))]
+  const allFeatureTypes = new Set()
+  features.forEach(f => {
+    if (f.feature_type && !isFeatureInferred(f)) {
+      allFeatureTypes.add(f.feature_type)
+    }
+  })
+  
+  const types = Array.from(allFeatureTypes)
   types.forEach((type, idx) => {
-    const colorHex = extractHexFromGradient(TYPE_COLORS[type])
+    const colorHex = getTypeColorHex(type)
     nodes.push({
       id: `type_${type}`,
       name: type,
@@ -310,7 +328,7 @@ function buildGraphData() {
           x2: 1,
           y2: 0,
           colorStops: [{
-            offset: 0, color: '#6366f1'
+            offset: 0, color: NODE_COLORS.userHex
           }, {
             offset: 1, color: colorHex
           }]
@@ -322,8 +340,16 @@ function buildGraphData() {
   })
   
   features.forEach((feature, idx) => {
-    const isInferred = feature.feature_type === '推断' || isFeatureInferred(feature)
-    const color = isInferred ? '#f59e0b' : '#22c55e'
+    const isInferred = isFeatureInferred(feature)
+    let featureType = feature.feature_type
+    
+    if (isInferred) {
+      featureType = types.length > 0 ? types[0] : null
+    }
+    
+    const typeColorHex = featureType ? getTypeColorHex(featureType) : NODE_COLORS.inferredHex
+    const color = isInferred ? NODE_COLORS.inferredHex : typeColorHex
+    
     nodes.push({
       id: `feature_${idx}`,
       name: feature.feature_value,
@@ -348,18 +374,20 @@ function buildGraphData() {
       value: feature.confidence
     })
     
-    links.push({
-      source: `type_${feature.feature_type}`,
-      target: `feature_${idx}`,
-      value: feature.confidence,
-      lineStyle: {
-        width: Math.max(1, feature.confidence * 4),
-        color: color,
-        curveness: 0.3,
-        type: isInferred ? 'dashed' : 'solid',
-        opacity: isInferred ? 0.6 : 0.8
-      }
-    })
+    if (featureType && types.includes(featureType)) {
+      links.push({
+        source: `type_${featureType}`,
+        target: `feature_${idx}`,
+        value: feature.confidence,
+        lineStyle: {
+          width: Math.max(1, feature.confidence * 4),
+          color: color,
+          curveness: 0.3,
+          type: isInferred ? 'dashed' : 'solid',
+          opacity: isInferred ? 0.6 : 0.8
+        }
+      })
+    }
   })
   
   return { nodes, links }
@@ -519,6 +547,14 @@ onMounted(async () => {
   renderChart()
 })
 
+// 监听特征数据变化，重新渲染图表
+watch(allFeatures, async (newFeatures) => {
+  if (newFeatures && newFeatures.length > 0) {
+    await nextTick()
+    renderChart()
+  }
+}, { deep: true })
+
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   if (chart) {
@@ -573,6 +609,62 @@ onUnmounted(() => {
   grid-template-columns: 280px 1fr 320px;
   gap: 20px;
   height: calc(100vh - 180px);
+  min-height: 500px;
+}
+
+@media (max-width: 1400px) {
+  .graph-content {
+    grid-template-columns: 260px 1fr 280px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .graph-content {
+    grid-template-columns: 250px 1fr;
+  }
+  
+  .features-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .graph-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .graph-sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    overflow-y: visible;
+  }
+  
+  .features-sidebar {
+    display: block;
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 600px) {
+  .knowledge-graph-view {
+    padding: 12px;
+  }
+  
+  .graph-content {
+    gap: 12px;
+  }
+  
+  .graph-sidebar {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
 }
 
 .graph-sidebar,

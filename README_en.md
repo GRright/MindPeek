@@ -24,7 +24,7 @@ MindPeek transforms your conversations into deep understanding of you:
 | **FeatureDiscovery Agent** | Automatically discover your personality, habits, preferences | No manual input needed, AI learns automatically |
 | **LatentIntent Agent** | Identify your hidden needs and latent intentions | Know what you need before you do |
 | **CorrelationAgent** | Discover correlations between features | Build a complete user profile network |
-| **DeepThink Agent** | Deep psychological analysis | Explore the psychology behind your words |
+| **MBTI/BigFive Agent** | Personality trait analysis | Deep understanding of your personality dimensions |
 
 ## 🚀 Why Choose MindPeek?
 
@@ -76,9 +76,11 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Correlation │  │ DeepThink │ │
-│  │ Discovery  │  │   Intent   │  │   Agent    │  │   Agent   │ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+│                                                                      │
+│              ⚡ DeepThink - Task Mode                                │
 └──────────────────────────────────────────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
@@ -125,7 +127,8 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
 ```bash
 cd MindPeek
 pip install -r requirements.txt
-cd frontend && npm install
+cd frontend
+npm install
 ```
 
 ### 2. Configure System
@@ -139,22 +142,33 @@ Edit `config/config.json` with your configuration:
 ```json
 {
     "llm_providers": {
-        "deepseek": {
+        "openai": {
             "enabled": true,
             "api_key": "your_api_key",
-            "api_url": "https://api.deepseek.com/v1",
-            "model": "deepseek-chat"
+            "api_url": "your_url",
+            "model": "your_model_name"
         }
     },
-    "default_provider": "deepseek",
+    "default_provider": "openai",
     "memo_base": {
         "enabled": true,
-        "project_url": "http://your-memobase:8019",
+        "project_url": "your_url",
         "api_key": "your_memobase_key"
     },
+    "feature_extraction": {  # Feature confidence configuration (default values are recommended)
+        "confidence_threshold": 0.6,
+        "auto_update_on_new_message": true,
+        "max_history_messages": 100,
+        "enable_knowledge_graph": true,
+        "enable_multi_agent": true,
+        "decay": {
+            "enabled": true,
+            "half_life_days": 30,
+            "min_confidence": 0.3
+        }
+    },
     "agent": {
-        "max_concurrent_agents": 3,
-        "comment": "Max concurrent agents, adjust based on server performance, recommended 1-5"
+        "max_concurrent_agents": 3  # Max concurrent agents, adjust based on server performance, recommended 1-5
     }
 }
 ```
@@ -188,18 +202,24 @@ MindPeek/
 ├── backend/
 │   ├── api/
 │   │   └── routes.py           # API routes
+│   ├── core/
+│   │   └── config.py          # Configuration management
 │   ├── models/
 │   │   ├── database.py         # Database models
 │   │   └── schemas.py          # Pydantic models
 │   ├── services/
 │   │   ├── llm_provider.py     # Multi-provider support
 │   │   ├── profile_service.py  # User profiling service
+│   │   ├── feature_merger.py   # ✨ Feature intelligent merging
 │   │   └── memo_base_service.py # Remote storage
 │   ├── agents/
 │   │   ├── chat_graph.py       # 🤖 LangGraph chat graph
 │   │   ├── feature_discovery.py # 🔮 Feature discovery agent
+│   │   ├── personal_info_agent.py # 🎯 Personal info extraction
 │   │   ├── async_orchestrator.py # ⚡ Async task orchestration
 │   │   └── agent_engine.py     # Agent engine
+│   ├── utils/
+│   │   └── database.py         # Database utilities
 │   └── knowledge_graph/
 │       └── graph.py           # 🔗 Knowledge graph (real-time inference)
 ├── frontend/
@@ -207,10 +227,11 @@ MindPeek/
 │   │   ├── views/             # Page components
 │   │   ├── stores/            # Pinia state
 │   │   ├── api/               # API calls
+│   │   ├── components/        # Common components
 │   │   └── router/            # Route configuration
 │   └── package.json
-└── data/
-    └── permir.db              # SQLite database
+├── tests/
+│   └── test_core.py            # Core functionality tests
 ```
 
 ## 🎨 Features

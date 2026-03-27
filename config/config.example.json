@@ -1,11 +1,11 @@
 {
     "llm_provider": {
-        "api_url": "your_api_url_here",
+        "api_url": "your_url",
         "api_key": "your_api_key_here",
         "model": "model_name_here"
     },
     "memo_base": {
-        "project_url": "memo_base_url_here",
+        "project_url": "your_url",
         "api_key": "your_memobase_key_here"
     },
     "feature_extraction": {
