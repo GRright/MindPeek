@@ -7,7 +7,16 @@
   <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
 </p>
 
-> *MindPeek is not an ordinary chatbot —— it's an AI partner that truly understands you. Through multi-turn conversations and advanced AI Agent technology, MindPeek gets to know you better over time, becoming an indispensable intelligent assistant.*
+> **🧠 MindPeek | AI That Truly Understands Your Users**
+>
+> Say goodbye to traditional user profiling.
+> MindPeek leverages LLM to decode every conversation—automatically extracting personality, preferences, and latent needs to build continuously evolving user profiles.
+>
+> **✨ Core Capabilities**
+> - Multi-dimensional extraction: Personality traits / Values / Latent needs / Emotional states
+> - Multi-Agent architecture: Self-evolving precision that gets smarter over time
+>
+> User-centric AI starts here.
 
 ---
 

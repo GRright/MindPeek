@@ -7,7 +7,16 @@
   <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
 </p>
 
-> *MindPeek 不是普通的聊天机器人 —— 它是一个能够真正理解你的 AI 伙伴。通过多轮对话和先进的 AI Agent 技术，MindPeek 会越来越懂你，成为你不可或缺的智能助手。*
+> **🧠 MindPeek | 让 AI 真正读懂人心**
+>
+> 告别传统用户画像方法！
+> MindPeek 通过 LLM 深度解析，从每轮对话中自动提取性格、偏好、潜在需求——构建持续进化的个人画像。
+>
+> **✨ 核心能力**
+> - 多维度特征提取：性格特点 / 价值观 / 潜在想法 / 情感状态等
+> - 多 Agent 协作架构：自我进化，越用越懂你
+>
+> 懂用户的 AI，从这里开始。
 
 ---
 
