@@ -60,7 +60,7 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
   - Slow logarithmic decay after stability period
   - Eventually converges to minimum threshold (0.3)
 
-![Decay Function Diagram](https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Decay%20function%20chart%2C%20X-axis%20represents%20time%20%28days%29%2C%20Y-axis%20represents%20confidence%20%280-1%29.%20The%20chart%20includes%3A%201.%20Stability%20period%20%280-30%20days%29%3A%20confidence%20remains%20constant%20at%200.9%3B%202.%20Logarithmic%20decay%20period%20%28after%2030%20days%29%3A%20confidence%20slowly%20decreases%3B%203.%20Minimum%20threshold%20line%3A%20confidence%20eventually%20approaches%200.3.%20Use%20dark%20blue%20lines%2C%20professional%20data%20visualization%20style%2C%20clear%20axis%20labels%2C%20English%20labels.&image_size=landscape_16_9)
+![Decay Function Diagram](docs/images/decay_function_en.png)
 
 ### 🔗 Social Relationship Awareness
 - Automatically identify people mentioned in conversations (family, friends, colleagues, etc.)

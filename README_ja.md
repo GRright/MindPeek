@@ -60,6 +60,8 @@ LangGraph上に構築されたIntelligent Agentネットワーク、複数の専
   - 安定期間後は緩やかな対数減衰を開始
   - 最終的に最小閾値（0.3）に収束
 
+![減衰関数図](docs/images/decay_function_en.png)
+
 ```
 C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ```
