@@ -7,74 +7,79 @@
   <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
 </p>
 
-> **🧠 MindPeek | AI That Truly Understands Your Users**
->
-> Say goodbye to traditional user profiling.
-> MindPeek leverages LLM to decode every conversation—automatically extracting personality, preferences, and latent needs to build continuously evolving user profiles.
->
-> **✨ Core Capabilities**
-> - 🔮 **AI Behavior Prediction**: Predict user's future behaviors and thoughts
-> - Multi-dimensional extraction: Personality traits / Values / Latent needs / Emotional states
-> - Multi-Agent architecture: Self-evolving precision that gets smarter over time
-> - Smart caching optimization: 24-hour cache + automatic update on feature changes
->
-> User-centric AI starts here.
+<p align="center">
+  <strong>AI That Truly Understands Your Users</strong>
+</p>
 
----
-
-**🌐 Language**: [English](README_en.md) | [中文](README.md) | [日本語](README_ja.md)
+<p align="center">
+  <a href="README_en.md">English</a> | <a href="README.md">中文</a> | <a href="README_ja.md">日本語</a>
+</p>
 
 ---
 
 ## ✨ Core Features
 
-MindPeek transforms your conversations into deep understanding of you:
+### 🧠 Intelligent User Profiling
 
-| 🔮 Agent | 💡 Function | 🎯 Value |
-|----------|-------------|-----------|
-| **Prediction Agent** | Predict user's future behaviors and thoughts | Know what you'll do before you do it |
-| **FeatureDiscovery Agent** | Automatically discover your personality, habits, preferences | No manual input needed, AI learns automatically |
-| **LatentIntent Agent** | Identify your hidden needs and latent intentions | Know what you need before you do |
-| **CorrelationAgent** | Discover correlations between features | Build a complete user profile network |
-| **MBTI/BigFive Agent** | Personality trait analysis | Deep understanding of your personality dimensions |
+MindPeek leverages LLM to decode conversations and build continuously evolving user profiles:
 
-## 🚀 Why Choose MindPeek?
+| Dimension | Description |
+|-----------|-------------|
+| **Personality** | MBTI, Big Five analysis |
+| **Behavior** | Habits, decision patterns |
+| **Interests** | Entertainment, learning preferences |
+| **Values** | Life philosophy, worldview |
+| **Emotions** | Current mood, psychological needs |
+| **Relationships** | Social network, interaction patterns |
 
-### 🤖 Multi-Agent Collaboration System
-Intelligent Agent network built on LangGraph, with multiple specialized agents working together:
-- **Async Processing**: Smooth conversations, background tasks execute automatically
-- **Smart Routing**: Automatically decide when to use personalization vs. general responses
-- **Parallel Analysis**: Feature extraction, correlation analysis, and need discovery run simultaneously
+### 🔮 AI Behavior Prediction
 
-### 🧠 Knows You Better Than You Know Yourself
-- **Active Learning**: Automatically discover your MBTI, behavioral habits, and interests through conversation
-- **Hidden Need Mining**: Discover what you don't say but actually need
-- **Dynamic Profiling**: Profile becomes more accurate as conversations deepen
+Based on user profiles, predict future behaviors and thoughts:
+- **Behavior Prediction**: Actions the user might take
+- **Thought Prediction**: Ideas the user might have
+- **Emotion Prediction**: Emotional states the user might experience
+- **Decision Prediction**: Choices the user might make
 
-### 🔄 Intelligent Feature Decay Mechanism
-- **LLM-Evaluated Stability**: Each feature's stability is judged by the large model
-- **Personalized Decay Curve**: Stable features decay slowly, volatile features decay fast
-- **Lazy Update Strategy**: Calculate decay only when user accesses, reducing database writes
-- **Logarithmic Decay Function**:
-  - No decay during stability period
-  - Slow logarithmic decay after stability period
-  - Eventually converges to minimum threshold (0.3)
+### 💬 Personalized Conversation
 
-![Decay Function Diagram](docs/images/decay_function_en.png)
+AI provides thoughtful responses based on your profile:
+- Naturally incorporates your interests and habits
+- Adjusts tone based on your personality
+- Anticipates your needs proactively
+- Converses naturally like an old friend
 
-### 🔗 Social Relationship Awareness
-- Automatically identify people mentioned in conversations (family, friends, colleagues, etc.)
-- Understand your interpersonal interaction patterns
-- Build a complete social relationship map
+---
 
-### ⚡ Production-Grade Performance
-- Async task queue with up to 3 agents executing in parallel
-- Zero-latency user conversation experience
-- Automatic background task scheduling
+## 🚀 Quick Start
 
-### 💾 Dual Storage Architecture
-- **SQLite Local Storage**: Core user data, conversation history, feature information
-- **MemoBase Remote Sync**: Cross-device feature sync, cloud backup
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+cd frontend && npm install
+```
+
+### 2. Configure System
+
+```bash
+copy config\config.example.json config\config.json
+```
+
+Edit `config/config.json` with your LLM API configuration.
+
+### 3. Start Services
+
+```bash
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+cd frontend && npm run dev
+```
+
+### 4. Get Started
+
+- 🌐 Frontend: http://localhost:3000
+- 📖 API Docs: http://localhost:8000/docs
+
+---
 
 ## 📊 System Architecture
 
@@ -99,8 +104,6 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
 │   │       BigFive           │  │          Agent              │  │
 │   │        Agent            │  │                             │  │
 │   └─────────────────────────┘  └─────────────────────────────┘  │
-│                                                                  │
-│              ⚡ DeepThink - Task Mode                             │
 └─────────────────────────────────────────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
@@ -109,222 +112,60 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
 │    💾 SQLite   │  │   📡 MemoBase  │  │       🧠 LLM        │
 │   Local Store  │  │   Remote Sync  │  │   (DeepSeek etc.)   │
 └─────────────────┘  └─────────────────┘  └─────────────────────┘
-                                │
-                                ▼
-                    ┌───────────────────────────┐
-                    │      🧠 Knowledge Graph   │
-                    │   Predefined Psychology   │
-                    │   Knowledge Base +        │
-                    │   Real-time Inference      │
-                    └───────────────────────────┘
 ```
+
+---
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **FastAPI** - High-performance async web framework
-- **LangGraph** - Multi-Agent orchestration framework
-- **SQLAlchemy** - Async ORM
-- **Knowledge Graph** - Predefined psychology knowledge base + real-time inference
-- **Pydantic** - Data validation
+| Layer | Technology |
+|-------|------------|
+| **Backend** | FastAPI + LangGraph + SQLAlchemy |
+| **Frontend** | Vue 3 + Element Plus + ECharts |
+| **AI** | OpenAI Compatible API + Sentence Transformers |
+| **Storage** | SQLite + MemoBase Cloud Sync |
 
-### Frontend
-- **Vue 3** - Composition API
-- **Element Plus** - UI component library
-- **Pinia** - State management
-- **ECharts** - Data visualization
-- **vis-network** - Knowledge graph visualization
+---
 
-### AI Capabilities
-- **OpenAI Compatible Interface** - Supports all major LLMs
-- **DeepSeek** - Default configuration
-- **Qwen / Zhipu AI / Ollama** - All supported
+## 🆕 Latest Features
 
-## 🚀 Quick Start
+### Smart Intent Classification
+Intelligent intent classification based on **Embedding semantic understanding**:
+- Hybrid approach: Rule-first + Embedding semantic judgment
+- High performance: 90%+ requests respond in milliseconds
+- Smart understanding: Accurate recognition of synonyms and variants
 
-### 1. Install Dependencies
+### Feature Decay Mechanism
+![Decay Function Diagram](docs/images/decay_function_en.png)
 
-```bash
-cd MindPeek
-pip install -r requirements.txt
-cd frontend
-npm install
-```
+- **Stability Period**: Feature confidence remains unchanged
+- **Decay Period**: Logarithmic decay, eventually converging to minimum threshold
+- **Lazy Update**: Calculate on access, reduce database writes
 
-### 2. Configure System
-
-```bash
-copy config\config.example.json config\config.json
-```
-
-Edit `config/config.json` with your configuration:
-
-```json
-{
-    "llm_providers": {
-        "openai": {
-            "enabled": true,
-            "api_key": "your_api_key",
-            "api_url": "your_url",
-            "model": "your_model_name"
-        }
-    },
-    "default_provider": "openai",
-    "memo_base": {
-        "enabled": true,
-        "project_url": "your_url",
-        "api_key": "your_memobase_key"
-    },
-    "feature_extraction": {  # Feature confidence configuration (default values are recommended)
-        "confidence_threshold": 0.6,
-        "auto_update_on_new_message": true,
-        "max_history_messages": 100,
-        "enable_knowledge_graph": true,
-        "enable_multi_agent": true,
-        "decay": {
-            "enabled": true,
-            "half_life_days": 30,
-            "min_confidence": 0.3
-        }
-    },
-    "agent": {
-        "max_concurrent_agents": 3  # Max concurrent agents, adjust based on server performance, recommended 1-5
-    }
-}
-```
-
-### 3. Start Services
-
-```bash
-# Backend (Terminal 1)
-cd MindPeek
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Frontend (Terminal 2)
-cd MindPeek/frontend
-npm run dev
-```
-
-### 4. Start Exploring
-
-- 🌐 Frontend: http://localhost:3000
-- 📖 API Docs: http://localhost:8000/docs
+---
 
 ## 📁 Project Structure
 
 ```
 MindPeek/
-├── main.py                     # FastAPI entry point
-├── requirements.txt            # Python dependencies
-├── config/
-│   ├── config.json             # Runtime configuration
-│   └── config.example.json     # Configuration template
 ├── backend/
-│   ├── api/
-│   │   └── routes.py           # API routes
-│   ├── core/
-│   │   └── config.py          # Configuration management
-│   ├── models/
-│   │   ├── database.py         # Database models
-│   │   └── schemas.py          # Pydantic models
-│   ├── services/
-│   │   ├── llm_provider.py     # Multi-provider support
-│   │   ├── profile_service.py  # User profiling service
-│   │   ├── feature_merger.py   # ✨ Feature intelligent merging
-│   │   └── memo_base_service.py # Remote storage
-│   ├── agents/
-│   │   ├── chat_graph.py       # 🤖 LangGraph chat graph
-│   │   ├── feature_discovery.py # 🔮 Feature discovery agent
-│   │   ├── personal_info_agent.py # 🎯 Personal info extraction
-│   │   ├── async_orchestrator.py # ⚡ Async task orchestration
-│   │   ├── agent_engine.py     # Agent engine
-│   │   └── prediction_agent.py # 🔮 AI behavior prediction Agent
-│   ├── utils/
-│   │   └── database.py         # Database utilities
-│   └── knowledge_graph/
-│       └── graph.py           # 🔗 Knowledge graph (real-time inference)
-├── frontend/
-│   ├── src/
-│   │   ├── views/             # Page components
-│   │   ├── stores/            # Pinia state
-│   │   ├── api/               # API calls
-│   │   ├── components/        # Common components
-│   │   └── router/            # Route configuration
-│   └── package.json
-├── tests/
-│   └── test_core.py            # Core functionality tests
+│   ├── agents/          # Agent modules
+│   │   ├── chat_graph.py          # Conversation flow
+│   │   ├── feature_discovery.py   # Feature discovery
+│   │   ├── prediction_agent.py    # Behavior prediction
+│   │   └── intent_classifier.py   # Intent classification
+│   ├── services/        # Service layer
+│   ├── knowledge_graph/ # Knowledge graph
+│   └── models/          # Data models
+├── frontend/            # Vue 3 frontend
+└── config/              # Configuration files
 ```
 
-## 🎨 Features
-
-### 💬 Smart Chat
-- Multi-turn conversations with automatic context understanding
-- Personalized responses based on your features
-- Optional deep thinking mode
-- Streaming output with real-time thought process display
-- **Conversation-first design**: User conversations are completely non-blocking, profile building executes asynchronously in the background
-
-### 👤 User Profile
-- MBTI personality analysis
-- Big Five personality radar chart
-- Behavioral habit insights
-- Hidden need discovery
-- Personal information tracking (name, occupation, residence, etc.)
-- Social relationship management
-- **🔮 Behavior Prediction**: AI intelligently predicts the user's most likely future behaviors and thoughts (Top 10)
-
-### 🔗 Knowledge Graph
-- **Brand new ECharts visualization**: Cool animation effects, smooth interaction experience
-- **Feature Overview View**: Clearly displays the distribution and correlations of feature types
-- Real-time inference based on predefined psychology knowledge base
-- Feature correlation visualization
-- Dynamic inference of potential features
-- Each feature type displayed independently with clear color differentiation
-- Responsive design adapting to different screen sizes
-- Nodes support free dragging, zooming, fisheye magnifier effects
-
-### 📊 Feature Distribution Analysis
-- **Bar chart visualization**: Intuitively displays the quantity distribution of each feature type
-- **Smart sorting**: Automatically sorts from most to least features
-- **Confidence display**: Shows average confidence for each type
-- **Proportion analysis**: Clearly displays the proportion of each type
-- **Interactive tooltips**: Hover to display detailed statistics
-
-### 🔮 AI Behavior Prediction Engine (NEW)
-MindPeek introduces advanced prediction capabilities to proactively predict user's future behaviors and thoughts:
-
-#### Smart Prediction Mechanism
-- **Feature-based intelligent inference**: Deep analysis combining user's historical features and behavioral patterns
-- **Multi-dimensional prediction**: Covers behavior, thoughts, emotions, decisions, and more
-- **Probability scoring**: Each prediction comes with confidence assessment (0-100%)
-- **Time range labeling**: Short-term (1-7 days), medium-term (1-4 weeks), long-term (1-3 months)
-- **Observable signals**: Provides specific verification indicators for predictions
-
-#### Automatic Update Strategy
-- **Smart caching**: Prioritizes cached results within 24 hours
-- **Feature change detection**: Automatically re-predicts when user feature count changes
-- **Silent generation**: Executes automatically in background when user visits page, no manual operation needed
-- **Top 10 display**: Shows the 10 most likely predictions sorted by probability
-
-#### Prediction Categories
-- **Behavior Prediction**: Specific actions the user may take
-- **Thought Prediction**: Thoughts or ideas the user may have
-- **Emotion Prediction**: Emotional states the user may experience
-- **Decision Prediction**: Choices or decisions the user may make
-
-### 🔍 Feature Management
-- Intelligent feature deduplication and merging
-- Feature search functionality for quick positioning
-- Infinite scroll loading for smooth experience
-- Feature verification count tracking
-- Feature decay visualization
-- Update time recording
+---
 
 ## 📜 License
 
-GNU General Public License v3.0 (GPL-3.0)
-
-See [LICENSE](LICENSE) for full license text.
+[GNU General Public License v3.0](LICENSE)
 
 ---
 
