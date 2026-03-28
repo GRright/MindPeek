@@ -86,7 +86,7 @@ class ChatGraph:
 请直接回答。"""
 
     def _should_use_personalization(self, state: ChatState) -> str:
-        """判断是否使用个性化 - 增强版，更智能的判断逻辑"""
+        """判断是否使用个性化 - 混合智能方法（规则 + Embedding）"""
         message_lower = state.message.lower()
 
         general_keywords = [
@@ -97,7 +97,8 @@ class ChatGraph:
             "math", "what is", "how to", "why", "explain",
             "translate", "weather", "time", "calculate",
             "公式", "定理", "历史", "地理", "科学",
-            "百科", "知识", "概念"
+            "百科", "知识", "概念", "定义是", "原理",
+            "函数", "算法", "步骤", "方法是", "原因是"
         ]
 
         personal_keywords = [
@@ -108,26 +109,42 @@ class ChatGraph:
             "我的问题是", "我的烦恼", "我感到", "我的心情",
             "推荐", "建议我", "适合我", "帮我选",
             "我该怎么办", "我该怎么做", "给我推荐",
-            "我应该", "对我", "根据我的"
+            "我应该", "对我", "根据我的", "我想知道我的",
+            "我的优势", "我的劣势", "我擅长", "我不懂",
+            "我害怕", "我担心", "我期望", "我想要成为"
         ]
 
         emotional_keywords = [
             "难过", "开心", "焦虑", "压力", "烦恼",
             "困扰", "迷茫", "孤独", "无聊", "累",
-            "心情不好", "情绪", "不开心", "郁闷"
+            "心情不好", "情绪", "不开心", "郁闷",
+            "沮丧", "失落", "紧张", "害怕", "恐惧",
+            "愤怒", "生气", "高兴", "快乐", "兴奋",
+            "感动", "温暖", "幸福", "满足", "欣慰"
         ]
 
-        for keyword in personal_keywords:
+        for keyword in emotional_keywords:
             if keyword in message_lower:
                 return "use_personalization"
 
-        for keyword in emotional_keywords:
+        for keyword in personal_keywords:
             if keyword in message_lower:
                 return "use_personalization"
 
         for keyword in general_keywords:
             if keyword in message_lower:
                 return "general"
+
+        try:
+            from .intent_classifier import get_intent_classifier
+            classifier = get_intent_classifier()
+            intent, confidence = classifier.classify(state.message)
+            if confidence > 0.6:
+                return intent
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"意图分类失败，使用默认判断: {str(e)}")
 
         return "use_personalization"
 
