@@ -42,20 +42,39 @@ class ChatGraph:
         self.graph = self._build_graph()
 
     def _build_personalization_prompt(self, state: ChatState) -> str:
-        """构建个性化提示词"""
+        """构建个性化提示词 - 增强版，更智能地利用用户画像"""
         if state.has_context and state.use_personalization:
-            return f"""你是一个友善的AI助手，正在与用户进行对话。
+            return f"""你是一个友善、贴心的AI助手，正在与用户进行对话。你已经通过之前的对话了解了这位用户的一些特征信息。
 
-## 用户信息
-你已经了解了该用户的一些特征信息：{state.user_context}
+{state.user_context}
 
-## 回复要求
-1. 首先判断用户的问题是否与个人化话题相关（如性格、情感、偏好、习惯、自我认知等）
-2. 如果相关，结合用户特征给出个性化回答
-3. 如果是通用知识性问题（如定义、解释、方法、计算等），直接给出清晰回答
-4. 保持回复简洁，自然，像朋友间的对话
+## 个性化回复指南
+请根据以上用户画像信息，提供更加贴心、个性化的回复：
 
-请直接回答，不需要在回复中说明你的判断过程。"""
+1. **自然融入用户特征**：
+   - 如果用户有明确的兴趣爱好，可以在相关话题中自然地提及
+   - 如果用户有特定的行为习惯，可以理解并尊重这些习惯
+   - 如果用户有特定的价值观，在讨论相关话题时予以理解和尊重
+
+2. **情感共鸣**：
+   - 根据用户的情感状态和性格特点，调整回复的语气和风格
+   - 对于内向型用户，可以更加温和、耐心
+   - 对于外向型用户，可以更加活泼、热情
+
+3. **预判用户需求**：
+   - 根据用户的潜在想法和需求，主动提供相关建议
+   - 结合用户的职业和生活背景，提供更有针对性的帮助
+
+4. **保持自然**：
+   - 不要生硬地提及"根据你的画像"或"基于你的特征"
+   - 让个性化融入回复中，像老朋友一样自然对话
+   - 如果是通用知识性问题，直接给出清晰回答即可
+
+5. **尊重隐私**：
+   - 不要过度暴露你对用户的了解
+   - 在用户主动提及相关话题时再深入讨论
+
+请直接回答用户的问题，不需要在回复中说明你的判断过程。"""
         else:
             return """你是一个友善的AI助手，正在与用户进行对话。
 
@@ -67,7 +86,7 @@ class ChatGraph:
 请直接回答。"""
 
     def _should_use_personalization(self, state: ChatState) -> str:
-        """判断是否使用个性化"""
+        """判断是否使用个性化 - 增强版，更智能的判断逻辑"""
         message_lower = state.message.lower()
 
         general_keywords = [
@@ -76,7 +95,9 @@ class ChatGraph:
             "搜索", "查找", "翻译", "天气", "时间",
             "写作文", "写文章", "帮我写", "代码", "程序",
             "math", "what is", "how to", "why", "explain",
-            "translate", "weather", "time", "calculate"
+            "translate", "weather", "time", "calculate",
+            "公式", "定理", "历史", "地理", "科学",
+            "百科", "知识", "概念"
         ]
 
         personal_keywords = [
@@ -84,10 +105,23 @@ class ChatGraph:
             "我的性格", "我是", "我的爱好", "我的习惯",
             "你觉得我", "我是怎么样的人", "我的特点",
             "我喜欢做", "我经常", "我总是", "我有时候",
-            "我的问题是", "我的烦恼", "我感到", "我的心情"
+            "我的问题是", "我的烦恼", "我感到", "我的心情",
+            "推荐", "建议我", "适合我", "帮我选",
+            "我该怎么办", "我该怎么做", "给我推荐",
+            "我应该", "对我", "根据我的"
+        ]
+
+        emotional_keywords = [
+            "难过", "开心", "焦虑", "压力", "烦恼",
+            "困扰", "迷茫", "孤独", "无聊", "累",
+            "心情不好", "情绪", "不开心", "郁闷"
         ]
 
         for keyword in personal_keywords:
+            if keyword in message_lower:
+                return "use_personalization"
+
+        for keyword in emotional_keywords:
             if keyword in message_lower:
                 return "use_personalization"
 
@@ -110,7 +144,7 @@ class ChatGraph:
         return state
 
     async def load_context(self, state: ChatState) -> ChatState:
-        """加载用户上下文"""
+        """加载用户上下文 - 增强版，加载更全面的用户画像信息"""
         try:
             features, _ = await self.profile_service.get_user_features(state.user_id)
 
@@ -119,7 +153,28 @@ class ChatGraph:
                 state.user_context = ""
                 return state
 
-            context_parts = ["\n## 用户画像信息（供参考）"]
+            context_parts = ["\n## 用户画像信息"]
+            
+            personal_info = {}
+            for f in features:
+                if f.feature_type == "个人信息" and f.confidence >= 0.7:
+                    if "姓名" in f.feature_value:
+                        personal_info["name"] = f.feature_value.replace("姓名：", "").strip()
+                    elif "职业" in f.feature_value:
+                        personal_info["occupation"] = f.feature_value.replace("职业：", "").strip()
+                    elif "居住地" in f.feature_value:
+                        personal_info["location"] = f.feature_value.replace("居住地：", "").strip()
+            
+            if personal_info:
+                info_strs = []
+                if personal_info.get("name"):
+                    info_strs.append(f"姓名: {personal_info['name']}")
+                if personal_info.get("occupation"):
+                    info_strs.append(f"职业: {personal_info['occupation']}")
+                if personal_info.get("location"):
+                    info_strs.append(f"居住地: {personal_info['location']}")
+                if info_strs:
+                    context_parts.append(f"- 基本信息: {', '.join(info_strs)}")
 
             mbti_features = [f for f in features if f.feature_type == "MBTI" and f.confidence >= 0.6]
             if mbti_features:
@@ -129,7 +184,7 @@ class ChatGraph:
             big_five_features = [f for f in features if f.feature_type == "大五人格" and f.confidence >= 0.6]
             if big_five_features:
                 traits = []
-                for f in big_five_features[:3]:
+                for f in big_five_features[:5]:
                     trait_name = f.feature_value.split(':')[0] if ':' in f.feature_value else f.feature_value
                     traits.append(f"{trait_name}({f.confidence:.0%})")
                 if traits:
@@ -137,26 +192,41 @@ class ChatGraph:
 
             behavior_features = [f for f in features if f.feature_type == "行为习惯" and f.confidence >= 0.6]
             if behavior_features:
-                habits = [f.feature_value for f in behavior_features[:3]]
+                habits = [f.feature_value for f in behavior_features[:5]]
                 context_parts.append(f"- 行为习惯: {', '.join(habits)}")
 
             interest_features = [f for f in features if f.feature_type == "兴趣爱好" and f.confidence >= 0.6]
             if interest_features:
-                interests = [f.feature_value for f in interest_features[:3]]
+                interests = [f.feature_value for f in interest_features[:5]]
                 context_parts.append(f"- 兴趣爱好: {', '.join(interests)}")
 
             value_features = [f for f in features if f.feature_type == "价值观" and f.confidence >= 0.6]
             if value_features:
-                values = [f.feature_value for f in value_features[:2]]
+                values = [f.feature_value for f in value_features[:3]]
                 context_parts.append(f"- 价值观: {', '.join(values)}")
 
             intent_features = [f for f in features if f.feature_type == "潜在想法" and f.confidence >= 0.7]
             if intent_features:
-                intents = [f.feature_value for f in intent_features[:2]]
-                context_parts.append(f"- 潜在需求: {', '.join(intents)}")
+                intents = [f.feature_value for f in intent_features[:3]]
+                context_parts.append(f"- 潜在需求/想法: {', '.join(intents)}")
+
+            emotion_features = [f for f in features if f.feature_type == "情感状态" and f.confidence >= 0.6]
+            if emotion_features:
+                emotions = [f.feature_value for f in emotion_features[:3]]
+                context_parts.append(f"- 情感状态: {', '.join(emotions)}")
+
+            social_features = [f for f in features if f.feature_type == "社会关系" and f.confidence >= 0.6]
+            if social_features:
+                socials = [f.feature_value for f in social_features[:3]]
+                context_parts.append(f"- 社会关系: {', '.join(socials)}")
+
+            inferred_features = [f for f in features if f.feature_type == "推断特征" and f.confidence >= 0.6]
+            if inferred_features:
+                inferred = [f.feature_value for f in inferred_features[:3]]
+                context_parts.append(f"- 推断特征: {', '.join(inferred)}")
 
             if len(context_parts) > 1:
-                state.user_context = "\n".join(context_parts) + "\n\n请结合以上用户画像信息，提供更个性化的回答。"
+                state.user_context = "\n".join(context_parts)
                 state.has_context = True
             else:
                 state.has_context = False
