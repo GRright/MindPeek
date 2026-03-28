@@ -18,7 +18,7 @@
     </div>
 
     <div class="graph-content">
-      <aside class="graph-sidebar">
+      <aside class="left-sidebar">
         <div class="user-profile-card">
           <div class="user-avatar">
             <div class="avatar-ring">
@@ -60,9 +60,18 @@
           </div>
         </div>
 
+        <div class="legend-card">
+          <div class="card-title">图例说明</div>
+          <div class="legend-list">
+            <div v-for="item in nodeLegendItems" :key="item.id" class="legend-item">
+              <div class="legend-dot" :style="{ background: item.color }"></div>
+              <span class="legend-name">{{ item.name }}</span>
+            </div>
+          </div>
+        </div>
       </aside>
 
-      <main class="graph-main">
+      <main class="main-content">
         <div class="graph-card">
           <div class="card-header">
             <span class="card-title">🌀 知识图谱</span>
@@ -74,44 +83,6 @@
           <div ref="graphContainer" class="graph-container"></div>
         </div>
       </main>
-
-      <aside class="features-sidebar">
-        <div class="features-detail-card">
-          <div class="card-header">
-            <span class="card-title">📋 详细特征</span>
-            <span class="feature-count">{{ filteredFeatures.length }} 个</span>
-          </div>
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索特征..."
-            clearable
-            prefix-icon="Search"
-            class="search-input"
-            size="small"
-          />
-          <div class="features-list">
-            <div
-              v-for="(feature, index) in filteredFeatures"
-              :key="index"
-              class="feature-item"
-              :style="{ animationDelay: (index * 0.03) + 's' }"
-            >
-              <div class="feature-type-badge" :style="{ background: getFeatureDisplayType(feature).color }">
-                {{ getFeatureDisplayType(feature).label }}
-              </div>
-              <div class="feature-content">
-                <div class="feature-value">{{ feature.feature_value }}</div>
-                <div class="feature-meta">
-                  <span class="feature-confidence">置信度: {{ (feature.confidence * 100).toFixed(0) }}%</span>
-                  <span class="feature-verification" v-if="feature.verification_count > 0">
-                    已证实 {{ feature.verification_count }} 次
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
     </div>
   </div>
 </template>
@@ -126,21 +97,10 @@ const store = useProfileStore()
 const userId = computed(() => store.user_id)
 const allFeatures = computed(() => store.features)
 
-const searchQuery = ref('')
 const graphContainer = ref(null)
 let chart = null
 
 const featureCount = computed(() => allFeatures.value?.length || 0)
-
-const verifiedCount = computed(() => {
-  if (!allFeatures.value) return 0
-  return allFeatures.value.filter(f => f.verification_count > 0).length
-})
-
-const inferredCount = computed(() => {
-  if (!allFeatures.value) return 0
-  return allFeatures.value.filter(f => isFeatureInferred(f)).length
-})
 
 const typeCount = computed(() => {
   if (!allFeatures.value) return 0
@@ -156,24 +116,12 @@ const typeDistribution = computed(() => {
   return dist
 })
 
-const filteredFeatures = computed(() => {
-  if (!allFeatures.value) return []
-  if (!searchQuery.value) return allFeatures.value
-  const query = searchQuery.value.toLowerCase()
-  return allFeatures.value.filter(f => 
-    f.feature_type?.toLowerCase().includes(query) ||
-    f.feature_value?.toLowerCase().includes(query)
-  )
-})
-
 const nodeLegendItems = computed(() => {
   const items = [
     { id: 'user', name: '用户', color: NODE_COLORS.user }
   ]
   
   const features = allFeatures.value || []
-  
-  // 只收集实际在图中渲染的特征类型（有对应的特征值节点）
   const renderedTypes = new Set()
   features.forEach(f => {
     if (f.feature_type && !isFeatureInferred(f) && f.feature_value) {
@@ -241,28 +189,6 @@ function isFeatureInferred(feature) {
   return feature.feature_type === '推断' || feature.feature_type === '推断特征'
 }
 
-function formatTypeLabel(type) {
-  const labelMap = {
-    'MBTI': 'MBTI',
-    '大五人格': '大五',
-    '行为习惯': '习惯',
-    '潜在想法': '想法',
-    '兴趣爱好': '爱好',
-    '用户信息': '信息',
-    '价值观': '价值',
-    '个人': '个人',
-    '推断': '推断'
-  }
-  return labelMap[type] || type?.slice(0, 2) || '未知'
-}
-
-function getFeatureDisplayType(feature) {
-  if (isFeatureInferred(feature)) {
-    return { type: '推断', label: '推断', color: NODE_COLORS.inferred }
-  }
-  return { type: feature.feature_type, label: formatTypeLabel(feature.feature_type), color: getTypeColor(feature.feature_type) }
-}
-
 function buildGraphData() {
   const features = allFeatures.value || []
   const nodes = []
@@ -272,17 +198,17 @@ function buildGraphData() {
     id: 'user',
     name: userId.value || '用户',
     category: 0,
-    symbolSize: 65,
+    symbolSize: 70,
     draggable: true,
     itemStyle: {
       color: NODE_COLORS.userHex,
       shadowColor: 'rgba(99, 102, 241, 0.5)',
-      shadowBlur: 15
+      shadowBlur: 20
     },
     label: {
       show: true,
       position: 'bottom',
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: 'bold',
       color: '#1f2937'
     }
@@ -296,23 +222,23 @@ function buildGraphData() {
   })
   
   const types = Array.from(allFeatureTypes)
-  types.forEach((type, idx) => {
+  types.forEach((type) => {
     const colorHex = getTypeColorHex(type)
     nodes.push({
       id: `type_${type}`,
       name: type,
       category: 1,
-      symbolSize: 50,
+      symbolSize: 55,
       draggable: true,
       itemStyle: {
         color: colorHex,
         shadowColor: `rgba(${hexToRgb(colorHex)}, 0.4)`,
-        shadowBlur: 12
+        shadowBlur: 15
       },
       label: {
         show: true,
         position: 'bottom',
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: 600,
         color: '#374151'
       }
@@ -323,21 +249,17 @@ function buildGraphData() {
       target: `type_${type}`,
       value: 1,
       lineStyle: {
-        width: 4,
+        width: 5,
         color: {
           type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 1,
-          y2: 0,
-          colorStops: [{
-            offset: 0, color: NODE_COLORS.userHex
-          }, {
-            offset: 1, color: colorHex
-          }]
+          x: 0, y: 0, x2: 1, y2: 0,
+          colorStops: [
+            { offset: 0, color: NODE_COLORS.userHex },
+            { offset: 1, color: colorHex }
+          ]
         },
         curveness: 0.2,
-        opacity: 0.7
+        opacity: 0.8
       }
     })
   })
@@ -357,21 +279,21 @@ function buildGraphData() {
       id: `feature_${idx}`,
       name: feature.feature_value,
       category: isInferred ? 3 : 2,
-      symbolSize: 32 + (feature.confidence * 18),
+      symbolSize: 35 + (feature.confidence * 20),
       draggable: true,
       itemStyle: {
         color: color,
         shadowColor: `rgba(${hexToRgb(color)}, 0.4)`,
-        shadowBlur: 10,
+        shadowBlur: 12,
         opacity: 0.95
       },
       label: {
         show: true,
         position: 'right',
-        fontSize: 11,
+        fontSize: 12,
         color: '#374151',
         formatter: (params) => {
-          return params.name.length > 10 ? params.name.slice(0, 10) + '...' : params.name
+          return params.name.length > 12 ? params.name.slice(0, 12) + '...' : params.name
         }
       },
       value: feature.confidence
@@ -383,7 +305,7 @@ function buildGraphData() {
         target: `feature_${idx}`,
         value: feature.confidence,
         lineStyle: {
-          width: Math.max(1, feature.confidence * 4),
+          width: Math.max(2, feature.confidence * 5),
           color: color,
           curveness: 0.3,
           type: isInferred ? 'dashed' : 'solid',
@@ -394,11 +316,6 @@ function buildGraphData() {
   })
   
   return { nodes, links }
-}
-
-function extractHexFromGradient(gradient) {
-  const match = gradient?.match(/#[a-f0-9]{6}/i)
-  return match ? match[0] : '#6366f1'
 }
 
 function hexToRgb(hex) {
@@ -427,9 +344,7 @@ function renderChart() {
       backgroundColor: 'rgba(255, 255, 255, 0.98)',
       borderColor: '#e5e7eb',
       borderWidth: 1,
-      textStyle: {
-        color: '#374151'
-      },
+      textStyle: { color: '#374151' },
       formatter: (params) => {
         if (params.dataType === 'edge') {
           return `<div style="padding: 8px;">
@@ -461,43 +376,28 @@ function renderChart() {
         { name: '推断特征' }
       ],
       roam: true,
-      label: {
-        show: true,
-        position: 'right',
-        formatter: '{b}'
-      },
-      lineStyle: {
-        color: 'source',
-        curveness: 0.3
-      },
+      label: { show: true, position: 'right', formatter: '{b}' },
+      lineStyle: { color: 'source', curveness: 0.3 },
       force: {
-        repulsion: 500,
+        repulsion: 600,
         gravity: 0.1,
-        edgeLength: 160,
+        edgeLength: 180,
         layoutAnimation: true
       },
       emphasis: {
         focus: 'adjacency',
-        lineStyle: {
-          width: 8
-        },
-        label: {
-          fontSize: 14,
-          fontWeight: 'bold'
-        }
+        lineStyle: { width: 10 },
+        label: { fontSize: 14, fontWeight: 'bold' }
       }
     }]
   }
   
   chart.setOption(option)
-  
   window.addEventListener('resize', handleResize)
 }
 
 function handleResize() {
-  if (chart) {
-    chart.resize()
-  }
+  if (chart) chart.resize()
 }
 
 function fitView() {
@@ -515,23 +415,11 @@ function fitView() {
 }
 
 function zoomIn() {
-  if (chart) {
-    chart.dispatchAction({
-      type: 'dataZoom',
-      start: 0,
-      end: 100
-    })
-  }
+  if (chart) chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
 }
 
 function zoomOut() {
-  if (chart) {
-    chart.dispatchAction({
-      type: 'dataZoom',
-      start: 0,
-      end: 100
-    })
-  }
+  if (chart) chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
 }
 
 async function refreshGraph() {
@@ -550,7 +438,6 @@ onMounted(async () => {
   renderChart()
 })
 
-// 监听特征数据变化，重新渲染图表
 watch(allFeatures, async (newFeatures) => {
   if (newFeatures && newFeatures.length > 0) {
     await nextTick()
@@ -560,9 +447,7 @@ watch(allFeatures, async (newFeatures) => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  if (chart) {
-    chart.dispose()
-  }
+  if (chart) chart.dispose()
 })
 </script>
 
@@ -609,69 +494,34 @@ onUnmounted(() => {
 
 .graph-content {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 300px 1fr;
   gap: 20px;
   height: calc(100vh - 180px);
   min-height: 500px;
 }
 
-@media (max-width: 1400px) {
-  .graph-content {
-    grid-template-columns: 260px 1fr 280px;
-  }
-}
-
 @media (max-width: 1200px) {
   .graph-content {
-    grid-template-columns: 250px 1fr;
-  }
-  
-  .features-sidebar {
-    display: none;
+    grid-template-columns: 260px 1fr;
   }
 }
 
 @media (max-width: 900px) {
   .graph-content {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
     height: auto;
     min-height: auto;
   }
   
-  .graph-sidebar {
+  .left-sidebar {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 16px;
-    overflow-y: visible;
-  }
-  
-  .features-sidebar {
-    display: block;
-    max-height: 400px;
   }
 }
 
-@media (max-width: 600px) {
-  .knowledge-graph-view {
-    padding: 12px;
-  }
-  
-  .graph-content {
-    gap: 12px;
-  }
-  
-  .graph-sidebar {
-    grid-template-columns: 1fr;
-  }
-  
-  .page-title {
-    font-size: 20px;
-  }
-}
-
-.graph-sidebar,
-.features-sidebar {
+.left-sidebar {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -679,27 +529,23 @@ onUnmounted(() => {
   padding-right: 8px;
 }
 
-.graph-sidebar::-webkit-scrollbar,
-.features-sidebar::-webkit-scrollbar {
+.left-sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
-.graph-sidebar::-webkit-scrollbar-track,
-.features-sidebar::-webkit-scrollbar-track {
+.left-sidebar::-webkit-scrollbar-track {
   background: var(--bg-tertiary);
   border-radius: 3px;
 }
 
-.graph-sidebar::-webkit-scrollbar-thumb,
-.features-sidebar::-webkit-scrollbar-thumb {
+.left-sidebar::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
 }
 
 .user-profile-card,
 .feature-types-card,
-.legend-card,
-.features-detail-card {
+.legend-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -707,12 +553,12 @@ onUnmounted(() => {
 }
 
 .user-avatar {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .avatar-ring {
-  width: 90px;
-  height: 90px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   padding: 4px;
@@ -727,17 +573,17 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .user-name {
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 
 .stats-grid {
@@ -765,10 +611,6 @@ onUnmounted(() => {
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.stat-value.inferred {
-  color: #f59e0b;
 }
 
 .stat-label {
@@ -847,39 +689,22 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
-.legend-dot.user {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-}
-
-.legend-dot.type {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-}
-
-.legend-dot.feature {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-}
-
-.legend-dot.inferred {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.legend-text {
+.legend-name {
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.graph-main {
+.main-content {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .graph-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  padding: 20px;
-  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -888,17 +713,15 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
-.graph-tip {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-  padding: 6px 12px;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  border-left: 3px solid var(--accent-color);
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .graph-controls {
@@ -910,12 +733,10 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   padding: 0;
-  border-radius: 6px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-weight: bold;
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 .mini-btn:hover {
@@ -925,137 +746,7 @@ onUnmounted(() => {
 }
 
 .graph-container {
-  width: 100%;
   flex: 1;
-  min-height: 500px;
-  border-radius: 12px;
-  background: var(--bg-tertiary);
-}
-
-.features-detail-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   min-height: 0;
-}
-
-.feature-count {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.search-input {
-  margin-bottom: 12px;
-}
-
-.search-input :deep(.el-input__wrapper) {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-}
-
-.search-input :deep(.el-input__wrapper:hover) {
-  border-color: var(--accent-color);
-}
-
-.search-input :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-  flex: 1;
-  padding-right: 4px;
-}
-
-.features-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.features-list::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 3px;
-}
-
-.features-list::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.feature-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  animation: fadeInUp 0.4s ease both;
-  transition: all 0.2s ease;
-}
-
-.feature-item:hover {
-  border-color: var(--accent-color);
-  transform: translateX(3px);
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.feature-type-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  color: white;
-  width: fit-content;
-}
-
-.feature-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.feature-value {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.feature-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.feature-meta span {
-  font-size: 10px;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.feature-confidence {
-  color: #22c55e !important;
-}
-
-.feature-verification {
-  color: #3b82f6 !important;
 }
 </style>

@@ -292,7 +292,9 @@ async function sendMessage() {
                 msg.content = data.content
                 msg.is_streaming = false
               }
+              loading.value = false
               await saveConversations()
+              break
             } else if (data.type === 'error') {
               ElMessage.error(data.content)
               const msg = messages.value.find(m => m.id === assistantMsgId)

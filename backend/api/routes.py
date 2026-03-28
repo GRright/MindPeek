@@ -16,7 +16,8 @@ from backend.utils.sync_database import (
     get_user_predictions_sync,
     get_cached_predictions_sync,
     save_predictions_sync,
-    get_user_conversations_sync
+    get_user_conversations_sync,
+    get_user_features_sync
 )
 from backend.utils.sync_feature_extractor import extract_features_sync
 
@@ -27,6 +28,159 @@ class ChatStreamRequest(BaseModel):
     message: str
     extract_features: bool = False
     deep_think: bool = True
+
+
+def _should_use_personalization(message: str) -> bool:
+    """判断是否使用个性化 - 基于规则"""
+    message_lower = message.lower()
+    
+    general_keywords = [
+        "什么是", "如何", "怎么", "为什么", "介绍一下",
+        "请问", "告诉我", "解释一下", "计算", "定义",
+        "搜索", "查找", "翻译", "天气", "时间",
+        "写作文", "写文章", "帮我写", "代码", "程序",
+        "公式", "定理", "历史", "地理", "科学",
+        "百科", "知识", "概念", "定义是", "原理"
+    ]
+    
+    personal_keywords = [
+        "我喜欢", "我的", "我觉得", "我想", "我最近",
+        "我的性格", "我是", "我的爱好", "我的习惯",
+        "你觉得我", "我是怎么样的人", "我的特点",
+        "推荐", "建议我", "适合我", "帮我选",
+        "我该怎么办", "我该怎么做", "给我推荐",
+        "我应该", "对我", "根据我的", "选择"
+    ]
+    
+    emotional_keywords = [
+        "难过", "开心", "焦虑", "压力", "烦恼",
+        "困扰", "迷茫", "孤独", "无聊", "累",
+        "心情", "情绪", "郁闷", "沮丧", "紧张"
+    ]
+    
+    for keyword in emotional_keywords:
+        if keyword in message_lower:
+            return True
+    
+    for keyword in personal_keywords:
+        if keyword in message_lower:
+            return True
+    
+    for keyword in general_keywords:
+        if keyword in message_lower:
+            return False
+    
+    return True
+
+
+def _build_personalization_prompt(features: list, message: str) -> str:
+    """构建个性化提示词"""
+    if not features:
+        return """你是一个友善的AI助手，正在与用户进行对话。
+
+## 回复要求
+1. 直接回答用户的问题
+2. 保持回复简洁、自然
+3. 像朋友间的对话一样亲切
+
+请直接回答。"""
+    
+    context_parts = ["\n## 用户画像信息"]
+    
+    personal_info = {}
+    for f in features:
+        if f.get("feature_type") == "个人信息" and f.get("confidence", 0) >= 0.7:
+            value = f.get("feature_value", "")
+            if "姓名" in value:
+                personal_info["name"] = value.replace("姓名：", "").strip()
+            elif "职业" in value:
+                personal_info["occupation"] = value.replace("职业：", "").strip()
+            elif "居住地" in value:
+                personal_info["location"] = value.replace("居住地：", "").strip()
+    
+    if personal_info:
+        info_strs = []
+        if personal_info.get("name"):
+            info_strs.append(f"姓名: {personal_info['name']}")
+        if personal_info.get("occupation"):
+            info_strs.append(f"职业: {personal_info['occupation']}")
+        if personal_info.get("location"):
+            info_strs.append(f"居住地: {personal_info['location']}")
+        if info_strs:
+            context_parts.append(f"- 基本信息: {', '.join(info_strs)}")
+    
+    mbti_features = [f for f in features if f.get("feature_type") == "MBTI" and f.get("confidence", 0) >= 0.6]
+    if mbti_features:
+        mbti = mbti_features[0]
+        context_parts.append(f"- 性格类型(MBTI): {mbti.get('feature_value', '')}（置信度: {mbti.get('confidence', 0):.0%}）")
+    
+    big_five_features = [f for f in features if f.get("feature_type") == "大五人格" and f.get("confidence", 0) >= 0.6]
+    if big_five_features:
+        traits = []
+        for f in big_five_features[:5]:
+            trait_name = f.get("feature_value", "").split(':')[0] if ':' in f.get("feature_value", "") else f.get("feature_value", "")
+            traits.append(f"{trait_name}({f.get('confidence', 0):.0%})")
+        if traits:
+            context_parts.append(f"- 人格特质: {', '.join(traits)}")
+    
+    behavior_features = [f for f in features if f.get("feature_type") == "行为习惯" and f.get("confidence", 0) >= 0.6]
+    if behavior_features:
+        habits = [f.get("feature_value", "") for f in behavior_features[:5]]
+        context_parts.append(f"- 行为习惯: {', '.join(habits)}")
+    
+    interest_features = [f for f in features if f.get("feature_type") == "兴趣爱好" and f.get("confidence", 0) >= 0.6]
+    if interest_features:
+        interests = [f.get("feature_value", "") for f in interest_features[:5]]
+        context_parts.append(f"- 兴趣爱好: {', '.join(interests)}")
+    
+    value_features = [f for f in features if f.get("feature_type") == "价值观" and f.get("confidence", 0) >= 0.6]
+    if value_features:
+        values = [f.get("feature_value", "") for f in value_features[:3]]
+        context_parts.append(f"- 价值观: {', '.join(values)}")
+    
+    intent_features = [f for f in features if f.get("feature_type") == "潜在想法" and f.get("confidence", 0) >= 0.7]
+    if intent_features:
+        intents = [f.get("feature_value", "") for f in intent_features[:3]]
+        context_parts.append(f"- 潜在需求/想法: {', '.join(intents)}")
+    
+    emotion_features = [f for f in features if f.get("feature_type") == "情感状态" and f.get("confidence", 0) >= 0.6]
+    if emotion_features:
+        emotions = [f.get("feature_value", "") for f in emotion_features[:3]]
+        context_parts.append(f"- 情感状态: {', '.join(emotions)}")
+    
+    inferred_features = [f for f in features if f.get("feature_type") in ["推断特征", "推断"] and f.get("confidence", 0) >= 0.6]
+    if inferred_features:
+        inferred = [f.get("feature_value", "") for f in inferred_features[:3]]
+        context_parts.append(f"- 推断特征: {', '.join(inferred)}")
+    
+    user_context = "\n".join(context_parts) if len(context_parts) > 1 else ""
+    
+    return f"""你是一个友善、贴心的AI助手，正在与用户进行对话。你已经通过之前的对话了解了这位用户的一些特征信息。
+
+{user_context}
+
+## 个性化回复指南
+请根据以上用户画像信息，提供更加贴心、个性化的回复：
+
+1. **结合用户特征做决策建议**：
+   - 如果用户在寻求建议或选择，根据用户的性格、价值观、行为习惯给出有倾向性的建议
+   - 不要只是列出选项，要结合用户画像给出明确的推荐
+   - 例如：如果用户性格保守，在风险选择上应推荐保守选项
+
+2. **自然融入用户特征**：
+   - 如果用户有明确的兴趣爱好，可以在相关话题中自然地提及
+   - 如果用户有特定的行为习惯，可以理解并尊重这些习惯
+
+3. **情感共鸣**：
+   - 根据用户的情感状态和性格特点，调整回复的语气和风格
+   - 对于内向型用户，可以更加温和、耐心
+
+4. **保持自然**：
+   - 不要生硬地提及"根据你的画像"或"基于你的特征"
+   - 让个性化融入回复中，像老朋友一样自然对话
+
+请直接回答用户的问题，给出有倾向性的建议，不要只是中立地分析。"""
+
 
 @router.post("/stream")
 async def chat_stream(
@@ -42,9 +196,21 @@ async def chat_stream(
                 yield f"data: {json.dumps({'type': 'error', 'content': 'LLM 服务未初始化'})}\n\n"
                 return
 
-            system_prompt = f"""你是一个友善的 AI 助手，正在与用户进行对话。"""
-            messages = [{"role": "system", "content": system_prompt}]
+            use_personalization = _should_use_personalization(request.message)
+            
+            if use_personalization:
+                features = get_user_features_sync(request.user_id)
+                system_prompt = _build_personalization_prompt(features, request.message)
+            else:
+                system_prompt = """你是一个友善的AI助手，正在与用户进行对话。
 
+## 回复要求
+1. 直接回答用户的问题
+2. 保持回复简洁、自然
+
+请直接回答。"""
+            
+            messages = [{"role": "system", "content": system_prompt}]
             messages.append({"role": "user", "content": request.message})
 
             full_response = ""
@@ -77,38 +243,15 @@ async def chat_stream(
 
             display_content = display_content.strip()
 
-            # 如果有 think 内容，在流式结束后发送
             if think_content:
                 yield f"data: {json.dumps({'type': 'think', 'content': think_content})}\n\n"
 
-            # 发送完成信号
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
 
-            # 使用同步方式保存对话（避免异步连接池问题）
-            print(f"\n>>> 开始使用同步方式保存对话 for user_id: {request.user_id}")
-            
-            # 保存用户消息
-            save_conversation_sync(request.user_id, "user", request.message, "default")
-            
-            # 保存助手回复
-            save_conversation_sync(request.user_id, "assistant", display_content if display_content else "(无回复内容)", "default")
-            
-            print(f">>> 同步保存对话完成\n")
-            
-            # 如果需要提取特征 - 在后台执行，不阻塞流式响应
-            if request.extract_features:
-                print(f">>> 开始特征提取 for user_id: {request.user_id}")
-                try:
-                    # 使用 asyncio 创建后台任务执行特征提取
-                    import asyncio
-                    asyncio.create_task(
-                        async_extract_features(request.user_id, request.message, display_content if display_content else "(无回复内容)")
-                    )
-                    print(f">>> 特征提取任务已创建\n")
-                except Exception as fe_error:
-                    print(f">>> 特征提取任务创建失败：{fe_error}")
-                    import traceback
-                    print(traceback.format_exc())
+            import asyncio
+            asyncio.create_task(
+                post_stream_tasks(request.user_id, request.message, display_content, request.extract_features)
+            )
 
         except Exception as e:
             import traceback
@@ -118,6 +261,27 @@ async def chat_stream(
             yield f"data: {json.dumps({'type': 'error', 'content': f'错误：{error_msg}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+async def post_stream_tasks(user_id: str, message: str, response: str, extract_features: bool):
+    """流式响应后的后台任务：保存对话和提取特征"""
+    try:
+        print(f"\n>>> 后台任务开始 for user_id: {user_id}")
+        
+        save_conversation_sync(user_id, "user", message, "default")
+        save_conversation_sync(user_id, "assistant", response if response else "(无回复内容)", "default")
+        print(f">>> 对话保存完成")
+        
+        if extract_features:
+            print(f">>> 开始特征提取...")
+            extract_features_sync(user_id, message, response if response else "(无回复内容)")
+            print(f">>> 特征提取完成")
+        
+        print(f">>> 后台任务完成\n")
+    except Exception as e:
+        print(f">>> 后台任务失败: {e}")
+        import traceback
+        print(traceback.format_exc())
 
 
 async def async_extract_features(user_id: str, message: str, response: str):

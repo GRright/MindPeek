@@ -69,14 +69,133 @@ def get_user_features_sync(user_id: str) -> list:
         print(f"  ❌ 同步获取特征失败：{e}")
         return []
 
+SINGLE_VALUE_TYPES = ["MBTI", "大五人格", "个人信息"]
+
+
+def normalize_mbti(value: str) -> str:
+    """标准化MBTI值"""
+    import re
+    mbti_pattern = r'[IE][NS][FT][JP]'
+    match = re.search(mbti_pattern, value.upper())
+    if match:
+        return match.group()
+    return value
+
+
+def is_conflicting_value(existing_value: str, new_value: str, feature_type: str) -> bool:
+    """判断两个特征值是否冲突"""
+    if feature_type == "MBTI":
+        existing_normalized = normalize_mbti(existing_value)
+        new_normalized = normalize_mbti(new_value)
+        return existing_normalized != new_normalized
+    
+    return existing_value != new_value
+
+
+def resolve_conflict(existing_conf: float, new_conf: float, 
+                     existing_value: str, new_value: str, feature_type: str) -> dict:
+    """解决特征冲突，返回应该保留的特征"""
+    if feature_type == "MBTI":
+        existing_normalized = normalize_mbti(existing_value)
+        new_normalized = normalize_mbti(new_value)
+        
+        if existing_normalized == new_normalized:
+            return {
+                "action": "update",
+                "value": existing_value,
+                "confidence": max(existing_conf, new_conf)
+            }
+        
+        if new_conf > existing_conf + 0.15:
+            return {
+                "action": "replace",
+                "value": new_value,
+                "confidence": new_conf
+            }
+        elif existing_conf > new_conf + 0.15:
+            return {
+                "action": "keep",
+                "value": existing_value,
+                "confidence": existing_conf
+            }
+        else:
+            return {
+                "action": "update",
+                "value": existing_value,
+                "confidence": (existing_conf + new_conf) / 2
+            }
+    
+    if new_conf > existing_conf + 0.1:
+        return {
+            "action": "replace",
+            "value": new_value,
+            "confidence": new_conf
+        }
+    
+    return {
+        "action": "keep",
+        "value": existing_value,
+        "confidence": existing_conf
+    }
+
+
 def save_feature_sync(user_id: str, feature_type: str, feature_value: str, 
                       confidence: float, reasoning: str = None) -> bool:
-    """同步保存特征"""
+    """同步保存特征（支持冲突解决）"""
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # 检查是否已存在
+        if feature_type in SINGLE_VALUE_TYPES:
+            cursor.execute("""
+                SELECT id, feature_value, confidence FROM features
+                WHERE user_id = ? AND feature_type = ? AND is_active = 1
+            """, (user_id, feature_type))
+            
+            existing_list = cursor.fetchall()
+            
+            if existing_list:
+                for existing in existing_list:
+                    existing_id, existing_value, existing_conf = existing
+                    
+                    if is_conflicting_value(existing_value, feature_value, feature_type):
+                        resolution = resolve_conflict(
+                            existing_conf, confidence, 
+                            existing_value, feature_value, feature_type
+                        )
+                        
+                        if resolution["action"] == "replace":
+                            cursor.execute("""
+                                UPDATE features
+                                SET feature_value = ?, confidence = ?, 
+                                    verification_count = COALESCE(verification_count, 0) + 1,
+                                    updated_at = ?, reasoning = ?
+                                WHERE id = ?
+                            """, (resolution["value"], resolution["confidence"], 
+                                  datetime.utcnow(), reasoning, existing_id))
+                            print(f"  🔄 特征冲突解决: {feature_type} 从 '{existing_value}' 更新为 '{resolution['value']}'")
+                        elif resolution["action"] == "update":
+                            cursor.execute("""
+                                UPDATE features
+                                SET confidence = ?, 
+                                    verification_count = COALESCE(verification_count, 0) + 1,
+                                    updated_at = ?
+                                WHERE id = ?
+                            """, (resolution["confidence"], datetime.utcnow(), existing_id))
+                    else:
+                        new_confidence = max(existing_conf, confidence)
+                        cursor.execute("""
+                            UPDATE features
+                            SET confidence = ?, verification_count = COALESCE(verification_count, 0) + 1,
+                                updated_at = ?, reasoning = ?
+                            WHERE id = ?
+                        """, (new_confidence, datetime.utcnow(), reasoning, existing_id))
+                
+                conn.commit()
+                conn.close()
+                print(f"  ✅ 同步保存特征成功：{user_id} - {feature_type}: {feature_value}")
+                return True
+        
         cursor.execute("""
             SELECT id, confidence FROM features
             WHERE user_id = ? AND feature_type = ? AND feature_value = ?
@@ -85,7 +204,6 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
         existing = cursor.fetchone()
         
         if existing:
-            # 更新置信度
             new_confidence = max(existing[1], confidence)
             cursor.execute("""
                 UPDATE features
@@ -94,7 +212,6 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
                 WHERE id = ?
             """, (new_confidence, datetime.utcnow(), existing[0]))
         else:
-            # 插入新特征
             cursor.execute("""
                 INSERT INTO features (user_id, feature_type, feature_value, confidence, 
                                      reasoning, is_active, created_at, updated_at)
