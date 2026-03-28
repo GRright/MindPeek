@@ -13,8 +13,10 @@
 > MindPeek leverages LLM to decode every conversation—automatically extracting personality, preferences, and latent needs to build continuously evolving user profiles.
 >
 > **✨ Core Capabilities**
+> - 🔮 **AI Behavior Prediction**: Predict user's future behaviors and thoughts
 > - Multi-dimensional extraction: Personality traits / Values / Latent needs / Emotional states
 > - Multi-Agent architecture: Self-evolving precision that gets smarter over time
+> - Smart caching optimization: 24-hour cache + automatic update on feature changes
 >
 > User-centric AI starts here.
 
@@ -30,6 +32,7 @@ MindPeek transforms your conversations into deep understanding of you:
 
 | 🔮 Agent | 💡 Function | 🎯 Value |
 |----------|-------------|-----------|
+| **Prediction Agent** | Predict user's future behaviors and thoughts | Know what you'll do before you do it |
 | **FeatureDiscovery Agent** | Automatically discover your personality, habits, preferences | No manual input needed, AI learns automatically |
 | **LatentIntent Agent** | Identify your hidden needs and latent intentions | Know what you need before you do |
 | **CorrelationAgent** | Discover correlations between features | Build a complete user profile network |
@@ -85,9 +88,9 @@ Intelligent Agent network built on LangGraph, with multiple specialized agents w
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │ │
-│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│ │
-│  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │  │ Prediction │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│  │   Agent    │ │
+│  └────────────┘  └────────────┘  └────────────┘  └───────────┘  └────────────┘ │
 │                                                                      │
 │              ⚡ DeepThink - Task Mode                                │
 └──────────────────────────────────────────────────────────────────┘
@@ -226,7 +229,8 @@ MindPeek/
 │   │   ├── feature_discovery.py # 🔮 Feature discovery agent
 │   │   ├── personal_info_agent.py # 🎯 Personal info extraction
 │   │   ├── async_orchestrator.py # ⚡ Async task orchestration
-│   │   └── agent_engine.py     # Agent engine
+│   │   ├── agent_engine.py     # Agent engine
+│   │   └── prediction_agent.py # 🔮 AI behavior prediction Agent
 │   ├── utils/
 │   │   └── database.py         # Database utilities
 │   └── knowledge_graph/
@@ -249,22 +253,64 @@ MindPeek/
 - Multi-turn conversations with automatic context understanding
 - Personalized responses based on your features
 - Optional deep thinking mode
+- Streaming output with real-time thought process display
+- **Conversation-first design**: User conversations are completely non-blocking, profile building executes asynchronously in the background
 
 ### 👤 User Profile
 - MBTI personality analysis
 - Big Five personality radar chart
 - Behavioral habit insights
 - Hidden need discovery
+- Personal information tracking (name, occupation, residence, etc.)
+- Social relationship management
+- **🔮 Behavior Prediction**: AI intelligently predicts the user's most likely future behaviors and thoughts (Top 10)
 
 ### 🔗 Knowledge Graph
+- **Brand new ECharts visualization**: Cool animation effects, smooth interaction experience
+- **Feature Overview View**: Clearly displays the distribution and correlations of feature types
 - Real-time inference based on predefined psychology knowledge base
 - Feature correlation visualization
 - Dynamic inference of potential features
+- Each feature type displayed independently with clear color differentiation
+- Responsive design adapting to different screen sizes
+- Nodes support free dragging, zooming, fisheye magnifier effects
 
-### 🔮 Agent Workbench
-- View agent task status in real-time
-- Async task management
-- Insight reports
+### 📊 Feature Distribution Analysis
+- **Bar chart visualization**: Intuitively displays the quantity distribution of each feature type
+- **Smart sorting**: Automatically sorts from most to least features
+- **Confidence display**: Shows average confidence for each type
+- **Proportion analysis**: Clearly displays the proportion of each type
+- **Interactive tooltips**: Hover to display detailed statistics
+
+### 🔮 AI Behavior Prediction Engine (NEW)
+MindPeek introduces advanced prediction capabilities to proactively predict user's future behaviors and thoughts:
+
+#### Smart Prediction Mechanism
+- **Feature-based intelligent inference**: Deep analysis combining user's historical features and behavioral patterns
+- **Multi-dimensional prediction**: Covers behavior, thoughts, emotions, decisions, and more
+- **Probability scoring**: Each prediction comes with confidence assessment (0-100%)
+- **Time range labeling**: Short-term (1-7 days), medium-term (1-4 weeks), long-term (1-3 months)
+- **Observable signals**: Provides specific verification indicators for predictions
+
+#### Automatic Update Strategy
+- **Smart caching**: Prioritizes cached results within 24 hours
+- **Feature change detection**: Automatically re-predicts when user feature count changes
+- **Silent generation**: Executes automatically in background when user visits page, no manual operation needed
+- **Top 10 display**: Shows the 10 most likely predictions sorted by probability
+
+#### Prediction Categories
+- **Behavior Prediction**: Specific actions the user may take
+- **Thought Prediction**: Thoughts or ideas the user may have
+- **Emotion Prediction**: Emotional states the user may experience
+- **Decision Prediction**: Choices or decisions the user may make
+
+### 🔍 Feature Management
+- Intelligent feature deduplication and merging
+- Feature search functionality for quick positioning
+- Infinite scroll loading for smooth experience
+- Feature verification count tracking
+- Feature decay visualization
+- Update time recording
 
 ## 📜 License
 

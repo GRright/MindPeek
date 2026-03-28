@@ -1,4 +1,4 @@
-# MindPeek - あなたのことを理解するAIパートナー 🎯
+# MindPeek - あなたのことを理解する AI パートナー 🎯
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
@@ -7,7 +7,18 @@
   <img src="https://img.shields.io/badge/LangGraph-Enabled-purple.svg" alt="LangGraph">
 </p>
 
-> *MindPeekは普通のチャットボットではありません —— あなたを真に理解するAIパートナーです。マルチターン対話と先進的なAI Agent技術を通じて、MindPeekはあなたをますます理解し、かけがえのないIntelligentアシスタントになります。*
+> **🧠 MindPeek | AI が本当に心を読む**
+>
+> 従来のユーザープロファイリングに別れを告げましょう！
+> MindPeek は LLM による深層解析で、あらゆる対話から性格、嗜好、潜在的なニーズを自動的に抽出し、継続的に進化する個人プロファイルを構築します。
+>
+> **✨ コア機能**
+> - 🔮 **AI 行動予測**: ユーザーの将来の行動や思考を予測
+> - 多次元特徴抽出：性格特性 / 価値観 / 潜在的想法 / 感情状態など
+> - マルチエージェント協調アーキテクチャ：自己進化型、使えば使うほどあなたを理解
+> - スマートキャッシュ最適化：24 時間キャッシュ + 特徴変化時の自動更新
+>
+> ユーザーを理解する AI は、ここから始まります。
 
 ---
 
@@ -21,8 +32,9 @@ MindPeekはあなたの対話を深い理解に変換します：
 
 | 🔮 Agent | 💡 機能 | 🎯 価値 |
 |---------|--------|---------|
-| **FeatureDiscovery Agent** | 性格、習慣、偏好を自動的に発見 | 手動入力不要、AIが自動学習 |
-| **LatentIntent Agent** | 隠れたニーズと潜在的な意図を識別 | あなたが]~!b[る前にあなたのニーズを知る |
+| **Prediction Agent** | ユーザーの将来の行動や思考を予測 | あなたがする前にあなたの行動を知る |
+| **FeatureDiscovery Agent** | 性格、習慣、嗜好を自動的に発見 | 手動入力不要、AI が自動学習 |
+| **LatentIntent Agent** | 隠れたニーズと潜在的な意図を識別 | あなたが知る前にあなたのニーズを知る |
 | **CorrelationAgent** | 特徴間の相関を発見 | 完全なユーザープロファイルネットワークを構築 |
 | **MBTI/BigFive Agent** | 性格特性分析 | 性格の次元を深く理解 |
 
@@ -78,9 +90,9 @@ C(t) = C₀ - 0.3 × (C₀ - 0.3) × ln(1 + (t - T_stable) × r)
 ┌──────────────────────────────────────────────────────────────────┐
 │                     🤖 LangGraph Orchestrator                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │ │
-│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│ │
-│  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
+│  │  Feature   │  │  Latent    │  │Correlation │  │   MBTI    │  │ Prediction │ │
+│  │ Discovery  │  │   Intent   │  │   Agent    │  │   /BigFive│  │   Agent    │ │
+│  └────────────┘  └────────────┘  └────────────┘  └───────────┘  └────────────┘ │
 │                                                                      │
 │              ⚡ DeepThink - タスクモード                              │
 └──────────────────────────────────────────────────────────────────┘
@@ -219,7 +231,8 @@ MindPeek/
 │   │   ├── feature_discovery.py # 🔮 特徴発見Agent
 │   │   ├── personal_info_agent.py # 🎯 個人情報抽出
 │   │   ├── async_orchestrator.py # ⚡ 非同期タスクオーケストレーション
-│   │   └── agent_engine.py     # Agentエンジン
+│   │   ├── agent_engine.py     # Agentエンジン
+│   │   └── prediction_agent.py # 🔮 AI 行動予測 Agent
 │   ├── utils/
 │   │   └── database.py         # データベースユーティリティ
 │   └── knowledge_graph/

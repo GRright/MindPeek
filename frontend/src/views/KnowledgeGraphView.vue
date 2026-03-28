@@ -171,18 +171,21 @@ const nodeLegendItems = computed(() => {
     { id: 'user', name: '用户', color: NODE_COLORS.user }
   ]
   
-  const types = new Set()
-  ;(allFeatures.value || []).forEach(f => {
-    if (f.feature_type && !isFeatureInferred(f)) {
-      types.add(f.feature_type)
+  const features = allFeatures.value || []
+  
+  // 只收集实际在图中渲染的特征类型（有对应的特征值节点）
+  const renderedTypes = new Set()
+  features.forEach(f => {
+    if (f.feature_type && !isFeatureInferred(f) && f.feature_value) {
+      renderedTypes.add(f.feature_type)
     }
   })
   
-  Array.from(types).forEach(type => {
+  Array.from(renderedTypes).forEach(type => {
     items.push({ id: `type_${type}`, name: type, color: getTypeColor(type) })
   })
   
-  const hasInferred = (allFeatures.value || []).some(f => isFeatureInferred(f))
+  const hasInferred = features.some(f => isFeatureInferred(f) && f.feature_value)
   if (hasInferred) {
     items.push({ id: 'inferred', name: '推断特征', color: NODE_COLORS.inferred })
   }

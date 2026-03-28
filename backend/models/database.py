@@ -26,6 +26,7 @@ class UserModel(Base):
     conversations = relationship("ConversationModel", back_populates="user")
     features = relationship("FeatureModel", back_populates="user")
     relationships = relationship("RelationshipModel", back_populates="user")
+    predictions = relationship("UserPredictionModel", back_populates="user")
 
 
 class ProfileModel(Base):
@@ -97,6 +98,26 @@ class RelationshipModel(Base):
     decay_enabled = Column(Boolean, default=True)
 
     user = relationship("UserModel", back_populates="relationships")
+
+
+class UserPredictionModel(Base):
+    __tablename__ = "user_predictions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True)
+    prediction = Column(Text, nullable=False)  # 预测内容
+    category = Column(String(50), nullable=False, index=True)  # 类别：行为/想法/情感/决策/其他
+    confidence = Column(Float, default=0.0)  # 可能性评分
+    reasoning = Column(Text, nullable=True)  # 推断依据
+    timeframe = Column(String(50), nullable=True)  # 时间范围：短期/中期/长期
+    observable_signals = Column(JSON, default=list)  # 可观察的信号
+    is_verified = Column(Boolean, default=False)  # 是否已验证
+    verified_at = Column(DateTime, nullable=True)  # 验证时间
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)  # 过期时间（长期预测可能需要）
+
+    user = relationship("UserModel", back_populates="predictions")
 
 
 class KnowledgeNodeModel(Base):

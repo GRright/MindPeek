@@ -68,7 +68,6 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="source_message" label="来源消息" min-width="180" show-overflow-tooltip />
         <el-table-column prop="reasoning" label="推理依据" min-width="180" show-overflow-tooltip />
         <el-table-column prop="updated_at" label="更新时间" width="160">
           <template #default="{ row }">
@@ -267,15 +266,21 @@ async function deleteFeature(row) {
 }
 
 function formatTime(timestamp) {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  if (!timestamp) return '暂无数据'
+  try {
+    const date = new Date(timestamp)
+    if (isNaN(date.getTime())) return '暂无数据'
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (e) {
+    console.error('时间格式化失败:', e)
+    return '暂无数据'
+  }
 }
 
 function getFeatureTagType(type) {

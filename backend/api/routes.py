@@ -10,7 +10,14 @@ from backend.agents.async_orchestrator import get_orchestrator, TaskType
 from backend.knowledge_graph.graph import knowledge_graph
 from backend.services.feature_merger import feature_merger
 from fastapi.responses import StreamingResponse
-from backend.utils.sync_database import save_conversation_sync, save_feature_sync
+from backend.utils.sync_database import (
+    save_conversation_sync, 
+    save_feature_sync,
+    get_user_predictions_sync,
+    get_cached_predictions_sync,
+    save_predictions_sync,
+    get_user_conversations_sync
+)
 from backend.utils.sync_feature_extractor import extract_features_sync
 
 router = APIRouter()
@@ -227,22 +234,76 @@ async def get_profile(
         # 尝试从特征中提取 MBTI
         mbti = extract_mbti_from_features(features)
         
+        # 获取用户预测（Top 10）
+        predictions = get_user_predictions_sync(user_id)
+        
         return {
             "user_id": user_id,
             "features": features,
+            "predictions": predictions,
             "summary": {
                 "conversation_count": conversation_count,
                 "feature_count": len(features),
                 "first_conversation": str(time_range[0]) if time_range[0] else None,
                 "last_conversation": str(time_range[1]) if time_range[1] else None,
                 "big_five": big_five,
-                "mbti": mbti
+                "mbti": mbti,
+                "confidence_score": calculate_average_confidence(features)
             },
             "features_by_type": features_by_type
         }
     except Exception as e:
         import traceback
         print(f"获取用户画像失败：{e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/profile/{user_id}/predict")
+async def generate_predictions(
+    user_id: str,
+    force_refresh: bool = False
+):
+    """生成用户行为预测"""
+    from backend.utils.sync_database import get_user_features_sync, get_user_conversations_sync
+    from backend.agents.prediction_agent import get_prediction_agent
+    from backend.utils.sync_database import save_predictions_sync
+    
+    try:
+        # 如果不强制刷新，先检查是否有缓存的预测
+        if not force_refresh:
+            cached_result = get_cached_predictions_sync(user_id)
+            if cached_result.get("is_valid") and cached_result.get("predictions"):
+                return {
+                    "predictions": cached_result["predictions"], 
+                    "cached": True,
+                    "feature_count_changed": cached_result.get("is_feature_count_changed", False)
+                }
+        
+        # 获取特征和对话
+        features = get_user_features_sync(user_id)
+        conversations = get_user_conversations_sync(user_id, limit=20)
+        
+        if not features:
+            return {"predictions": [], "message": "特征不足，无法生成预测"}
+        
+        # 使用预测 Agent 生成预测
+        agent = get_prediction_agent()
+        predictions = await agent.predict_user_behavior(
+            user_id=user_id,
+            features=features,
+            recent_conversations=conversations
+        )
+        
+        # 保存预测到数据库
+        if predictions:
+            save_predictions_sync(user_id, predictions)
+        
+        return {"predictions": predictions[:10], "cached": False}
+        
+    except Exception as e:
+        import traceback
+        print(f"生成预测失败：{e}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -312,6 +373,13 @@ def extract_mbti_from_features(features):
             if 'INT' in value or 'INF' in value or 'IST' in value or 'ISF' in value:
                 return value
     return None
+
+def calculate_average_confidence(features):
+    """计算平均置信度"""
+    if not features or len(features) == 0:
+        return 0.0
+    total = sum(f.get('confidence', 0) for f in features)
+    return round(total / len(features), 2)
 
 @router.get("/health")
 async def health_check():
