@@ -36,7 +36,7 @@
 
     <div class="features-content">
       <el-table
-        :data="filteredFeatures"
+        :data="paginatedFeatures"
         style="width: 100%"
         v-loading="loading"
         class="features-table"
@@ -89,13 +89,12 @@
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrapper" v-if="total > pageSize">
+      <div class="pagination-wrapper" v-if="filteredTotal > pageSize">
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="pageSize"
-          :total="total"
+          :total="filteredTotal"
           layout="total, prev, pager, next"
-          @current-change="loadFeatures"
         />
       </div>
 
@@ -156,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import { Document, Search } from '@element-plus/icons-vue'
@@ -166,8 +165,7 @@ const store = useProfileStore()
 const features = ref([])
 const loading = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
+const pageSize = ref(10)
 const searchQuery = ref('')
 const selectedTypes = ref([])
 
@@ -205,6 +203,18 @@ const filteredFeatures = computed(() => {
   return result
 })
 
+const filteredTotal = computed(() => filteredFeatures.value.length)
+
+const paginatedFeatures = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredFeatures.value.slice(start, end)
+})
+
+watch([searchQuery, selectedTypes], () => {
+  currentPage.value = 1
+})
+
 onMounted(async () => {
   await loadFeatures()
 })
@@ -214,7 +224,6 @@ async function loadFeatures() {
   try {
     const data = await store.loadProfile()
     features.value = data.features || []
-    total.value = features.value.length
   } catch (e) {
     console.error('Failed to load features:', e)
   } finally {
@@ -380,11 +389,13 @@ function tableRowClassName({ rowIndex }) {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .features-table {
   background: transparent;
+  flex: 1;
 }
 
 .features-table :deep(.el-table__header-wrapper th) {
@@ -461,6 +472,7 @@ function tableRowClassName({ rowIndex }) {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+  flex-shrink: 0;
 }
 
 .pagination-wrapper :deep(.el-pagination) {

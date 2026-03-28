@@ -173,8 +173,24 @@ const TYPE_COLORS = {
   '推断Hex': '#f59e0b',
   '推断特征': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
   '推断特征Hex': '#f59e0b',
-  '未知': 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
-  '未知Hex': '#0ea5e9'
+  '人际关系': 'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  '人际关系Hex': '#06b6d4',
+  '家庭关系': 'linear-gradient(135deg, #f97316, #fb923c)',
+  '家庭关系Hex': '#f97316',
+  '社会角色': 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+  '社会角色Hex': '#8b5cf6',
+  '社交特点': 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
+  '社交特点Hex': '#0ea5e9',
+  '沟通风格': 'linear-gradient(135deg, #6366f1, #818cf8)',
+  '沟通风格Hex': '#6366f1',
+  '思维模式': 'linear-gradient(135deg, #a855f7, #c084fc)',
+  '思维模式Hex': '#a855f7',
+  '工作风格': 'linear-gradient(135deg, #3b82f6, #60a5fa)',
+  '工作风格Hex': '#3b82f6',
+  '情感状态': 'linear-gradient(135deg, #ec4899, #f472b6)',
+  '情感状态Hex': '#ec4899',
+  '未知': 'linear-gradient(135deg, #6b7280, #9ca3af)',
+  '未知Hex': '#6b7280'
 }
 
 function getTypeColor(type) {
