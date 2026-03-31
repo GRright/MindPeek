@@ -1,30 +1,6 @@
 <template>
   <div class="features-view">
     <div class="features-layout">
-      <div class="left-panel" v-if="insights.alerts.length > 0">
-        <div class="alerts-panel">
-          <div class="panel-header">
-            <el-icon :size="18"><Bell /></el-icon>
-            <span>智能提醒</span>
-          </div>
-          <div class="alerts-list">
-            <div 
-              v-for="(alert, index) in insights.alerts" 
-              :key="index"
-              :class="['alert-item', alert.level]"
-            >
-              <el-icon :size="16" :class="alert.level">
-                <component :is="getAlertIcon(alert.icon)" />
-              </el-icon>
-              <div class="alert-content">
-                <span class="alert-title">{{ alert.title }}</span>
-                <span class="alert-message">{{ alert.message }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <div class="right-panel">
         <div class="features-header">
           <div class="header-left">
@@ -33,6 +9,10 @@
             <span class="feature-count" v-if="features.length > 0">共 {{ features.length }} 个特征</span>
           </div>
           <div class="header-actions">
+            <div class="alerts-trigger" v-if="insights.alerts.length > 0" @click="showAlerts = !showAlerts">
+              <el-icon :size="20"><Bell /></el-icon>
+              <span class="alerts-badge">{{ insights.alerts.length }}</span>
+            </div>
             <el-input
               v-model="searchQuery"
               placeholder="搜索特征..."
@@ -58,6 +38,30 @@
                 :value="type"
               />
             </el-select>
+          </div>
+        </div>
+        
+        <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
+          <div class="alerts-panel">
+            <div class="panel-header">
+              <el-icon :size="18"><Bell /></el-icon>
+              <span>智能提醒</span>
+            </div>
+            <div class="alerts-list">
+              <div 
+                v-for="(alert, index) in insights.alerts" 
+                :key="index"
+                :class="['alert-item', alert.level]"
+              >
+                <el-icon :size="16" :class="alert.level">
+                  <component :is="getAlertIcon(alert.icon)" />
+                </el-icon>
+                <div class="alert-content">
+                  <span class="alert-title">{{ alert.title }}</span>
+                  <span class="alert-message">{{ alert.message }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -137,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import { Document, Search, Bell, Warning, SuccessFilled, Refresh } from '@element-plus/icons-vue'
@@ -157,7 +161,20 @@ const insights = ref({
   stats: {}
 })
 
+const showAlerts = ref(false)
+
 let abortController = null
+
+function handleClickOutside(event) {
+  if (showAlerts.value) {
+    const target = event.target
+    const dropdown = document.querySelector('.alerts-dropdown')
+    const trigger = document.querySelector('.alerts-trigger')
+    if (dropdown && !dropdown.contains(target) && trigger && !trigger.contains(target)) {
+      showAlerts.value = false
+    }
+  }
+}
 
 const showAddDialog = ref(false)
 const adding = ref(false)
@@ -210,12 +227,14 @@ onMounted(async () => {
     loadFeatures(),
     loadInsights()
   ])
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   if (abortController) {
     abortController.abort()
   }
+  document.removeEventListener('click', handleClickOutside)
 })
 
 async function loadFeatures() {
@@ -356,16 +375,9 @@ function tableRowClassName({ rowIndex }) {
 }
 
 .features-layout {
-  display: grid;
-  grid-template-columns: 18.75rem 1fr;
-  gap: 1.25rem;
-  height: 100%;
-}
-
-.left-panel {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  height: 100%;
 }
 
 .right-panel {
@@ -373,6 +385,54 @@ function tableRowClassName({ rowIndex }) {
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  position: relative;
+}
+
+.alerts-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alerts-trigger:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
+}
+
+.alerts-badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alerts-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  z-index: 1000;
+  min-width: 22rem;
+  max-width: 28rem;
+  max-height: 25rem;
 }
 
 .alerts-panel {
@@ -380,8 +440,9 @@ function tableRowClassName({ rowIndex }) {
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   padding: 1rem;
-  height: 100%;
+  max-height: 25rem;
   overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
 
 .panel-header {
@@ -656,13 +717,7 @@ function tableRowClassName({ rowIndex }) {
   }
   
   .features-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
     height: auto;
-  }
-  
-  .left-panel {
-    display: none;
   }
   
   .features-header {
@@ -682,6 +737,13 @@ function tableRowClassName({ rowIndex }) {
   .features-content {
     padding: 0.75rem;
     min-height: 250px;
+  }
+  
+  .alerts-dropdown {
+    left: 0;
+    right: 0;
+    min-width: auto;
+    max-width: none;
   }
 }
 
