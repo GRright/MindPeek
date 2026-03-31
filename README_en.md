@@ -56,7 +56,8 @@ AI provides thoughtful responses based on your profile:
 
 ```bash
 pip install -r requirements.txt
-cd frontend && npm install
+cd frontend
+npm install
 ```
 
 ### 2. Configure System
@@ -71,7 +72,8 @@ Edit `config/config.json` with your LLM API configuration.
 
 ```bash
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
-cd frontend && npm run dev
+cd frontend
+npm run dev
 ```
 
 ### 4. Get Started

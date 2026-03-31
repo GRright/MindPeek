@@ -653,16 +653,12 @@ function tableRowClassName({ rowIndex }) {
   
   .features-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
     height: auto;
   }
   
   .left-panel {
-    max-height: 15.625rem;
-  }
-  
-  .alerts-panel {
-    height: 100%;
+    display: none;
   }
   
   .features-header {

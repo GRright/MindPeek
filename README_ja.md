@@ -56,7 +56,8 @@ AIはあなたのプロファイルに基づいて思いやりのある応答を
 
 ```bash
 pip install -r requirements.txt
-cd frontend && npm install
+cd frontend
+npm install
 ```
 
 ### 2. システム設定
@@ -71,7 +72,8 @@ copy config\config.example.json config\config.json
 
 ```bash
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
-cd frontend && npm run dev
+cd frontend
+npm run dev
 ```
 
 ### 4. 始めましょう
