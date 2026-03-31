@@ -1,164 +1,147 @@
 <template>
   <div class="features-view">
-    <div class="features-header">
-      <div class="header-left">
-        <el-icon :size="20"><Document /></el-icon>
-        <span class="header-title">特征管理</span>
-      </div>
-      <div class="header-actions">
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索特征..."
-          clearable
-          class="search-input"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-select
-          v-model="selectedTypes"
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          placeholder="筛选类型"
-          class="filter-select"
-        >
-          <el-option
-            v-for="type in featureTypes"
-            :key="type"
-            :label="type"
-            :value="type"
-          />
-        </el-select>
-      </div>
-    </div>
-
-    <div class="features-content">
-      <el-table
-        :data="paginatedFeatures"
-        style="width: 100%"
-        v-loading="loading"
-        class="features-table"
-        :row-class-name="tableRowClassName"
-      >
-        <el-table-column prop="feature_type" label="特征类型" width="140">
-          <template #default="{ row }">
-            <el-tag :type="getFeatureTagType(row.feature_type)" size="small">
-              {{ row.feature_type }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="feature_value" label="特征值" min-width="200">
-          <template #default="{ row }">
-            <span class="feature-value-cell">{{ row.feature_value }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="confidence" label="置信度" width="160">
-          <template #default="{ row }">
-            <div class="confidence-cell">
-              <el-progress
-                :percentage="row.confidence * 100"
-                :stroke-width="6"
-                :color="getConfidenceColor(row.confidence)"
-                :show-text="false"
-                class="confidence-bar"
-              />
-              <span class="confidence-text">{{ (row.confidence * 100).toFixed(0) }}%</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="reasoning" label="推理依据" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="updated_at" label="更新时间" width="160">
-          <template #default="{ row }">
-            <span class="time-cell">{{ formatTime(row.updated_at) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              type="danger"
-              size="small"
-              text
-              @click="deleteFeature(row)"
-              class="delete-btn"
+    <div class="features-layout">
+      <div class="left-panel" v-if="insights.alerts.length > 0">
+        <div class="alerts-panel">
+          <div class="panel-header">
+            <el-icon :size="18"><Bell /></el-icon>
+            <span>智能提醒</span>
+          </div>
+          <div class="alerts-list">
+            <div 
+              v-for="(alert, index) in insights.alerts" 
+              :key="index"
+              :class="['alert-item', alert.level]"
             >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-wrapper" v-if="filteredTotal > pageSize">
-        <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="filteredTotal"
-          layout="total, prev, pager, next"
-        />
+              <el-icon :size="16" :class="alert.level">
+                <component :is="getAlertIcon(alert.icon)" />
+              </el-icon>
+              <div class="alert-content">
+                <span class="alert-title">{{ alert.title }}</span>
+                <span class="alert-message">{{ alert.message }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      <div class="right-panel">
+        <div class="features-header">
+          <div class="header-left">
+            <el-icon :size="20"><Document /></el-icon>
+            <span class="header-title">特征管理</span>
+            <span class="feature-count" v-if="features.length > 0">共 {{ features.length }} 个特征</span>
+          </div>
+          <div class="header-actions">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索特征..."
+              clearable
+              class="search-input"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-select
+              v-model="selectedTypes"
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
+              placeholder="筛选类型"
+              class="filter-select"
+            >
+              <el-option
+                v-for="type in featureTypes"
+                :key="type"
+                :label="type"
+                :value="type"
+              />
+            </el-select>
+          </div>
+        </div>
 
-      <div class="empty-state" v-if="!loading && features.length === 0">
-        <el-icon :size="48"><Document /></el-icon>
-        <p>暂无特征数据</p>
+        <div class="features-content">
+          <el-table
+            :data="paginatedFeatures"
+            style="width: 100%"
+            v-loading="loading"
+            class="features-table"
+            :row-class-name="tableRowClassName"
+          >
+            <el-table-column prop="feature_type" label="特征类型" width="140">
+              <template #default="{ row }">
+                <el-tag :type="getFeatureTagType(row.feature_type)" size="small">
+                  {{ row.feature_type }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="feature_value" label="特征值" min-width="200">
+              <template #default="{ row }">
+                <span class="feature-value-cell">{{ row.feature_value }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="confidence" label="置信度" width="160">
+              <template #default="{ row }">
+                <div class="confidence-cell">
+                  <el-progress
+                    :percentage="row.confidence * 100"
+                    :stroke-width="6"
+                    :color="getConfidenceColor(row.confidence)"
+                    :show-text="false"
+                    class="confidence-bar"
+                  />
+                  <span class="confidence-text">{{ (row.confidence * 100).toFixed(0) }}%</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="reasoning" label="推理依据" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="updated_at" label="更新时间" width="160">
+              <template #default="{ row }">
+                <span class="time-cell">{{ formatTime(row.updated_at) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  type="danger"
+                  size="small"
+                  text
+                  @click="deleteFeature(row)"
+                  class="delete-btn"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div class="pagination-wrapper" v-if="filteredTotal > pageSize">
+            <el-pagination
+              :current-page="currentPage"
+              @update:current-page="currentPage = $event"
+              :page-size="pageSize"
+              :total="filteredTotal"
+              layout="total, prev, pager, next"
+            />
+          </div>
+
+          <div class="empty-state" v-if="!loading && features.length === 0">
+            <el-icon :size="48"><Document /></el-icon>
+            <p>暂无特征数据</p>
+          </div>
+        </div>
       </div>
     </div>
-
-    <el-dialog v-model="showAddDialog" title="添加特征" width="500px" class="add-dialog">
-      <el-form :model="newFeature" label-width="100px" class="add-form">
-        <el-form-item label="特征类型">
-          <el-select v-model="newFeature.feature_type" placeholder="选择类型" style="width: 100%">
-            <el-option label="MBTI" value="MBTI" />
-            <el-option label="大五人格" value="大五人格" />
-            <el-option label="行为习惯" value="行为习惯" />
-            <el-option label="潜在想法" value="潜在想法" />
-            <el-option label="兴趣爱好" value="兴趣爱好" />
-            <el-option label="价值观" value="价值观" />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="特征值">
-          <el-input v-model="newFeature.feature_value" placeholder="输入特征值" />
-        </el-form-item>
-
-        <el-form-item label="置信度">
-          <el-slider v-model="newFeature.confidence" :min="0" :max="1" :step="0.1" show-input />
-        </el-form-item>
-
-        <el-form-item label="来源消息">
-          <el-input
-            v-model="newFeature.source_message"
-            type="textarea"
-            :rows="2"
-            placeholder="可选"
-          />
-        </el-form-item>
-
-        <el-form-item label="推理依据">
-          <el-input
-            v-model="newFeature.reasoning"
-            type="textarea"
-            :rows="2"
-            placeholder="可选"
-          />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="showAddDialog = false" class="cancel-btn">取消</el-button>
-        <el-button type="primary" @click="addFeature" :loading="adding" class="submit-btn">
-          添加
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
-import { Document, Search } from '@element-plus/icons-vue'
+import { Document, Search, Bell, Warning, SuccessFilled, Refresh } from '@element-plus/icons-vue'
+import axios from 'axios'
 
 const store = useProfileStore()
 
@@ -168,6 +151,13 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
 const selectedTypes = ref([])
+
+const insights = ref({
+  alerts: [],
+  stats: {}
+})
+
+let abortController = null
 
 const showAddDialog = ref(false)
 const adding = ref(false)
@@ -216,7 +206,16 @@ watch([searchQuery, selectedTypes], () => {
 })
 
 onMounted(async () => {
-  await loadFeatures()
+  await Promise.all([
+    loadFeatures(),
+    loadInsights()
+  ])
+})
+
+onUnmounted(() => {
+  if (abortController) {
+    abortController.abort()
+  }
 })
 
 async function loadFeatures() {
@@ -225,10 +224,39 @@ async function loadFeatures() {
     const data = await store.loadProfile()
     features.value = data.features || []
   } catch (e) {
-    console.error('Failed to load features:', e)
+    if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
+      console.error('Failed to load features:', e)
+    }
   } finally {
     loading.value = false
   }
+}
+
+async function loadInsights() {
+  if (abortController) {
+    abortController.abort()
+  }
+  abortController = new AbortController()
+  
+  try {
+    const response = await axios.get(`/api/profile/${store.currentUserId}/insights`, {
+      signal: abortController.signal
+    })
+    insights.value = response.data
+  } catch (e) {
+    if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
+      console.error('Failed to load insights:', e)
+    }
+  }
+}
+
+function getAlertIcon(iconType) {
+  const icons = {
+    'warning': Warning,
+    'success': SuccessFilled,
+    'update': Refresh
+  }
+  return icons[iconType] || Warning
 }
 
 async function addFeature() {
@@ -318,40 +346,151 @@ function tableRowClassName({ rowIndex }) {
 .features-view {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  height: calc(100vh - 112px);
+  height: calc(100vh - 7rem);
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.features-layout {
+  display: grid;
+  grid-template-columns: 18.75rem 1fr;
+  gap: 1.25rem;
+  height: 100%;
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.alerts-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--bg-tertiary);
+}
+
+.alert-item.warning {
+  border-left: 3px solid #f59e0b;
+}
+
+.alert-item.serious {
+  border-left: 3px solid #ef4444;
+}
+
+.alert-item.info {
+  border-left: 3px solid #22c55e;
+}
+
+.alert-item .warning {
+  color: #f59e0b;
+}
+
+.alert-item .serious {
+  color: #ef4444;
+}
+
+.alert-item .success {
+  color: #22c55e;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.alert-message {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  word-break: break-word;
 }
 
 .features-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 0.75rem;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
   color: var(--text-primary);
 }
 
 .header-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
+}
+
+.feature-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.625rem;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .search-input {
-  width: 200px;
+  width: 12.5rem;
+  max-width: 100%;
 }
 
 .search-input :deep(.el-input__wrapper) {
@@ -365,7 +504,8 @@ function tableRowClassName({ rowIndex }) {
 }
 
 .filter-select {
-  width: 180px;
+  width: 11.25rem;
+  max-width: 100%;
 }
 
 .filter-select :deep(.el-input__wrapper) {
@@ -378,19 +518,16 @@ function tableRowClassName({ rowIndex }) {
   color: var(--text-primary);
 }
 
-.load-btn {
-  background: var(--accent-color) !important;
-  border: none !important;
-}
-
 .features-content {
   flex: 1;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  min-height: 300px;
 }
 
 .features-table {
@@ -442,7 +579,7 @@ function tableRowClassName({ rowIndex }) {
 .confidence-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .confidence-bar {
@@ -450,13 +587,13 @@ function tableRowClassName({ rowIndex }) {
 }
 
 .confidence-text {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
-  min-width: 40px;
+  min-width: 2.5rem;
 }
 
 .time-cell {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
 }
 
@@ -471,7 +608,7 @@ function tableRowClassName({ rowIndex }) {
 .pagination-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 1.25rem;
   flex-shrink: 0;
 }
 
@@ -499,57 +636,59 @@ function tableRowClassName({ rowIndex }) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 3.75rem 1.25rem;
   color: var(--text-muted);
 }
 
 .empty-state p {
-  margin-top: 12px;
-  font-size: 14px;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
 }
 
-.add-dialog :deep(.el-dialog) {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+@media screen and (max-width: 768px) {
+  .features-view {
+    height: auto;
+    min-height: calc(100vh - 7rem);
+  }
+  
+  .features-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+  }
+  
+  .left-panel {
+    max-height: 15.625rem;
+  }
+  
+  .alerts-panel {
+    height: 100%;
+  }
+  
+  .features-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .search-input,
+  .filter-select {
+    width: 100%;
+  }
+  
+  .features-content {
+    padding: 0.75rem;
+    min-height: 250px;
+  }
 }
 
-.add-dialog :deep(.el-dialog__header) {
-  border-bottom: 1px solid var(--border-color);
-}
-
-.add-dialog :deep(.el-dialog__title) {
-  color: var(--text-primary);
-}
-
-.add-form :deep(.el-form-item__label) {
-  color: var(--text-secondary);
-}
-
-.add-form :deep(.el-input__wrapper) {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-}
-
-.add-form :deep(.el-input__inner) {
-  color: var(--text-primary);
-}
-
-.add-form :deep(.el-textarea__inner) {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-  color: var(--text-primary);
-}
-
-.cancel-btn {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-}
-
-.submit-btn {
-  background: var(--accent-color) !important;
-  border: none !important;
+@media screen and (min-width: 1920px) {
+  .features-view {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }
 </style>

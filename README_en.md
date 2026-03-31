@@ -79,6 +79,24 @@ cd frontend && npm run dev
 - 🌐 Frontend: http://localhost:3000
 - 📖 API Docs: http://localhost:8000/docs
 
+### 5. Quick Test (Recommended)
+
+Run the interactive test script to quickly experience all features:
+
+```bash
+python tests/interactive_conversation_test.py
+```
+
+This script will automatically:
+- Send 30 rounds of simulated conversations
+- Extract user features (MBTI, interests, values, etc.)
+- Generate user profile and knowledge graph
+- Trigger smart alerts and profile trend analysis
+
+After the test, visit these pages to see results:
+- 📊 Features: http://localhost:3000/features
+- 🔗 Knowledge Graph: http://localhost:3000/knowledge-graph
+
 ---
 
 ## 📊 System Architecture
@@ -128,6 +146,24 @@ cd frontend && npm run dev
 ---
 
 ## 🆕 Latest Features
+
+### 🔔 Smart Alert System
+Emotion anomaly detection based on conversation content:
+- **Emotion Monitoring**: Automatically identify negative emotions like anxiety, depression, and anger
+- **Timely Warning**: Alert when emotional abnormalities are detected
+- **Health Advice**: Provide mental health related suggestions
+
+### 📱 Responsive Design
+User interface adapted for all platforms:
+- **Desktop**: Full feature display with left-right split layout
+- **Tablet**: Adaptive layout with optimized touch experience
+- **Mobile**: Streamlined interface with core features prioritized
+
+### 🔧 User Management Optimization
+Unified user identity management:
+- Automatically generate unique user ID
+- Local persistent storage
+- Seamless cross-session experience
 
 ### Smart Intent Classification
 Intelligent intent classification based on **Embedding semantic understanding**:

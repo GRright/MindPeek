@@ -651,3 +651,95 @@ async def get_knowledge_graph(user_id: str):
             return {"nodes": nodes, "edges": edges, "featureTypes": feature_types}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/profile/{user_id}/insights")
+async def get_profile_insights(user_id: str):
+    """获取用户画像洞察：智能提醒"""
+    import sqlite3
+    from datetime import datetime, timedelta
+    
+    try:
+        conn = sqlite3.connect('C:\\myProject\\MindPeek\\data\\permir.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT feature_type, feature_value, confidence, updated_at, created_at
+            FROM features 
+            WHERE user_id = ? AND is_active = 1
+            ORDER BY updated_at DESC
+        """, (user_id,))
+        features = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT content, timestamp, role
+            FROM conversations 
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 50
+        """, (user_id,))
+        conversations = cursor.fetchall()
+        
+        alerts = []
+        
+        emotion_keywords = {
+            "焦虑": ["焦虑", "担心", "紧张", "不安", "压力"],
+            "抑郁": ["难过", "沮丧", "郁闷", "失落", "孤独"],
+            "愤怒": ["生气", "愤怒", "烦躁", "不满"],
+            "快乐": ["开心", "高兴", "愉快", "满足", "幸福"]
+        }
+        
+        recent_emotion_counts = {k: 0 for k in emotion_keywords.keys()}
+        
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
+        
+        for conv in conversations:
+            content = conv[0].lower() if conv[0] else ""
+            timestamp = conv[1]
+            try:
+                conv_time = datetime.fromisoformat(str(timestamp).replace('Z', '+00:00').replace('+00:00', ''))
+            except:
+                conv_time = datetime.utcnow()
+            
+            for emotion, keywords in emotion_keywords.items():
+                for kw in keywords:
+                    if kw in content:
+                        if conv_time > one_week_ago:
+                            recent_emotion_counts[emotion] += 1
+        
+        for emotion, count in recent_emotion_counts.items():
+            if count >= 3:
+                if emotion in ["焦虑", "抑郁", "愤怒"]:
+                    alerts.append({
+                        "type": "emotion_alert",
+                        "level": "warning" if count < 5 else "serious",
+                        "title": f"检测到{emotion}情绪倾向",
+                        "message": f"近一周内检测到{count}次{emotion}相关表达，建议关注心理健康",
+                        "icon": "warning"
+                    })
+            elif emotion == "快乐" and count >= 5:
+                alerts.append({
+                    "type": "emotion_positive",
+                    "level": "info",
+                    "title": "情绪状态良好",
+                    "message": f"近期情绪积极，继续保持！",
+                    "icon": "success"
+                })
+        
+        total_features = len(features)
+        
+        conn.close()
+        
+        return {
+            "alerts": alerts[:5],
+            "stats": {
+                "total_features": total_features,
+                "recent_emotions": recent_emotion_counts
+            }
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"获取画像洞察失败：{e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))

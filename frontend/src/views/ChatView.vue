@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import MarkdownIt from 'markdown-it'
@@ -131,7 +131,7 @@ import {
 const store = useProfileStore()
 const md = new MarkdownIt()
 
-const userId = ref(store.currentUserId)
+const userId = computed(() => store.currentUserId)
 const inputMessage = ref('')
 const messages = ref([])
 const loading = ref(false)
@@ -376,7 +376,8 @@ function renderMarkdown(content) {
 
 <style scoped>
 .chat-view {
-  height: calc(100vh - 112px);
+  height: calc(100vh - 7rem);
+  min-height: 400px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -397,7 +398,7 @@ function renderMarkdown(content) {
 }
 
 .messages-area::-webkit-scrollbar {
-  width: 8px;
+  width: 0.5rem;
 }
 
 .messages-area::-webkit-scrollbar-track {
@@ -406,7 +407,7 @@ function renderMarkdown(content) {
 
 .messages-area::-webkit-scrollbar-thumb {
   background: var(--bg-tertiary);
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 .welcome-screen {
@@ -418,47 +419,47 @@ function renderMarkdown(content) {
 
 .welcome-content {
   text-align: center;
-  max-width: 700px;
-  padding: 40px;
+  max-width: 43.75rem;
+  padding: 2.5rem;
 }
 
 .welcome-logo {
-  width: 80px;
-  height: 80px;
-  border-radius: 20px;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 1.25rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  margin: 0 auto 24px;
+  margin: 0 auto 1.5rem;
 }
 
 .welcome-content h1 {
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 8px;
+  margin: 0 0 0.5rem;
 }
 
 .welcome-content p {
-  font-size: 16px;
+  font-size: 1rem;
   color: var(--text-muted);
-  margin: 0 0 40px;
+  margin: 0 0 2.5rem;
 }
 
 .messages-list {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px 0;
+  padding: 1.5rem 0;
 }
 
 .message {
   display: flex;
-  gap: 20px;
-  padding: 24px 60px;
-  max-width: 1000px;
+  gap: 1.25rem;
+  padding: 1.5rem 3.75rem;
+  max-width: 62.5rem;
   margin: 0 auto;
   width: 100%;
 }
@@ -478,9 +479,9 @@ function renderMarkdown(content) {
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -503,31 +504,31 @@ function renderMarkdown(content) {
 .message-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
 }
 
 .message-author {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .message-time {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .message-body {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.8;
   color: var(--text-primary);
 }
 
 .thinking-box {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   overflow: hidden;
   background: var(--bg-tertiary);
 }
@@ -535,11 +536,11 @@ function renderMarkdown(content) {
 .thinking-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
+  gap: 0.375rem;
+  padding: 0.625rem 0.875rem;
   background: var(--bg-hover);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-secondary);
   transition: background 0.15s ease;
@@ -550,15 +551,15 @@ function renderMarkdown(content) {
 }
 
 .thinking-body {
-  padding: 14px;
-  font-size: 14px;
+  padding: 0.875rem;
+  font-size: 0.875rem;
   line-height: 1.7;
   color: var(--text-secondary);
   white-space: pre-wrap;
 }
 
 .message-text {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.8;
 }
 
@@ -587,7 +588,7 @@ function renderMarkdown(content) {
 .message-text :deep(code) {
   background: var(--bg-tertiary);
   padding: 0.2em 0.5em;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
   color: #ec4899;
@@ -596,8 +597,8 @@ function renderMarkdown(content) {
 .message-text :deep(pre) {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  padding: 16px;
-  border-radius: 8px;
+  padding: 1rem;
+  border-radius: 0.5rem;
   overflow-x: auto;
   margin: 0.5em 0;
 }
@@ -610,13 +611,13 @@ function renderMarkdown(content) {
 
 .typing-dots {
   display: flex;
-  gap: 5px;
-  padding: 10px 0;
+  gap: 0.3125rem;
+  padding: 0.625rem 0;
 }
 
 .typing-dots .dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: var(--text-muted);
   animation: typing 1.4s infinite ease-in-out both;
@@ -641,8 +642,8 @@ function renderMarkdown(content) {
 
 .message-actions {
   display: flex;
-  gap: 4px;
-  margin-top: 12px;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -652,13 +653,13 @@ function renderMarkdown(content) {
 }
 
 .message-action-btn {
-  width: 30px;
-  height: 30px;
+  width: 1.875rem;
+  height: 1.875rem;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -673,16 +674,16 @@ function renderMarkdown(content) {
 
 .input-area {
   flex-shrink: 0;
-  padding: 20px;
+  padding: 1.25rem;
   background: var(--bg-primary);
 }
 
 .input-container {
-  max-width: 800px;
+  max-width: 50rem;
   margin: 0 auto;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 1rem;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -695,17 +696,17 @@ function renderMarkdown(content) {
 
 .input-tools {
   display: flex;
-  padding: 12px 8px;
+  padding: 0.75rem 0.5rem;
 }
 
 .tool-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -719,7 +720,7 @@ function renderMarkdown(content) {
 
 .textarea-wrapper {
   flex: 1;
-  padding: 12px 0;
+  padding: 0.75rem 0;
 }
 
 .textarea-wrapper textarea {
@@ -727,13 +728,13 @@ function renderMarkdown(content) {
   border: none;
   background: transparent;
   resize: none;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-family: inherit;
   color: var(--text-primary);
   line-height: 1.6;
   padding: 0;
-  min-height: 24px;
-  max-height: 200px;
+  min-height: 1.5rem;
+  max-height: 12.5rem;
   overflow-y: auto;
 }
 
@@ -747,14 +748,14 @@ function renderMarkdown(content) {
 
 .send-section {
   display: flex;
-  padding: 12px 12px 12px 8px;
+  padding: 0.75rem 0.75rem 0.75rem 0.5rem;
 }
 
 .send-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: var(--accent-color);
   color: white;
   cursor: pointer;
@@ -791,13 +792,57 @@ function renderMarkdown(content) {
 }
 
 .input-footer-text {
-  max-width: 800px;
-  margin: 8px auto 0;
+  max-width: 50rem;
+  margin: 0.5rem auto 0;
   text-align: center;
 }
 
 .input-footer-text span {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+@media screen and (max-width: 768px) {
+  .chat-view {
+    height: calc(100vh - 5rem);
+    min-height: 300px;
+  }
+  
+  .message {
+    padding: 1rem 1rem;
+    gap: 0.75rem;
+  }
+  
+  .welcome-content {
+    padding: 1.5rem;
+  }
+  
+  .welcome-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .welcome-content p {
+    font-size: 0.875rem;
+  }
+  
+  .welcome-logo {
+    width: 4rem;
+    height: 4rem;
+  }
+  
+  .input-area {
+    padding: 0.75rem;
+  }
+  
+  .input-container {
+    border-radius: 0.75rem;
+  }
+}
+
+@media screen and (min-width: 1920px) {
+  .chat-view {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }
 </style>

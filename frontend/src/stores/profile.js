@@ -1,15 +1,28 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import api from '@/api'
 
+const STORAGE_KEY = 'mindpeek_user_id'
+
+function getInitialUserId() {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (stored) return stored
+  localStorage.setItem(STORAGE_KEY, 'MindPeek')
+  return 'MindPeek'
+}
+
 export const useProfileStore = defineStore('profile', () => {
-  const currentUserId = ref('interactive_test_user')
+  const currentUserId = ref(getInitialUserId())
   const profile = ref(null)
   const features = ref([])
   const conversations = ref([])
   const knowledgeGraph = ref(null)
   const loading = ref(false)
   const error = ref(null)
+
+  watch(currentUserId, (newId) => {
+    localStorage.setItem(STORAGE_KEY, newId)
+  })
 
   const mbti = computed(() => {
     if (!features.value) return null

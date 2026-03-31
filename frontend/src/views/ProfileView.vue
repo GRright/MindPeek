@@ -974,46 +974,47 @@ function getTimeframeLabel(timeframe) {
 
 <style scoped>
 .profile-view {
-  height: calc(100vh - 112px);
+  height: calc(100vh - 7rem);
+  min-height: 25rem;
   overflow-y: auto;
 }
 
 .profile-grid {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
+  grid-template-columns: 20rem 1fr;
+  gap: 1.25rem;
 }
 
 .profile-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .user-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 1rem;
+  padding: 1.5rem;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .user-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+  transform: translateY(-0.25rem);
+  box-shadow: 0 0.5rem 1.5rem rgba(99, 102, 241, 0.15);
 }
 
 .user-avatar {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .avatar-ring {
-  width: 100px;
-  height: 100px;
+  width: 6.25rem;
+  height: 6.25rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  padding: 4px;
+  padding: 0.25rem;
   margin: 0 auto;
 }
 
@@ -1025,28 +1026,28 @@ function getTimeframeLabel(timeframe) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .user-name {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
 .user-badge {
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 .mbti-badge {
   display: inline-block;
-  padding: 6px 16px;
+  padding: 0.375rem 1rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 1.25rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: white;
 }
@@ -1055,38 +1056,38 @@ function getTimeframeLabel(timeframe) {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 0;
+  padding: 1rem 0;
   border-top: 1px solid var(--border-color);
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 .stat-item {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .stat-divider {
   width: 1px;
-  height: 40px;
+  height: 2.5rem;
   background: var(--border-color);
 }
 
 .user-input-section {
-  padding-top: 8px;
+  padding-top: 0.5rem;
 }
 
 .user-id-input {
@@ -1106,46 +1107,46 @@ function getTimeframeLabel(timeframe) {
 .overview-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 1rem;
+  padding: 1.25rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .overview-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+  transform: translateY(-0.25rem);
+  box-shadow: 0 0.5rem 1.5rem rgba(99, 102, 241, 0.15);
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .overview-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .overview-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 0.625rem 0.75rem;
   background: var(--bg-tertiary);
-  border-radius: 10px;
+  border-radius: 0.625rem;
 }
 
 .overview-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .overview-value {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   font-weight: 600;
   max-width: 60%;
@@ -1158,20 +1159,20 @@ function getTimeframeLabel(timeframe) {
 .mbti-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 1rem;
+  padding: 1.25rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .mbti-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+  transform: translateY(-0.25rem);
+  box-shadow: 0 0.5rem 1.5rem rgba(99, 102, 241, 0.15);
 }
 
 .mbti-chars {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .mbti-char-item {
@@ -1615,12 +1616,42 @@ function getTimeframeLabel(timeframe) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 3.75rem 1.25rem;
   color: var(--text-muted);
 }
 
 .empty-features p {
-  margin-top: 12px;
-  font-size: 14px;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+}
+
+@media screen and (max-width: 64rem) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .profile-sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15.625rem, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media screen and (max-width: 48rem) {
+  .profile-view {
+    height: auto;
+    min-height: calc(100vh - 7rem);
+  }
+  
+  .profile-grid {
+    gap: 0.75rem;
+  }
+}
+
+@media screen and (min-width: 120rem) {
+  .profile-view {
+    max-width: 87.5rem;
+    margin: 0 auto;
+  }
 }
 </style>

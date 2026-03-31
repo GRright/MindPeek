@@ -469,8 +469,8 @@ onUnmounted(() => {
 
 <style scoped>
 .knowledge-graph-view {
-  min-height: calc(100vh - 112px);
-  padding: 20px;
+  min-height: calc(100vh - 7rem);
+  padding: 1.25rem;
   background: var(--bg-primary);
 }
 
@@ -478,21 +478,23 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .page-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 26px;
+  gap: 0.75rem;
+  font-size: 1.625rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
 
 .title-icon {
-  font-size: 28px;
+  font-size: 1.75rem;
 }
 
 .action-btn {
@@ -510,53 +512,38 @@ onUnmounted(() => {
 
 .graph-content {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 20px;
-  height: calc(100vh - 180px);
-  min-height: 500px;
+  grid-template-columns: 18.75rem 1fr;
+  gap: 1.25rem;
+  height: calc(100vh - 11.25rem);
+  min-height: 31.25rem;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 75rem) {
   .graph-content {
-    grid-template-columns: 260px 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .graph-content {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    height: auto;
-    min-height: auto;
-  }
-  
-  .left-sidebar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
+    grid-template-columns: 16.25rem 1fr;
   }
 }
 
 .left-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 0.5rem;
 }
 
 .left-sidebar::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem;
 }
 
 .left-sidebar::-webkit-scrollbar-track {
   background: var(--bg-tertiary);
-  border-radius: 3px;
+  border-radius: 0.1875rem;
 }
 
 .left-sidebar::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 3px;
+  border-radius: 0.1875rem;
 }
 
 .user-profile-card,
@@ -564,20 +551,20 @@ onUnmounted(() => {
 .legend-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 1rem;
+  padding: 1.25rem;
 }
 
 .user-avatar {
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 .avatar-ring {
-  width: 70px;
-  height: 70px;
+  width: 4.375rem;
+  height: 4.375rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  padding: 4px;
+  padding: 0.25rem;
   margin: 0 auto;
 }
 
@@ -589,95 +576,95 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .user-name {
   text-align: center;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 14px;
+  margin: 0 0 0.875rem;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .stat-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
   background: var(--bg-tertiary);
-  border-radius: 10px;
+  border-radius: 0.625rem;
   transition: transform 0.2s ease;
 }
 
 .stat-box:hover {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .stat-value {
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-muted);
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 14px;
+  margin-bottom: 0.875rem;
 }
 
 .type-bars {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .type-bar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .type-name {
-  width: 70px;
-  font-size: 11px;
+  width: 4.375rem;
+  font-size: 0.6875rem;
   color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 .type-bar {
   flex: 1;
-  height: 8px;
+  height: 0.5rem;
   background: var(--bg-tertiary);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   overflow: hidden;
 }
 
 .type-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   transition: width 0.6s ease;
 }
 
 .type-count {
-  width: 24px;
+  width: 1.5rem;
   text-align: right;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -685,28 +672,28 @@ onUnmounted(() => {
 .legend-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
   transition: transform 0.2s ease;
 }
 
 .legend-item:hover {
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
 }
 
 .legend-dot {
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   border-radius: 50%;
 }
 
 .legend-name {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
 }
 
@@ -719,7 +706,7 @@ onUnmounted(() => {
 .graph-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 1rem;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -729,25 +716,25 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
 .card-title {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .graph-controls {
   display: flex;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .mini-btn {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -763,6 +750,60 @@ onUnmounted(() => {
 
 .graph-container {
   flex: 1;
-  min-height: 0;
+  min-height: 25rem;
+}
+
+@media (max-width: 56.25rem) {
+  .knowledge-graph-view {
+    min-height: auto;
+    padding: 0.75rem;
+  }
+  
+  .graph-header {
+    margin-bottom: 0.75rem;
+  }
+  
+  .page-title {
+    font-size: 1.25rem;
+  }
+  
+  .graph-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .left-sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: 0.75rem;
+    overflow: visible;
+  }
+  
+  .legend-card {
+    display: none;
+  }
+  
+  .main-content {
+    min-height: 25rem;
+  }
+  
+  .graph-card {
+    height: 100%;
+    min-height: 25rem;
+  }
+  
+  .graph-container {
+    min-height: 20rem;
+  }
+}
+
+@media screen and (min-width: 120rem) {
+  .knowledge-graph-view {
+    max-width: 87.5rem;
+    margin: 0 auto;
+  }
 }
 </style>
