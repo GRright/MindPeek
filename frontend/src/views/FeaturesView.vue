@@ -9,7 +9,7 @@
             <span class="feature-count" v-if="features.length > 0">共 {{ features.length }} 个特征</span>
           </div>
           <div class="header-actions">
-            <div class="alerts-trigger" v-if="insights.alerts.length > 0" @click="showAlerts = !showAlerts">
+            <div class="alerts-trigger" v-if="insights.alerts.length > 0" @click="toggleAlerts">
               <el-icon :size="20"><Bell /></el-icon>
               <span class="alerts-badge">{{ insights.alerts.length }}</span>
             </div>
@@ -38,30 +38,6 @@
                 :value="type"
               />
             </el-select>
-          </div>
-        </div>
-        
-        <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
-          <div class="alerts-panel">
-            <div class="panel-header">
-              <el-icon :size="18"><Bell /></el-icon>
-              <span>智能提醒</span>
-            </div>
-            <div class="alerts-list">
-              <div 
-                v-for="(alert, index) in insights.alerts" 
-                :key="index"
-                :class="['alert-item', alert.level]"
-              >
-                <el-icon :size="16" :class="alert.level">
-                  <component :is="getAlertIcon(alert.icon)" />
-                </el-icon>
-                <div class="alert-content">
-                  <span class="alert-title">{{ alert.title }}</span>
-                  <span class="alert-message">{{ alert.message }}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -137,6 +113,30 @@
         </div>
       </div>
     </div>
+    
+    <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
+      <div class="alerts-panel">
+        <div class="panel-header">
+          <el-icon :size="18"><Bell /></el-icon>
+          <span>智能提醒</span>
+        </div>
+        <div class="alerts-list">
+          <div 
+            v-for="(alert, index) in insights.alerts" 
+            :key="index"
+            :class="['alert-item', alert.level]"
+          >
+            <el-icon :size="16" :class="alert.level">
+              <component :is="getAlertIcon(alert.icon)" />
+            </el-icon>
+            <div class="alert-content">
+              <span class="alert-title">{{ alert.title }}</span>
+              <span class="alert-message">{{ alert.message }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -165,14 +165,18 @@ const showAlerts = ref(false)
 
 let abortController = null
 
+function toggleAlerts() {
+  showAlerts.value = !showAlerts.value
+  console.log('toggleAlerts, showAlerts:', showAlerts.value)
+}
+
 function handleClickOutside(event) {
-  if (showAlerts.value) {
-    const target = event.target
-    const dropdown = document.querySelector('.alerts-dropdown')
-    const trigger = document.querySelector('.alerts-trigger')
-    if (dropdown && !dropdown.contains(target) && trigger && !trigger.contains(target)) {
-      showAlerts.value = false
-    }
+  if (!showAlerts.value) return
+  const target = event.target
+  const dropdown = document.querySelector('.alerts-dropdown')
+  const trigger = document.querySelector('.alerts-trigger')
+  if (dropdown && !dropdown.contains(target) && trigger && !trigger.contains(target)) {
+    showAlerts.value = false
   }
 }
 
@@ -372,6 +376,7 @@ function tableRowClassName({ rowIndex }) {
   height: calc(100vh - 7rem);
   min-height: 400px;
   overflow: hidden;
+  position: relative;
 }
 
 .features-layout {
@@ -385,7 +390,6 @@ function tableRowClassName({ rowIndex }) {
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  position: relative;
 }
 
 .alerts-trigger {
@@ -426,13 +430,11 @@ function tableRowClassName({ rowIndex }) {
 
 .alerts-dropdown {
   position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
+  top: 5.5rem;
+  right: 1.25rem;
   z-index: 1000;
   min-width: 22rem;
   max-width: 28rem;
-  max-height: 25rem;
 }
 
 .alerts-panel {
