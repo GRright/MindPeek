@@ -242,7 +242,11 @@ async function loadInsights() {
     const response = await axios.get(`/api/profile/${store.currentUserId}/insights`, {
       signal: abortController.signal
     })
-    insights.value = response.data
+    const data = response.data
+    data.alerts = data.alerts.filter(alert => 
+      !alert.title.includes('更新') && !alert.title.includes('update')
+    )
+    insights.value = data
   } catch (e) {
     if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
       console.error('Failed to load insights:', e)
