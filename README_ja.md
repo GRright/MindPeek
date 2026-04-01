@@ -61,9 +61,9 @@ AIはあなたのプロファイルに基づいて思いやりのある応答を
         <strong>チャット画面</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/chat1.png" width="300" alt="スマートシンキング"/>
+        <img src="docs/images/page/chat1.png" width="300" alt="パーソナライズ会話"/>
         <br/>
-        <strong>スマートシンキング</strong>
+        <strong>ユーザープロファイルに基づく会話</strong>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="特徴管理"/>
@@ -78,14 +78,14 @@ AIはあなたのプロファイルに基づいて思いやりのある応答を
         <strong>特徴グラフ</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/profile1.png" width="300" alt="ユーザープロファイル1"/>
+        <img src="docs/images/page/profile1.png" width="300" alt="ユーザープロファイル"/>
         <br/>
         <strong>ユーザープロファイル</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/profile2.png" width="300" alt="ユーザープロファイル2"/>
+        <img src="docs/images/page/profile2.png" width="300" alt="行動予測"/>
         <br/>
-        <strong>特徴分布</strong>
+        <strong>行動予測</strong>
       </td>
     </tr>
   </table>
@@ -196,11 +196,6 @@ python tests/interactive_conversation_test.py
 - **ディープ会話解析**：継続的な対話を通じてユーザー特徴を自動抽出
 - **多次元プロファイリング**：性格、興味、価値観、感情状態などをカバー
 - **継続的進化**：ユーザープロファイルは会話と共に常に更新・改善
-
-### 🔄 タブ間会話履歴同期
-- **データベース永続化**：すべての会話が自動保存、失われない
-- **タブ間同期**：新しいタブで即座に完全な会話履歴を表示
-- **思考内容保存**：AIの深い思考プロセスも記録
 
 ### 🎨 レスポンシブUIデザイン
 - **デスクトップ**：左右分割レイアウトで完全な機能表示

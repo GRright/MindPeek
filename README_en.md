@@ -61,9 +61,9 @@ AI provides thoughtful responses based on your profile:
         <strong>Chat Interface</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/chat1.png" width="300" alt="Smart Thinking"/>
+        <img src="docs/images/page/chat1.png" width="300" alt="Smart Conversation"/>
         <br/>
-        <strong>Smart Thinking</strong>
+        <strong>Personalized Conversation</strong>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="Feature Management"/>
@@ -78,14 +78,14 @@ AI provides thoughtful responses based on your profile:
         <strong>Feature Graph</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/profile1.png" width="300" alt="User Profile 1"/>
+        <img src="docs/images/page/profile1.png" width="300" alt="User Profile"/>
         <br/>
         <strong>User Profile</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/profile2.png" width="300" alt="User Profile 2"/>
+        <img src="docs/images/page/profile2.png" width="300" alt="Behavior Prediction"/>
         <br/>
-        <strong>Feature Distribution</strong>
+        <strong>Behavior Prediction</strong>
       </td>
     </tr>
   </table>
@@ -196,11 +196,6 @@ After the test, visit these pages to see results:
 - **Deep Conversation Analysis**: Auto-extract user features through continuous dialogue
 - **Multi-dimensional Profiling**: Covers personality, interests, values, emotional states, etc.
 - **Continuous Evolution**: User profile constantly updates and improves with conversations
-
-### 🔄 Cross-tab Conversation Sync
-- **Database Persistence**: All conversations auto-saved, never lost
-- **Cross-tab Sync**: New tabs immediately show full conversation history
-- **Think Content Saved**: AI's deep thinking process is also recorded
 
 ### 🎨 Responsive UI Design
 - **Desktop**: Full feature display with left-right split layout
