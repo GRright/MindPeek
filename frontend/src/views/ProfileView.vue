@@ -983,12 +983,17 @@ function getTimeframeLabel(timeframe) {
   display: grid;
   grid-template-columns: 20rem 1fr;
   gap: 1.25rem;
+  align-items: start;
 }
 
 .profile-sidebar {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
 }
 
 .user-card {
