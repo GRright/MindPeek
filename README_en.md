@@ -50,6 +50,49 @@ AI provides thoughtful responses based on your profile:
 
 ---
 
+## 🖼️ Demo Gallery
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="docs/images/page/chat.png" width="300" alt="Chat Interface"/>
+        <br/>
+        <strong>Chat Interface</strong>
+      </td>
+      <td align="center">
+        <img src="docs/images/page/chat1.png" width="300" alt="Smart Thinking"/>
+        <br/>
+        <strong>Smart Thinking</strong>
+      </td>
+      <td align="center">
+        <img src="docs/images/page/feature1.png" width="300" alt="Feature Management"/>
+        <br/>
+        <strong>Feature Management</strong>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="docs/images/page/knowledge-graph.png" width="300" alt="Feature Graph"/>
+        <br/>
+        <strong>Feature Graph</strong>
+      </td>
+      <td align="center">
+        <img src="docs/images/page/profile1.png" width="300" alt="User Profile 1"/>
+        <br/>
+        <strong>User Profile</strong>
+      </td>
+      <td align="center">
+        <img src="docs/images/page/profile2.png" width="300" alt="User Profile 2"/>
+        <br/>
+        <strong>Feature Distribution</strong>
+      </td>
+    </tr>
+  </table>
+</p>
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
@@ -147,38 +190,32 @@ After the test, visit these pages to see results:
 
 ---
 
-## 🆕 Latest Features
+## ⚡ System Features
 
-### 🔔 Smart Alert System
-Emotion anomaly detection based on conversation content:
-- **Emotion Monitoring**: Automatically identify negative emotions like anxiety, depression, and anger
-- **Timely Warning**: Alert when emotional abnormalities are detected
-- **Health Advice**: Provide mental health related suggestions
+### 🧠 Intelligent User Profiling
+- **Deep Conversation Analysis**: Auto-extract user features through continuous dialogue
+- **Multi-dimensional Profiling**: Covers personality, interests, values, emotional states, etc.
+- **Continuous Evolution**: User profile constantly updates and improves with conversations
 
-### 📱 Responsive Design
-User interface adapted for all platforms:
+### 🔄 Cross-tab Conversation Sync
+- **Database Persistence**: All conversations auto-saved, never lost
+- **Cross-tab Sync**: New tabs immediately show full conversation history
+- **Think Content Saved**: AI's deep thinking process is also recorded
+
+### 🎨 Responsive UI Design
 - **Desktop**: Full feature display with left-right split layout
-- **Tablet**: Adaptive layout with optimized touch experience
-- **Mobile**: Streamlined interface with core features prioritized
+- **Mobile**: Adaptive optimization, core features prioritized
+- **Humanized Interaction**: Smart scrolling, no interruption to user reading
 
-### 🔧 User Management Optimization
-Unified user identity management:
-- Automatically generate unique user ID
-- Local persistent storage
-- Seamless cross-session experience
+### 🔔 Smart Emotional Alerts
+- **Real-time Emotion Monitoring**: Auto-identify negative emotional states
+- **Timely Health Warnings**: Proactive alerts when abnormalities are detected
+- **Personalized Suggestions**: Care based on user's situation
 
-### Smart Intent Classification
-Intelligent intent classification based on **Embedding semantic understanding**:
-- Hybrid approach: Rule-first + Embedding semantic judgment
-- High performance: 90%+ requests respond in milliseconds
-- Smart understanding: Accurate recognition of synonyms and variants
-
-### Feature Decay Mechanism
-![Decay Function Diagram](docs/images/decay_function_en.png)
-
-- **Stability Period**: Feature confidence remains unchanged
-- **Decay Period**: Logarithmic decay, eventually converging to minimum threshold
-- **Lazy Update**: Calculate on access, reduce database writes
+### 🔗 Visual Feature Graph
+- **Knowledge Graph Display**: Intuitive presentation of feature relationships
+- **Feature Distribution Charts**: Visualize user profile composition
+- **Interactive Exploration**: Click to view detailed feature info
 
 ---
 

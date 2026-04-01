@@ -3,7 +3,7 @@
     <div class="graph-header">
       <h1 class="page-title">
         <span class="title-icon">🔮</span>
-        <span class="title-text">用户画像知识图谱</span>
+        <span class="title-text">用户画像特征图谱</span>
       </h1>
       <div class="header-actions">
         <el-button class="action-btn" @click="refreshGraph">
@@ -74,7 +74,7 @@
       <main class="main-content">
         <div class="graph-card">
           <div class="card-header">
-            <span class="card-title">🌀 知识图谱</span>
+            <span class="card-title">🌀 特征图谱</span>
             <div class="graph-controls">
               <el-button size="small" class="mini-btn" @click="zoomIn">+</el-button>
               <el-button size="small" class="mini-btn" @click="zoomOut">-</el-button>

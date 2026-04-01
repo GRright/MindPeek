@@ -243,15 +243,26 @@ async def chat_stream(
 
             display_content = display_content.strip()
 
+            print(f"\n>>> 保存对话到数据库...")
+            print(f"  - 用户ID: {request.user_id}")
+            print(f"  - 用户消息: {request.message[:50]}...")
+            print(f"  - 助手回复: {display_content[:50]}...")
+            print(f"  - 思考内容: {think_content[:50] if think_content else 'None'}...")
+            
+            save_conversation_sync(request.user_id, "user", request.message, "default", None)
+            save_conversation_sync(request.user_id, "assistant", display_content if display_content else "(无回复内容)", "default", think_content)
+            print(f">>> 对话保存完成\n")
+
             if think_content:
                 yield f"data: {json.dumps({'type': 'think', 'content': think_content})}\n\n"
 
             yield f"data: {json.dumps({'type': 'done', 'content': display_content, 'think_content': think_content})}\n\n"
 
-            import asyncio
-            asyncio.create_task(
-                post_stream_tasks(request.user_id, request.message, display_content, request.extract_features)
-            )
+            if request.extract_features:
+                import asyncio
+                asyncio.create_task(
+                    _extract_features_async(request.user_id, request.message, display_content)
+                )
 
         except Exception as e:
             import traceback
@@ -263,23 +274,14 @@ async def chat_stream(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
-async def post_stream_tasks(user_id: str, message: str, response: str, extract_features: bool):
-    """流式响应后的后台任务：保存对话和提取特征"""
+async def _extract_features_async(user_id: str, message: str, response: str):
+    """异步执行特征提取，不阻塞流式响应"""
     try:
-        print(f"\n>>> 后台任务开始 for user_id: {user_id}")
-        
-        save_conversation_sync(user_id, "user", message, "default")
-        save_conversation_sync(user_id, "assistant", response if response else "(无回复内容)", "default")
-        print(f">>> 对话保存完成")
-        
-        if extract_features:
-            print(f">>> 开始特征提取...")
-            extract_features_sync(user_id, message, response if response else "(无回复内容)")
-            print(f">>> 特征提取完成")
-        
-        print(f">>> 后台任务完成\n")
+        print(f">>> 开始特征提取...")
+        extract_features_sync(user_id, message, response if response else "(无回复内容)")
+        print(f">>> 特征提取完成")
     except Exception as e:
-        print(f">>> 后台任务失败: {e}")
+        print(f">>> 特征提取失败: {e}")
         import traceback
         print(traceback.format_exc())
 
@@ -531,11 +533,32 @@ def calculate_big_five(features):
 
 def extract_mbti_from_features(features):
     """从特征中提取 MBTI"""
+    import re
+    mbti_pattern = r'[IE][NS][FT][JP]'
+    
+    mbti_candidates = []
     for f in features:
-        if f.get('feature_type') == 'MBTI' or f.get('feature_type') == '个人信息':
+        if f.get('feature_type') == 'MBTI':
             value = f.get('feature_value', '')
-            if 'INT' in value or 'INF' in value or 'IST' in value or 'ISF' in value:
-                return value
+            confidence = f.get('confidence', 0)
+            
+            matches = re.findall(mbti_pattern, value.upper())
+            if matches:
+                for match in matches:
+                    mbti_candidates.append((match, confidence))
+    
+    if mbti_candidates:
+        mbti_counts = {}
+        for mbti, conf in mbti_candidates:
+            if mbti not in mbti_counts:
+                mbti_counts[mbti] = {'count': 0, 'total_confidence': 0}
+            mbti_counts[mbti]['count'] += 1
+            mbti_counts[mbti]['total_confidence'] += conf
+        
+        best_mbti = max(mbti_counts.items(), 
+                       key=lambda x: (x[1]['count'], x[1]['total_confidence']))
+        return best_mbti[0]
+    
     return None
 
 def calculate_average_confidence(features):

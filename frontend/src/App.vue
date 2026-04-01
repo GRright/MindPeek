@@ -37,6 +37,7 @@
           <div class="page-title">{{ currentPageTitle }}</div>
           <div class="top-bar-actions">
             <el-button
+              v-if="currentPageTitle !== '对话分析'"
               type="primary"
               class="config-btn"
               @click="showConfigDialog = true"
@@ -86,14 +87,14 @@ const sidebarCollapsed = ref(false)
 const navItems = [
   { path: '/chat', label: '对话分析', icon: 'ChatDotRound' },
   { path: '/profile', label: '用户画像', icon: 'UserFilled' },
-  { path: '/knowledge-graph', label: '知识图谱', icon: 'Connection' },
+  { path: '/knowledge-graph', label: '特征图谱', icon: 'Connection' },
   { path: '/features', label: '特征管理', icon: 'List' }
 ]
 
 const routeNameMap = {
   '/chat': '对话分析',
   '/profile': '用户画像',
-  '/knowledge-graph': '知识图谱',
+  '/knowledge-graph': '特征图谱',
   '/features': '特征管理'
 }
 

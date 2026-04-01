@@ -22,11 +22,6 @@
             </div>
             <div class="stat-divider"></div>
             <div class="stat-item">
-              <span class="stat-value">{{ profileSummary?.conversation_count || 0 }}</span>
-              <span class="stat-label">对话轮数</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
               <span class="stat-value">{{ confidencePercent }}%</span>
               <span class="stat-label">置信度</span>
             </div>
@@ -92,7 +87,7 @@
             <el-tab-pane label="特征总览" name="overview">
               <div ref="overviewContainer" class="chart-container"></div>
             </el-tab-pane>
-            <el-tab-pane label="分布图" name="pie">
+            <el-tab-pane label="特征分布" name="pie">
               <div ref="pieContainer" class="chart-container"></div>
             </el-tab-pane>
           </el-tabs>
@@ -230,10 +225,13 @@ function getFeatureValueByType(type) {
 
 // 获取 MBTI 总结
 function getMbtiSummary() {
+  if (profileSummary.value?.mbti) {
+    return profileSummary.value.mbti
+  }
+  
   const mbtiFeature = allFeatures.value.find(f => f.feature_type === 'MBTI')
   if (mbtiFeature) {
     const value = mbtiFeature.feature_value
-    // 提取 MBTI 类型（如 INFP、INTP）
     const match = value.match(/[A-Z]{4}/)
     if (match) return match[0]
     return value.slice(0, 10) + (value.length > 10 ? '...' : '')
