@@ -35,16 +35,6 @@
       <main class="main-content">
         <header class="top-bar">
           <div class="page-title">{{ currentPageTitle }}</div>
-          <div class="top-bar-actions">
-            <el-button
-              type="primary"
-              class="config-btn"
-              @click="showConfigDialog = true"
-            >
-              <el-icon><Setting /></el-icon>
-              <span>API 配置</span>
-            </el-button>
-          </div>
         </header>
 
         <div class="content-area">
@@ -56,32 +46,45 @@
         </div>
       </main>
 
-      <el-dialog v-model="showConfigDialog" title="API 配置" width="500px" class="config-dialog">
-        <api-config @configured="showConfigDialog = false" />
-      </el-dialog>
     </div>
   </el-config-provider>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-import ApiConfig from './components/ApiConfig.vue'
 import {
   Cpu,
   ChatDotRound,
   UserFilled,
   Connection,
   List,
-  Setting,
   DArrowLeft,
   DArrowRight
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
-const showConfigDialog = ref(false)
 const sidebarCollapsed = ref(false)
+
+const BREAKPOINT = 1024
+
+const handleResize = () => {
+  if (window.innerWidth <= BREAKPOINT) {
+    sidebarCollapsed.value = true
+  } else {
+    sidebarCollapsed.value = false
+  }
+}
+
+onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 const navItems = [
   { path: '/chat', label: '对话分析', icon: 'ChatDotRound' },
@@ -294,46 +297,11 @@ html, body, #app {
   color: var(--text-primary);
 }
 
-.top-bar-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.config-btn {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  height: 36px;
-  font-weight: 500;
-}
-
-.config-btn:hover {
-  background: var(--bg-hover) !important;
-  border-color: var(--accent-color) !important;
-}
-
 .content-area {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
   background: var(--bg-primary);
-}
-
-.config-dialog .el-dialog {
-  background: var(--bg-secondary) !important;
-  border: 1px solid var(--border-color);
-}
-
-.config-dialog .el-dialog__header {
-  border-bottom: 1px solid var(--border-color);
-}
-
-.config-dialog .el-dialog__title {
-  color: var(--text-primary);
 }
 
 ::-webkit-scrollbar {
@@ -367,6 +335,22 @@ html, body, #app {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(-20px);
+}
+
+@media (max-width: 1024px) {
+  .top-bar {
+    padding: 0 16px;
+  }
+
+  .content-area {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-bar .page-title {
+    font-size: 16px;
+  }
 }
 
 @keyframes fadeInUp {

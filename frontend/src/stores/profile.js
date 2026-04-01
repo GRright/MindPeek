@@ -3,12 +3,18 @@ import { ref, computed, watch } from 'vue'
 import api from '@/api'
 
 const STORAGE_KEY = 'mindpeek_user_id'
+const MULTIMODAL_KEY = 'mindpeek_multimodal'
 
 function getInitialUserId() {
   const stored = localStorage.getItem(STORAGE_KEY)
   if (stored) return stored
   localStorage.setItem(STORAGE_KEY, 'MindPeek')
   return 'MindPeek'
+}
+
+function getInitialMultimodal() {
+  const stored = localStorage.getItem(MULTIMODAL_KEY)
+  return stored === 'true'
 }
 
 export const useProfileStore = defineStore('profile', () => {
@@ -19,10 +25,16 @@ export const useProfileStore = defineStore('profile', () => {
   const knowledgeGraph = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  const multimodalEnabled = ref(getInitialMultimodal())
 
   watch(currentUserId, (newId) => {
     localStorage.setItem(STORAGE_KEY, newId)
   })
+
+  function setMultimodalEnabled(enabled) {
+    multimodalEnabled.value = enabled
+    localStorage.setItem(MULTIMODAL_KEY, String(enabled))
+  }
 
   const mbti = computed(() => {
     if (!features.value) return null

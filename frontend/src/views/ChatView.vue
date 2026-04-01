@@ -43,6 +43,10 @@
                   </div>
                 </div>
 
+                <div v-if="msg.images && msg.images.length > 0" class="message-images">
+                  <img v-for="(img, idx) in msg.images" :key="idx" :src="img" alt="图片" @click="previewImage(img)" />
+                </div>
+
                 <div v-if="msg.content" v-html="renderMarkdown(msg.content)" class="message-text"></div>
 
                 <div v-if="msg.is_streaming" class="typing-dots">
@@ -71,9 +75,20 @@
             <button class="tool-btn">
               <el-icon><Paperclip /></el-icon>
             </button>
-            <button class="tool-btn">
+            <button 
+              v-if="store.multimodalEnabled" 
+              class="tool-btn"
+              @click="triggerImageUpload"
+            >
               <el-icon><Picture /></el-icon>
             </button>
+            <input
+              ref="imageInput"
+              type="file"
+              accept="image/*"
+              style="display: none"
+              @change="handleImageSelect"
+            />
           </div>
 
           <div class="textarea-wrapper">
@@ -88,12 +103,21 @@
             ></textarea>
           </div>
 
+          <div v-if="uploadedImages.length > 0" class="uploaded-images-preview">
+            <div v-for="img in uploadedImages" :key="img.id" class="uploaded-image-item">
+              <img :src="img.url" :alt="img.name" />
+              <button class="remove-image-btn" @click="removeImage(img.id)">
+                <el-icon><Close /></el-icon>
+              </button>
+            </div>
+          </div>
+
           <div class="send-section">
             <button
               class="send-btn"
               :class="{ loading: loading }"
               @click="sendMessage"
-              :disabled="loading || !inputMessage.trim()"
+              :disabled="loading || (!inputMessage.trim() && uploadedImages.length === 0)"
             >
               <el-icon v-if="!loading"><Promotion /></el-icon>
               <el-icon v-else class="spinner-icon"><Loading /></el-icon>
@@ -125,7 +149,8 @@ import {
   Refresh,
   DocumentCopy,
   ArrowRight,
-  ArrowDown
+  ArrowDown,
+  Close
 } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
@@ -137,6 +162,8 @@ const messages = ref([])
 const loading = ref(false)
 const messagesContainer = ref(null)
 const inputTextarea = ref(null)
+const imageInput = ref(null)
+const uploadedImages = ref([])
 
 function formatThinkContent(content) {
   if (!content) return ''
@@ -158,6 +185,45 @@ function clearChat() {
 function sendSuggestion(text) {
   inputMessage.value = text
   sendMessage()
+}
+
+function triggerImageUpload() {
+  imageInput.value?.click()
+}
+
+async function handleImageSelect(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过 10MB')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    uploadedImages.value.push({
+      id: Date.now(),
+      url: e.target.result,
+      name: file.name
+    })
+    ElMessage.success('图片已上传，将随消息发送')
+  }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+function removeImage(imageId) {
+  uploadedImages.value = uploadedImages.value.filter(img => img.id !== imageId)
+}
+
+function previewImage(url) {
+  window.open(url, '_blank')
 }
 
 function copyMessage(content) {
@@ -206,23 +272,27 @@ async function loadLocalConversations() {
 }
 
 async function sendMessage() {
-  if (!inputMessage.value.trim() || loading.value) {
+  if ((!inputMessage.value.trim() && uploadedImages.value.length === 0) || loading.value) {
     return
   }
 
   const message = inputMessage.value
+  const images = [...uploadedImages.value]
   inputMessage.value = ''
+  uploadedImages.value = []
   if (inputTextarea.value) {
     inputTextarea.value.style.height = 'auto'
   }
 
   const userMsgId = Date.now()
-  messages.value.push({
+  const userMessage = {
     id: userMsgId,
     role: 'user',
     content: message,
+    images: images.map(img => img.url),
     timestamp: new Date().toISOString()
-  })
+  }
+  messages.value.push(userMessage)
 
   scrollToBottom()
 
@@ -247,7 +317,8 @@ async function sendMessage() {
       body: JSON.stringify({
         user_id: userId.value,
         message: message,
-        extract_features: true
+        extract_features: true,
+        images: images.length > 0 ? images.map(img => img.url) : null
       })
     })
 
@@ -692,6 +763,68 @@ function renderMarkdown(content) {
 
 .input-container:focus-within {
   border-color: var(--accent-color);
+}
+
+.uploaded-images-preview {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px;
+  flex-wrap: wrap;
+}
+
+.uploaded-image-item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.uploaded-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.message-images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.message-images img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.message-images img:hover {
+  transform: scale(1.05);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.remove-image-btn:hover {
+  background: rgba(239, 68, 68, 0.8);
 }
 
 .input-tools {

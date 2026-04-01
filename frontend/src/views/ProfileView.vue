@@ -146,7 +146,6 @@
             <div v-if="predictions.length === 0 && !generatingPredictions" class="empty-predictions">
               <el-icon :size="48"><MagicStick /></el-icon>
               <p>暂无预测数据</p>
-              <p class="empty-hint">点击"生成预测"按钮，AI 将基于您的特征进行智能预测</p>
             </div>
 
             <div v-if="generatingPredictions" class="loading-predictions">
