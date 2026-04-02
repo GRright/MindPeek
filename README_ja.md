@@ -146,35 +146,31 @@ python tests/interactive_conversation_test.py
 
 ## 📊 システムアーキテクチャ
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      MindPeek フロントエンド                       │
-│   💬 チャット  │  👤 プロファイル  │  🔗 ナレッジグラフ  │  ✨ 特徴  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    🤖 LangGraph Orchestrator                     │
-│                                                                  │
-│   ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐│
-│   │   Feature    │  │   Latent     │  │     Correlation        ││
-│   │  Discovery   │  │   Intent     │  │        Agent          ││
-│   │    Agent     │  │   Agent      │  │                        ││
-│   └──────────────┘  └──────────────┘  └────────────────────────┘│
-│                                                                  │
-│   ┌──────────────────────────┐  ┌─────────────────────────────┐ │
-│   │         MBTI /            │  │        Prediction          │ │
-│   │        BigFive           │  │          Agent              │ │
-│   │         Agent            │  │                             │ │
-│   └──────────────────────────┘  └─────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        ▼                       ▼                       ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
-│    💾 SQLite    │  │   📡 MemoBase   │  │       🧠 LLM        │
-│   ローカル保存    │  │   リモート同期    │  │   (DeepSeek等)     │
-└─────────────────┘  └─────────────────┘  └─────────────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["MindPeek フロントエンド"]
+        Chat["💬 チャット"]
+        Profile["👤 プロファイル"]
+        KG["🔗 ナレッジグラフ"]
+        Features["✨ 特徴"]
+    end
+
+    subgraph LangGraph["🤖 LangGraph Orchestrator"]
+        FeatureAgent["Feature Discovery Agent"]
+        IntentAgent["Latent Intent Agent"]
+        CorrelationAgent["Correlation Agent"]
+        MBTIAgent["MBTI / BigFive Agent"]
+        PredictionAgent["Prediction Agent"]
+    end
+
+    subgraph Storage["ストレージ層"]
+        SQLite["💾 SQLite<br/>ローカル保存"]
+        MemoBase["📡 MemoBase<br/>リモート同期"]
+        LLM["🧠 LLM<br/>(DeepSeek等)"]
+    end
+
+    Frontend --> LangGraph
+    LangGraph --> Storage
 ```
 
 ---

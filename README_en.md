@@ -146,35 +146,31 @@ After the test, visit these pages to see results:
 
 ## 📊 System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        MindPeek Frontend                         │
-│   💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    🤖 LangGraph Orchestrator                     │
-│                                                                  │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
-│   │   Feature    │  │   Latent    │  │      Correlation       │ │
-│   │  Discovery   │  │   Intent    │  │         Agent          │ │
-│   │    Agent     │  │   Agent     │  │                        │ │
-│   └─────────────┘  └─────────────┘  └─────────────────────────┘ │
-│                                                                  │
-│   ┌─────────────────────────┐  ┌─────────────────────────────┐  │
-│   │        MBTI /           │  │        Prediction           │  │
-│   │       BigFive           │  │          Agent              │  │
-│   │        Agent            │  │                             │  │
-│   └─────────────────────────┘  └─────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        ▼                       ▼                       ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
-│    💾 SQLite    │  │   📡 MemoBase   │  │       🧠 LLM        │
-│   Local Store   │  │   Remote Sync   │  │  (DeepSeek etc.)    │
-└─────────────────┘  └─────────────────┘  └─────────────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["MindPeek Frontend"]
+        Chat["💬 Chat"]
+        Profile["👤 Profile"]
+        KG["🔗 Knowledge Graph"]
+        Features["✨ Features"]
+    end
+
+    subgraph LangGraph["🤖 LangGraph Orchestrator"]
+        FeatureAgent["Feature Discovery Agent"]
+        IntentAgent["Latent Intent Agent"]
+        CorrelationAgent["Correlation Agent"]
+        MBTIAgent["MBTI / BigFive Agent"]
+        PredictionAgent["Prediction Agent"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        SQLite["💾 SQLite<br/>Local Store"]
+        MemoBase["📡 MemoBase<br/>Remote Sync"]
+        LLM["🧠 LLM<br/>(DeepSeek etc.)"]
+    end
+
+    Frontend --> LangGraph
+    LangGraph --> Storage
 ```
 
 ---
