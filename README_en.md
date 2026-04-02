@@ -149,18 +149,18 @@ After the test, visit these pages to see results:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        MindPeek Frontend                         │
-│   💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features  │  ⚙️ Settings   │
+│   💬 Chat  │  👤 Profile  │  🔗 Knowledge Graph  │  ✨ Features  │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    🤖 LangGraph Orchestrator                     │
 │                                                                  │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│   │   Feature   │  │   Latent    │  │      Correlation       │  │
-│   │  Discovery  │  │   Intent    │  │        Agent           │  │
-│   │   Agent     │  │   Agent     │  │                        │  │
-│   └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│   ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
+│   │   Feature    │  │   Latent    │  │      Correlation       │ │
+│   │  Discovery   │  │   Intent    │  │         Agent          │ │
+│   │    Agent     │  │   Agent     │  │                        │ │
+│   └─────────────┘  └─────────────┘  └─────────────────────────┘ │
 │                                                                  │
 │   ┌─────────────────────────┐  ┌─────────────────────────────┐  │
 │   │        MBTI /           │  │        Prediction           │  │
@@ -172,8 +172,8 @@ After the test, visit these pages to see results:
         ┌───────────────────────┼───────────────────────┐
         ▼                       ▼                       ▼
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
-│    💾 SQLite   │  │   📡 MemoBase  │  │       🧠 LLM        │
-│   Local Store  │  │   Remote Sync  │  │   (DeepSeek etc.)   │
+│    💾 SQLite    │  │   📡 MemoBase   │  │       🧠 LLM        │
+│   Local Store   │  │   Remote Sync   │  │  (DeepSeek etc.)    │
 └─────────────────┘  └─────────────────┘  └─────────────────────┘
 ```
 
