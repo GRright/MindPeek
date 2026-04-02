@@ -25,8 +25,8 @@
     <text x="327.5" y="130" text-anchor="middle" class="node-text">👤 ユーザープロファイル</text>
     <text x="327.5" y="150" text-anchor="middle" class="node-text">Profile</text>
     <rect x="430" y="100" width="155" height="70" class="node-box"/>
-    <text x="507.5" y="130" text-anchor="middle" class="node-text">🔗 ナレッジグラフ</text>
-    <text x="507.5" y="150" text-anchor="middle" class="node-text">KG</text>
+    <text x="507.5" y="130" text-anchor="middle" class="node-text">🔗 特徴グラフ</text>
+    <text x="507.5" y="150" text-anchor="middle" class="node-text">Feature Graph</text>
     <rect x="610" y="100" width="155" height="70" class="node-box"/>
     <text x="687.5" y="130" text-anchor="middle" class="node-text">✨ 特徴管理</text>
     <text x="687.5" y="150" text-anchor="middle" class="node-text">Features</text>
@@ -70,9 +70,9 @@
     <text x="225" y="625" text-anchor="middle" class="node-text">💾 SQLite</text>
     <text x="225" y="645" text-anchor="middle" class="node-text">データベース</text>
     <rect x="340" y="595" width="170" height="70" class="node-box"/>
-    <text x="425" y="625" text-anchor="middle" class="node-text">📡 MemoBase</text>
+    <text x="425" y="625" text-anchor="middle" class="node-text">☁️ MemoBase</text>
     <text x="425" y="645" text-anchor="middle" class="node-text">クラウドストレージ</text>
     <rect x="540" y="595" width="170" height="70" class="node-box"/>
-    <text x="625" y="625" text-anchor="middle" class="node-text">🧠 LLM</text>
+    <text x="625" y="625" text-anchor="middle" class="node-text">🤖 LLM</text>
     <text x="625" y="645" text-anchor="middle" class="node-text">大規模言語モデル</text>
 </svg>

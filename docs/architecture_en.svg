@@ -25,8 +25,8 @@
     <text x="327.5" y="130" text-anchor="middle" class="node-text">👤 User Profile</text>
     <text x="327.5" y="150" text-anchor="middle" class="node-text">用户画像</text>
     <rect x="430" y="100" width="155" height="70" class="node-box"/>
-    <text x="507.5" y="130" text-anchor="middle" class="node-text">🔗 Knowledge Graph</text>
-    <text x="507.5" y="150" text-anchor="middle" class="node-text">知识图谱</text>
+    <text x="507.5" y="130" text-anchor="middle" class="node-text">🔗 Feature Graph</text>
+    <text x="507.5" y="150" text-anchor="middle" class="node-text">特征图谱</text>
     <rect x="610" y="100" width="155" height="70" class="node-box"/>
     <text x="687.5" y="130" text-anchor="middle" class="node-text">✨ Features</text>
     <text x="687.5" y="150" text-anchor="middle" class="node-text">特征管理</text>
@@ -70,9 +70,9 @@
     <text x="225" y="625" text-anchor="middle" class="node-text">💾 SQLite</text>
     <text x="225" y="645" text-anchor="middle" class="node-text">Database</text>
     <rect x="340" y="595" width="170" height="70" class="node-box"/>
-    <text x="425" y="625" text-anchor="middle" class="node-text">📡 MemoBase</text>
+    <text x="425" y="625" text-anchor="middle" class="node-text">☁️ MemoBase</text>
     <text x="425" y="645" text-anchor="middle" class="node-text">Cloud Storage</text>
     <rect x="540" y="595" width="170" height="70" class="node-box"/>
-    <text x="625" y="625" text-anchor="middle" class="node-text">🧠 LLM</text>
+    <text x="625" y="625" text-anchor="middle" class="node-text">🤖 LLM</text>
     <text x="625" y="645" text-anchor="middle" class="node-text">Large Language Model</text>
 </svg>
