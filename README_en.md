@@ -64,8 +64,6 @@ AI provides thoughtful responses based on your profile:
         <img src="docs/images/page/chat1.png" width="300" alt="Smart Conversation"/>
         <br/>
         <strong>Personalized Conversation*</strong>
-        <br/>
-        <small style="color: #666;">* When users chat, responses are personalized based on user profile information. In the image, the answer is tailored to the user who lives in Shanghai and has a fast-paced lifestyle, making the response more relevant to the user's actual situation.</small>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="Feature Management"/>
@@ -91,6 +89,10 @@ AI provides thoughtful responses based on your profile:
       </td>
     </tr>
   </table>
+</p>
+
+<p style="color: #666; font-size: 12px; text-align: left; padding-left: 40px;">
+* When users chat, responses are personalized based on user profile information. In the image, the answer is tailored to the user who lives in Shanghai and has a fast-paced lifestyle, making the response more relevant to the user's actual situation.
 </p>
 
 ---

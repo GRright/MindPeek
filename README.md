@@ -66,8 +66,6 @@ AI 会根据你的画像提供贴心回复：
         <img src="docs/images/page/chat1.png" width="300" alt="智能思考"/>
         <br/>
         <strong>根据用户画像智能对话*</strong>
-        <br/>
-        <small style="color: #666;">* 用户对话时会根据用户画像信息个性化进行回答，图中已根据用户居住在上海，生活节奏快等之前已经提取到的用户特征信息进行回答，使得答案更贴近用户实际。</small>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="特征管理"/>
@@ -93,6 +91,10 @@ AI 会根据你的画像提供贴心回复：
       </td>
     </tr>
   </table>
+</p>
+
+<p style="color: #666; font-size: 12px; text-align: left; padding-left: 40px;">
+* 用户对话时会根据用户画像信息个性化进行回答，图中已根据用户居住在上海，生活节奏快等之前已经提取到的用户特征信息进行回答，使得答案更贴近用户实际。
 </p>
 
 ***
