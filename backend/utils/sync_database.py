@@ -9,23 +9,21 @@ import json
 
 DB_PATH = 'C:\\myProject\\MindPeek\\data\\permir.db'
 
-def save_conversation_sync(user_id: str, role: str, content: str, session_id: str = "default") -> bool:
+def save_conversation_sync(user_id: str, role: str, content: str, session_id: str = "default", think_content: str = None) -> bool:
     """同步保存对话"""
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # 确保用户存在
         cursor.execute("""
             INSERT OR IGNORE INTO profiles (user_id, created_at, updated_at)
             VALUES (?, ?, ?)
         """, (user_id, datetime.utcnow(), datetime.utcnow()))
         
-        # 保存对话
         cursor.execute("""
-            INSERT INTO conversations (user_id, role, content, session_id, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_id, role, content, session_id, datetime.utcnow()))
+            INSERT INTO conversations (user_id, role, content, think_content, session_id, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (user_id, role, content, think_content, session_id, datetime.utcnow()))
         
         conn.commit()
         conn.close()
@@ -214,10 +212,12 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
         else:
             cursor.execute("""
                 INSERT INTO features (user_id, feature_type, feature_value, confidence, 
-                                     reasoning, is_active, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+                                     reasoning, is_active, created_at, updated_at,
+                                     decay_enabled, stability_period_days, decay_rate,
+                                     last_confirmed_at)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, 1, 30, 0.05, ?)
             """, (user_id, feature_type, feature_value, confidence, reasoning, 
-                  datetime.utcnow(), datetime.utcnow()))
+                  datetime.utcnow(), datetime.utcnow(), datetime.utcnow()))
         
         conn.commit()
         conn.close()

@@ -49,6 +49,7 @@ class ConversationModel(Base):
     user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True)
     role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
+    think_content = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
     session_id = Column(String(100), nullable=True, index=True)
     

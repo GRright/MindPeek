@@ -57,10 +57,10 @@
               </div>
 
               <div class="message-actions">
-                <button class="message-action-btn" @click="copyMessage(msg.content)">
+                <button class="message-action-btn" @click.stop="copyMessage(msg.content)">
                   <el-icon><DocumentCopy /></el-icon>
                 </button>
-                <button class="message-action-btn" @click="regenerateMessage(msg)">
+                <button class="message-action-btn" @click.stop="regenerateMessage(msg)">
                   <el-icon><Refresh /></el-icon>
                 </button>
               </div>
@@ -75,8 +75,8 @@
             <button class="tool-btn">
               <el-icon><Paperclip /></el-icon>
             </button>
-            <button 
-              v-if="store.multimodalEnabled" 
+            <button
+              v-if="store.multimodalEnabled"
               class="tool-btn"
               @click="triggerImageUpload"
             >
@@ -227,13 +227,22 @@ function previewImage(url) {
 }
 
 function copyMessage(content) {
+  console.log('复制消息:', content)
   navigator.clipboard.writeText(content)
-  ElMessage.success('已复制到剪贴板')
+    .then(() => {
+      ElMessage.success('已复制到剪贴板')
+    })
+    .catch((err) => {
+      console.error('复制失败:', err)
+      ElMessage.error('复制失败，请手动复制')
+    })
 }
 
 function regenerateMessage(msg) {
+  console.log('重新生成消息:', msg)
   if (msg.role === 'assistant') {
     const userMsg = messages.value.slice().reverse().find(m => m.role === 'user' && m.id < msg.id)
+    console.log('找到用户消息:', userMsg)
     if (userMsg) {
       const msgIndex = messages.value.findIndex(m => m.id === msg.id)
       if (msgIndex > -1) {
@@ -241,7 +250,11 @@ function regenerateMessage(msg) {
       }
       inputMessage.value = userMsg.content
       sendMessage()
+    } else {
+      ElMessage.warning('找不到对应的用户消息')
     }
+  } else {
+    ElMessage.warning('只能重新生成助手的回复')
   }
 }
 
@@ -254,6 +267,34 @@ onMounted(async () => {
 
 async function loadLocalConversations() {
   try {
+    const conversations = await store.loadConversations(50)
+    if (conversations && conversations.length > 0) {
+      messages.value = conversations.map((msg, idx) => ({
+        id: Date.now() + idx,
+        role: msg.role,
+        content: msg.content,
+        think_content: msg.think_content || '',
+        is_streaming: false,
+        showThinking: false,
+        timestamp: msg.timestamp || new Date().toISOString()
+      }))
+      saveConversations()
+    } else {
+      const saved = localStorage.getItem(`chat_${userId.value}`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        messages.value = data.map((msg, idx) => ({
+          ...msg,
+          id: Date.now() + idx,
+          is_streaming: false,
+          showThinking: false,
+          timestamp: new Date().toISOString()
+        }))
+      }
+    }
+    scrollToBottom()
+  } catch (e) {
+    console.error('加载本地对话失败:', e)
     const saved = localStorage.getItem(`chat_${userId.value}`)
     if (saved) {
       const data = JSON.parse(saved)
@@ -265,9 +306,6 @@ async function loadLocalConversations() {
         timestamp: new Date().toISOString()
       }))
     }
-    scrollToBottom()
-  } catch (e) {
-    console.error('加载本地对话失败:', e)
   }
 }
 
@@ -428,7 +466,11 @@ function autoResize(e) {
 function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      const container = messagesContainer.value
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+      if (isNearBottom) {
+        container.scrollTop = container.scrollHeight
+      }
     }
   })
 }
@@ -865,7 +907,7 @@ function renderMarkdown(content) {
   font-family: inherit;
   color: var(--text-primary);
   line-height: 1.6;
-  padding: 0;
+  padding: 0 0 0 0.5rem;
   min-height: 1.5rem;
   max-height: 12.5rem;
   overflow-y: auto;
