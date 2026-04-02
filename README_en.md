@@ -19,7 +19,7 @@
 
 ## ✨ Core Features
 
-### 🧠 Intelligent User Profiling
+### 👤 Intelligent User Profiling
 
 MindPeek leverages LLM to decode conversations and build continuously evolving user profiles:
 
