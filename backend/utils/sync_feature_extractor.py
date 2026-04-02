@@ -288,6 +288,7 @@ def extract_features_sync(user_id: str, message: str, response: str = "") -> boo
             return True
 
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
 
         cursor.execute("""

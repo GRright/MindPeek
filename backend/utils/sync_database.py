@@ -13,6 +13,7 @@ def save_conversation_sync(user_id: str, role: str, content: str, session_id: st
     """同步保存对话"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -37,6 +38,7 @@ def get_user_features_sync(user_id: str) -> list:
     """同步获取用户特征"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -142,6 +144,7 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
     """同步保存特征（支持冲突解决）"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         if feature_type in SINGLE_VALUE_TYPES:
@@ -232,6 +235,7 @@ def get_user_conversations_sync(user_id: str, limit: int = 20) -> list:
     """同步获取用户对话"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -267,6 +271,7 @@ def get_cached_predictions_sync(user_id: str, max_age_hours: int = 24) -> dict:
     """
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         from datetime import timedelta
@@ -340,6 +345,7 @@ def save_predictions_sync(user_id: str, predictions: list) -> bool:
     """保存预测到数据库，同时记录生成预测时的特征数量"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         # 获取当前特征数量
@@ -389,6 +395,7 @@ def get_user_predictions_sync(user_id: str) -> list:
     """获取用户的预测（Top 10）"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.text_factory = str
         cursor = conn.cursor()
         
         cursor.execute("""
