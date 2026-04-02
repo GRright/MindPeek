@@ -149,6 +149,7 @@ python tests/interactive_conversation_test.py
 ```mermaid
 graph TB
     subgraph Frontend["MindPeek 前端"]
+        direction LR
         Chat["💬 聊天"]
         Profile["👤 画像"]
         KG["🔗 知识图谱"]
@@ -156,14 +157,22 @@ graph TB
     end
 
     subgraph LangGraph["🤖 LangGraph Orchestrator"]
-        FeatureAgent["Feature Discovery Agent"]
-        IntentAgent["Latent Intent Agent"]
-        CorrelationAgent["Correlation Agent"]
-        MBTIAgent["MBTI / BigFive Agent"]
-        PredictionAgent["Prediction Agent"]
+        direction LR
+        subgraph Agents1[""]
+            direction LR
+            FeatureAgent["Feature Discovery Agent"]
+            IntentAgent["Latent Intent Agent"]
+            CorrelationAgent["Correlation Agent"]
+        end
+        subgraph Agents2[""]
+            direction LR
+            MBTIAgent["MBTI / BigFive Agent"]
+            PredictionAgent["Prediction Agent"]
+        end
     end
 
     subgraph Storage["存储层"]
+        direction LR
         SQLite["💾 SQLite<br/>本地存储"]
         MemoBase["📡 MemoBase<br/>远程存储"]
         LLM["🧠 LLM<br/>(DeepSeek 等)"]

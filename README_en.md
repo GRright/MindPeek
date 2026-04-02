@@ -149,6 +149,7 @@ After the test, visit these pages to see results:
 ```mermaid
 graph TB
     subgraph Frontend["MindPeek Frontend"]
+        direction LR
         Chat["💬 Chat"]
         Profile["👤 Profile"]
         KG["🔗 Knowledge Graph"]
@@ -156,14 +157,22 @@ graph TB
     end
 
     subgraph LangGraph["🤖 LangGraph Orchestrator"]
-        FeatureAgent["Feature Discovery Agent"]
-        IntentAgent["Latent Intent Agent"]
-        CorrelationAgent["Correlation Agent"]
-        MBTIAgent["MBTI / BigFive Agent"]
-        PredictionAgent["Prediction Agent"]
+        direction LR
+        subgraph Agents1[""]
+            direction LR
+            FeatureAgent["Feature Discovery Agent"]
+            IntentAgent["Latent Intent Agent"]
+            CorrelationAgent["Correlation Agent"]
+        end
+        subgraph Agents2[""]
+            direction LR
+            MBTIAgent["MBTI / BigFive Agent"]
+            PredictionAgent["Prediction Agent"]
+        end
     end
 
     subgraph Storage["Storage Layer"]
+        direction LR
         SQLite["💾 SQLite<br/>Local Store"]
         MemoBase["📡 MemoBase<br/>Remote Sync"]
         LLM["🧠 LLM<br/>(DeepSeek etc.)"]
