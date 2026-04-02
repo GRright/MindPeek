@@ -1,4 +1,4 @@
-# MindPeek - Your AI Partner Who Understands You 🎯
+# MindPeek - AI User Profiling Engine
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">

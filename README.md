@@ -1,4 +1,4 @@
-# MindPeek - 懂你的 AI 伙伴 🎯
+# MindPeek - AI 用户画像引擎
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
