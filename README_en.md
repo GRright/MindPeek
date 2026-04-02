@@ -146,43 +146,7 @@ After the test, visit these pages to see results:
 
 ## 📊 System Architecture
 
-```mermaid
-graph TB
-    subgraph Frontend["Frontend Layer"]
-        Chat["💬 Chat"]
-        Profile["👤 User Profile"]
-        KG["🔗 Knowledge Graph"]
-        Features["✨ Features"]
-    end
-
-    subgraph Agents["Agents Layer"]
-        FeatureAgent["Feature Discovery"]
-        IntentAgent["Intent Classification"]
-        MBTIAgent["MBTI Analysis"]
-        PredictionAgent["Prediction"]
-    end
-
-    subgraph Services["Services Layer"]
-        ProfileService["Profile Service"]
-        KGService["Graph Service"]
-        LLMService["LLM Service"]
-    end
-
-    subgraph Storage["Data Layer"]
-        SQLite["💾 SQLite"]
-        MemoBase["📡 MemoBase"]
-        LLM["🧠 LLM"]
-    end
-
-    Frontend --> Agents
-    Agents --> Services
-    Services --> Storage
-    
-    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
-    style Agents fill:#bbf,stroke:#333,stroke-width:2px
-    style Services fill:#bfb,stroke:#333,stroke-width:2px
-    style Storage fill:#ff9,stroke:#333,stroke-width:2px
-```
+![MindPeek System Architecture](docs/architecture_en.svg)
 
 ---
 

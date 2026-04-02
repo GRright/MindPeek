@@ -146,43 +146,7 @@ python tests/interactive_conversation_test.py
 
 ## 📊 システムアーキテクチャ
 
-```mermaid
-graph TB
-    subgraph Frontend["フロントエンド層"]
-        Chat["💬 チャット"]
-        Profile["👤 ユーザープロファイル"]
-        KG["🔗 ナレッジグラフ"]
-        Features["✨ 特徴管理"]
-    end
-
-    subgraph Agents["エージェント層"]
-        FeatureAgent["特徴発見"]
-        IntentAgent["意図分類"]
-        MBTIAgent["MBTI分析"]
-        PredictionAgent["予測"]
-    end
-
-    subgraph Services["サービス層"]
-        ProfileService["プロファイルサービス"]
-        KGService["グラフサービス"]
-        LLMService["LLMサービス"]
-    end
-
-    subgraph Storage["データ層"]
-        SQLite["💾 SQLite"]
-        MemoBase["📡 MemoBase"]
-        LLM["🧠 LLM"]
-    end
-
-    Frontend --> Agents
-    Agents --> Services
-    Services --> Storage
-    
-    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
-    style Agents fill:#bbf,stroke:#333,stroke-width:2px
-    style Services fill:#bfb,stroke:#333,stroke-width:2px
-    style Storage fill:#ff9,stroke:#333,stroke-width:2px
-```
+![MindPeek システムアーキテクチャ](docs/architecture_ja.svg)
 
 ---
 

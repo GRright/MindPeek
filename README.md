@@ -15,7 +15,7 @@
   <a href="README_en.md">English</a> | <a href="README.md">中文</a> | <a href="README_ja.md">日本語</a>
 </p>
 
----
+***
 
 ## ✨ 核心亮点
 
@@ -23,18 +23,19 @@
 
 MindPeek 通过 LLM 深度解析对话，自动构建持续进化的个人画像：
 
-| 特征维度 | 说明 |
-|---------|------|
+| 特征维度     | 说明          |
+| -------- | ----------- |
 | **性格特质** | MBTI、大五人格分析 |
-| **行为习惯** | 生活习惯、决策模式 |
-| **兴趣爱好** | 娱乐偏好、学习方向 |
-| **价值观** | 人生观、世界观 |
-| **情感状态** | 当前情绪、心理需求 |
-| **社会关系** | 人际网络、互动模式 |
+| **行为习惯** | 生活习惯、决策模式   |
+| **兴趣爱好** | 娱乐偏好、学习方向   |
+| **价值观**  | 人生观、世界观     |
+| **情感状态** | 当前情绪、心理需求   |
+| **社会关系** | 人际网络、互动模式   |
 
 ### 🔮 AI 行为预测
 
 基于用户画像，预测用户未来的行为和想法：
+
 - **行为预测**：用户可能采取的行动
 - **想法预测**：用户可能产生的思考
 - **情感预测**：用户可能出现的情绪
@@ -43,12 +44,13 @@ MindPeek 通过 LLM 深度解析对话，自动构建持续进化的个人画像
 ### 💬 个性化对话
 
 AI 会根据你的画像提供贴心回复：
+
 - 自然融入你的兴趣和习惯
 - 根据你的性格调整语气风格
 - 预判你的需求并主动建议
 - 像老朋友一样自然对话
 
----
+***
 
 ## 🖼️ 效果展示
 
@@ -91,7 +93,7 @@ AI 会根据你的画像提供贴心回复：
   </table>
 </p>
 
----
+***
 
 ## 🚀 快速开始
 
@@ -121,8 +123,8 @@ npm run dev
 
 ### 4. 开始使用
 
-- 🌐 前端界面：http://localhost:3000
-- 📖 API 文档：http://localhost:8000/docs
+- 🌐 前端界面：<http://localhost:3000>
+- 📖 API 文档：<http://localhost:8000/docs>
 
 ### 5. 快速测试（推荐）
 
@@ -133,93 +135,63 @@ python tests/interactive_conversation_test.py
 ```
 
 该脚本将自动：
+
 - 发送 30 轮模拟对话
 - 自动提取用户特征（MBTI、兴趣爱好、价值观等）
 - 生成用户画像和知识图谱
 - 触发智能提醒和画像趋势分析
 
 测试完成后，访问以下页面查看结果：
-- 📊 特征管理：http://localhost:3000/features
-- 🔗 知识图谱：http://localhost:3000/knowledge-graph
 
----
+- 📊 特征管理：<http://localhost:3000/features>
+- 🔗 知识图谱：<http://localhost:3000/knowledge-graph>
+
+***
 
 ## 📊 系统架构
 
-```mermaid
-graph TB
-    subgraph Frontend["前端层"]
-        Chat["💬 聊天"]
-        Profile["👤 用户画像"]
-        KG["🔗 知识图谱"]
-        Features["✨ 特征管理"]
-    end
+![MindPeek 系统架构](docs/architecture_zh.svg)
 
-    subgraph Agents["智能体层"]
-        FeatureAgent["特征发现"]
-        IntentAgent["意图识别"]
-        MBTIAgent["MBTI分析"]
-        PredictionAgent["行为预测"]
-    end
-
-    subgraph Services["服务层"]
-        ProfileService["画像服务"]
-        KGService["图谱服务"]
-        LLMService["LLM服务"]
-    end
-
-    subgraph Storage["数据层"]
-        SQLite["💾 SQLite"]
-        MemoBase["📡 MemoBase"]
-        LLM["🧠 LLM"]
-    end
-
-    Frontend --> Agents
-    Agents --> Services
-    Services --> Storage
-    
-    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
-    style Agents fill:#bbf,stroke:#333,stroke-width:2px
-    style Services fill:#bfb,stroke:#333,stroke-width:2px
-    style Storage fill:#ff9,stroke:#333,stroke-width:2px
-```
-
----
+***
 
 ## 🛠️ 技术栈
 
-| 层级 | 技术 |
-|-----|------|
-| **后端** | FastAPI + LangGraph + SQLAlchemy |
-| **前端** | Vue 3 + Element Plus + ECharts |
+| 层级     | 技术                                  |
+| ------ | ----------------------------------- |
+| **后端** | FastAPI + LangGraph + SQLAlchemy    |
+| **前端** | Vue 3 + Element Plus + ECharts      |
 | **AI** | OpenAI 兼容接口 + Sentence Transformers |
-| **存储** | SQLite + MemoBase 云同步 |
+| **存储** | SQLite + MemoBase 云同步               |
 
----
+***
 
 ## ⚡ 系统特性
 
 ### 🧠 智能用户画像构建
+
 - **深度对话解析**：通过持续对话自动提取用户特征
 - **多维度画像**：涵盖性格、兴趣、价值观、情感状态等
 - **持续进化**：用户画像随对话不断更新和完善
 
 ### 🎨 响应式界面设计
+
 - **桌面端**：完整功能展示，左右分栏布局
 - **移动端**：自适应优化，核心功能优先
 - **人性化交互**：智能滚动，不打断用户阅读
 
 ### 🔔 智能情绪提醒
+
 - **实时情绪监测**：自动识别负面情绪状态
 - **及时健康预警**：发现异常时主动提醒
 - **个性化建议**：根据用户情况提供关怀
 
 ### 🔗 可视化特征图谱
+
 - **知识图谱展示**：直观呈现特征之间的关联
 - **特征分布图表**：可视化展示用户画像构成
 - **可交互探索**：点击查看详细特征信息
 
----
+***
 
 ## 📁 项目结构
 
@@ -238,13 +210,13 @@ MindPeek/
 └── config/              # 配置文件
 ```
 
----
+***
 
 ## 📜 License
 
 [GNU General Public License v3.0](LICENSE)
 
----
+***
 
 <p align="center">
   <strong>MindPeek</strong> - 让 AI 真正理解你
