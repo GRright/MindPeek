@@ -176,6 +176,7 @@ python tests/interactive_conversation_test.py
 - **深度对话解析**：通过持续对话自动提取用户特征
 - **多维度画像**：涵盖性格、兴趣、价值观、情感状态等
 - **持续进化**：用户画像随对话不断更新和完善
+- **[Agents原理](docs/agent_evolution_design.md)**：深入了解 Agent 系统的协作机制
 
 ### 🎨 响应式界面设计
 
