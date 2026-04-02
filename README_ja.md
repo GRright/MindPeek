@@ -196,14 +196,21 @@ MindPeek/
 ├── backend/
 │   ├── agents/          # エージェントモジュール
 │   │   ├── chat_graph.py          # 会話フロー
-│   │   ├── feature_discovery.py   # 特徴発見
-│   │   ├── prediction_agent.py    # 行動予測
-│   │   └── intent_classifier.py   # インテント分類
+│   │   ├── feature_discovery.py   # 特徴発見（ユーザープロファイリング）
+│   │   ├── prediction_agent.py     # 行動予測
+│   │   └── intent_classifier.py    # インテント分類
 │   ├── services/        # サービス層
-│   ├── knowledge_graph/ # ナレッジグラフ
-│   └── models/          # データモデル
-├── frontend/            # Vue 3 フロントエンド
-└── config/              # 設定ファイル
+│   │   ├── profile_service.py     # ユーザープロファイルサービス
+│   │   └── llm_service.py         # LLM サービス
+│   ├── profile/          # ユーザープロファイリングコアモジュール
+│   └── models/           # データモデル
+├── frontend/             # Vue 3 フロントエンド
+│   ├── views/            # ページビュー
+│   │   ├── chat/         # チャット界面
+│   │   ├── profile/      # ユーザープロファイルページ
+│   │   └── features/     # 特徴管理ページ
+│   └── components/       # コンポーネント
+└── config/               # 設定ファイル
 ```
 
 ---

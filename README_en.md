@@ -196,14 +196,21 @@ MindPeek/
 ├── backend/
 │   ├── agents/          # Agent modules
 │   │   ├── chat_graph.py          # Conversation flow
-│   │   ├── feature_discovery.py   # Feature discovery
+│   │   ├── feature_discovery.py   # Feature discovery (User profiling)
 │   │   ├── prediction_agent.py    # Behavior prediction
 │   │   └── intent_classifier.py   # Intent classification
 │   ├── services/        # Service layer
-│   ├── knowledge_graph/ # Knowledge graph
-│   └── models/          # Data models
-├── frontend/            # Vue 3 frontend
-└── config/              # Configuration files
+│   │   ├── profile_service.py     # User profile service
+│   │   └── llm_service.py         # LLM service
+│   ├── profile/          # User profiling core module
+│   └── models/           # Data models
+├── frontend/             # Vue 3 frontend
+│   ├── views/            # Page views
+│   │   ├── chat/         # Chat interface
+│   │   ├── profile/      # User profile page
+│   │   └── features/     # Feature management page
+│   └── components/       # Components
+└── config/               # Configuration files
 ```
 
 ---

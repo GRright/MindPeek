@@ -204,14 +204,21 @@ MindPeek/
 ├── backend/
 │   ├── agents/          # Agent 智能体
 │   │   ├── chat_graph.py          # 对话流程
-│   │   ├── feature_discovery.py   # 特征发现
+│   │   ├── feature_discovery.py   # 特征发现（用户画像构建）
 │   │   ├── prediction_agent.py    # 行为预测
 │   │   └── intent_classifier.py   # 意图分类
 │   ├── services/        # 服务层
-│   ├── knowledge_graph/ # 知识图谱
-│   └── models/          # 数据模型
-├── frontend/            # Vue 3 前端
-└── config/              # 配置文件
+│   │   ├── profile_service.py     # 用户画像服务
+│   │   └── llm_service.py        # LLM 服务
+│   ├── profile/          # 用户画像核心模块
+│   └── models/           # 数据模型
+├── frontend/             # Vue 3 前端
+│   ├── views/            # 页面视图
+│   │   ├── chat/         # 聊天界面
+│   │   ├── profile/      # 用户画像页面
+│   │   └── features/     # 特征管理页面
+│   └── components/       # 组件
+└── config/               # 配置文件
 ```
 
 ***
