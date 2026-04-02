@@ -27,10 +27,10 @@ def save_conversation_sync(user_id: str, role: str, content: str, session_id: st
         
         conn.commit()
         conn.close()
-        print(f"  ✅ 同步保存对话成功：{user_id} - {role}")
+        print(f"  [OK] 同步保存对话成功：{user_id} - {role}")
         return True
     except Exception as e:
-        print(f"  ❌ 同步保存对话失败：{e}")
+        print(f"  [ERROR] 同步保存对话失败：{e}")
         return False
 
 def get_user_features_sync(user_id: str) -> list:
@@ -64,7 +64,7 @@ def get_user_features_sync(user_id: str) -> list:
             "last_verified_at": f[10]
         } for f in features]
     except Exception as e:
-        print(f"  ❌ 同步获取特征失败：{e}")
+        print(f"  [ERROR] 同步获取特征失败：{e}")
         return []
 
 SINGLE_VALUE_TYPES = ["MBTI", "大五人格", "个人信息"]
@@ -191,7 +191,7 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
                 
                 conn.commit()
                 conn.close()
-                print(f"  ✅ 同步保存特征成功：{user_id} - {feature_type}: {feature_value}")
+                print(f"  [OK] 同步保存特征成功：{user_id} - {feature_type}: {feature_value}")
                 return True
         
         cursor.execute("""
@@ -221,10 +221,10 @@ def save_feature_sync(user_id: str, feature_type: str, feature_value: str,
         
         conn.commit()
         conn.close()
-        print(f"  ✅ 同步保存特征成功：{user_id} - {feature_type}: {feature_value}")
+        print(f"  [OK] 同步保存特征成功：{user_id} - {feature_type}: {feature_value}")
         return True
     except Exception as e:
-        print(f"  ❌ 同步保存特征失败：{e}")
+        print(f"  [ERROR] 同步保存特征失败：{e}")
         return False
 
 
@@ -251,7 +251,7 @@ def get_user_conversations_sync(user_id: str, limit: int = 20) -> list:
             "timestamp": c[2]
         } for c in conversations]
     except Exception as e:
-        print(f"  ❌ 同步获取对话失败：{e}")
+        print(f"  [ERROR] 同步获取对话失败：{e}")
         return []
 
 
@@ -327,7 +327,7 @@ def get_cached_predictions_sync(user_id: str, max_age_hours: int = 24) -> dict:
             "is_feature_count_changed": is_feature_count_changed
         }
     except Exception as e:
-        print(f"  ❌ 获取缓存预测失败：{e}")
+        print(f"  [ERROR] 获取缓存预测失败：{e}")
         return {
             "predictions": [],
             "feature_count": 0,
@@ -378,10 +378,10 @@ def save_predictions_sync(user_id: str, predictions: list) -> bool:
         
         conn.commit()
         conn.close()
-        print(f"  ✅ 保存预测成功：{len(predictions)} 个")
+        print(f"  [OK] 保存预测成功：{len(predictions)} 个")
         return True
     except Exception as e:
-        print(f"  ❌ 保存预测失败：{e}")
+        print(f"  [ERROR] 保存预测失败：{e}")
         return False
 
 
@@ -414,5 +414,5 @@ def get_user_predictions_sync(user_id: str) -> list:
             "created_at": p[7]
         } for p in predictions]
     except Exception as e:
-        print(f"  ❌ 获取预测失败：{e}")
+        print(f"  [ERROR] 获取预测失败：{e}")
         return []

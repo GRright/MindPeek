@@ -1,7 +1,7 @@
 <template>
   <div class="chat-view">
     <div class="chat-area">
-      <div class="messages-area" ref="messagesContainer">
+      <div class="messages-area" ref="messagesContainer" @scroll="handleUserScroll">
         <div v-if="messages.length === 0" class="welcome-screen">
           <div class="welcome-content">
             <div class="welcome-logo">
@@ -43,10 +43,6 @@
                   </div>
                 </div>
 
-                <div v-if="msg.images && msg.images.length > 0" class="message-images">
-                  <img v-for="(img, idx) in msg.images" :key="idx" :src="img" alt="图片" @click="previewImage(img)" />
-                </div>
-
                 <div v-if="msg.content" v-html="renderMarkdown(msg.content)" class="message-text"></div>
 
                 <div v-if="msg.is_streaming" class="typing-dots">
@@ -71,26 +67,6 @@
 
       <div class="input-area">
         <div class="input-container">
-          <div class="input-tools">
-            <button class="tool-btn">
-              <el-icon><Paperclip /></el-icon>
-            </button>
-            <button
-              v-if="store.multimodalEnabled"
-              class="tool-btn"
-              @click="triggerImageUpload"
-            >
-              <el-icon><Picture /></el-icon>
-            </button>
-            <input
-              ref="imageInput"
-              type="file"
-              accept="image/*"
-              style="display: none"
-              @change="handleImageSelect"
-            />
-          </div>
-
           <div class="textarea-wrapper">
             <textarea
               v-model="inputMessage"
@@ -103,21 +79,12 @@
             ></textarea>
           </div>
 
-          <div v-if="uploadedImages.length > 0" class="uploaded-images-preview">
-            <div v-for="img in uploadedImages" :key="img.id" class="uploaded-image-item">
-              <img :src="img.url" :alt="img.name" />
-              <button class="remove-image-btn" @click="removeImage(img.id)">
-                <el-icon><Close /></el-icon>
-              </button>
-            </div>
-          </div>
-
           <div class="send-section">
             <button
               class="send-btn"
               :class="{ loading: loading }"
               @click="sendMessage"
-              :disabled="loading || (!inputMessage.trim() && uploadedImages.length === 0)"
+              :disabled="loading || !inputMessage.trim()"
             >
               <el-icon v-if="!loading"><Promotion /></el-icon>
               <el-icon v-else class="spinner-icon"><Loading /></el-icon>
@@ -134,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import MarkdownIt from 'markdown-it'
@@ -144,13 +111,10 @@ import {
   ChatDotRound,
   Promotion,
   Loading,
-  Paperclip,
-  Picture,
   Refresh,
   DocumentCopy,
   ArrowRight,
-  ArrowDown,
-  Close
+  ArrowDown
 } from '@element-plus/icons-vue'
 
 const store = useProfileStore()
@@ -162,8 +126,14 @@ const messages = ref([])
 const loading = ref(false)
 const messagesContainer = ref(null)
 const inputTextarea = ref(null)
-const imageInput = ref(null)
-const uploadedImages = ref([])
+const userScrolledUp = ref(false)
+
+function handleUserScroll() {
+  if (!messagesContainer.value) return
+  const container = messagesContainer.value
+  const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+  userScrolledUp.value = !isNearBottom
+}
 
 function formatThinkContent(content) {
   if (!content) return ''
@@ -187,62 +157,19 @@ function sendSuggestion(text) {
   sendMessage()
 }
 
-function triggerImageUpload() {
-  imageInput.value?.click()
-}
-
-async function handleImageSelect(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    ElMessage.warning('请选择图片文件')
-    return
-  }
-
-  if (file.size > 10 * 1024 * 1024) {
-    ElMessage.warning('图片大小不能超过 10MB')
-    return
-  }
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    uploadedImages.value.push({
-      id: Date.now(),
-      url: e.target.result,
-      name: file.name
-    })
-    ElMessage.success('图片已上传，将随消息发送')
-  }
-  reader.readAsDataURL(file)
-  event.target.value = ''
-}
-
-function removeImage(imageId) {
-  uploadedImages.value = uploadedImages.value.filter(img => img.id !== imageId)
-}
-
-function previewImage(url) {
-  window.open(url, '_blank')
-}
-
 function copyMessage(content) {
-  console.log('复制消息:', content)
   navigator.clipboard.writeText(content)
     .then(() => {
       ElMessage.success('已复制到剪贴板')
     })
-    .catch((err) => {
-      console.error('复制失败:', err)
+    .catch(() => {
       ElMessage.error('复制失败，请手动复制')
     })
 }
 
 function regenerateMessage(msg) {
-  console.log('重新生成消息:', msg)
   if (msg.role === 'assistant') {
     const userMsg = messages.value.slice().reverse().find(m => m.role === 'user' && m.id < msg.id)
-    console.log('找到用户消息:', userMsg)
     if (userMsg) {
       const msgIndex = messages.value.findIndex(m => m.id === msg.id)
       if (msgIndex > -1) {
@@ -260,9 +187,10 @@ function regenerateMessage(msg) {
 
 onMounted(async () => {
   await loadLocalConversations()
-  nextTick(() => {
-    scrollToBottom()
-  })
+})
+
+onUnmounted(() => {
+  loading.value = false
 })
 
 async function loadLocalConversations() {
@@ -292,9 +220,7 @@ async function loadLocalConversations() {
         }))
       }
     }
-    scrollToBottom()
   } catch (e) {
-    console.error('加载本地对话失败:', e)
     const saved = localStorage.getItem(`chat_${userId.value}`)
     if (saved) {
       const data = JSON.parse(saved)
@@ -307,46 +233,48 @@ async function loadLocalConversations() {
       }))
     }
   }
+  scrollToBottom(true)
 }
 
 async function sendMessage() {
-  if ((!inputMessage.value.trim() && uploadedImages.value.length === 0) || loading.value) {
+  if (!inputMessage.value.trim() || loading.value) {
     return
   }
 
   const message = inputMessage.value
-  const images = [...uploadedImages.value]
   inputMessage.value = ''
-  uploadedImages.value = []
   if (inputTextarea.value) {
     inputTextarea.value.style.height = 'auto'
   }
 
   const userMsgId = Date.now()
-  const userMessage = {
+  messages.value.push({
     id: userMsgId,
     role: 'user',
     content: message,
-    images: images.map(img => img.url),
     timestamp: new Date().toISOString()
-  }
-  messages.value.push(userMessage)
+  })
 
-  scrollToBottom()
+  userScrolledUp.value = false
+  scrollToBottom(true)
 
   loading.value = true
-  try {
-    const assistantMsgId = Date.now() + 1
-    messages.value.push({
-      id: assistantMsgId,
-      role: 'assistant',
-      content: '',
-      think_content: null,
-      showThinking: false,
-      is_streaming: true,
-      timestamp: new Date().toISOString()
-    })
+  const assistantMsgId = Date.now() + 1
+  messages.value.push({
+    id: assistantMsgId,
+    role: 'assistant',
+    content: '',
+    think_content: null,
+    showThinking: false,
+    is_streaming: true,
+    timestamp: new Date().toISOString()
+  })
 
+  let fullResponse = ''
+  let thinkContent = null
+  let streamEnded = false
+
+  try {
     const response = await fetch('/api/stream', {
       method: 'POST',
       headers: {
@@ -355,8 +283,7 @@ async function sendMessage() {
       body: JSON.stringify({
         user_id: userId.value,
         message: message,
-        extract_features: true,
-        images: images.length > 0 ? images.map(img => img.url) : null
+        extract_features: true
       })
     })
 
@@ -366,27 +293,34 @@ async function sendMessage() {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    let fullResponse = ''
-    let thinkContent = null
+    let buffer = ''
 
-    while (true) {
+    while (!streamEnded) {
       const { done, value } = await reader.read()
-      if (done) break
+      
+      if (done) {
+        break
+      }
 
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n')
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
+          const jsonStr = line.substring(6).trim()
+          if (!jsonStr) continue
+          
           try {
-            const data = JSON.parse(line.substring(6))
+            const data = JSON.parse(jsonStr)
+            
             if (data.type === 'chunk') {
               fullResponse += data.content
               const msg = messages.value.find(m => m.id === assistantMsgId)
               if (msg) {
                 msg.content = fullResponse
               }
-              scrollToBottom()
+              scrollToBottom(false)
             } else if (data.type === 'think' && data.content) {
               thinkContent = data.content
               const msg = messages.value.find(m => m.id === assistantMsgId)
@@ -398,11 +332,10 @@ async function sendMessage() {
               const msg = messages.value.find(m => m.id === assistantMsgId)
               if (msg) {
                 msg.think_content = thinkContent
-                msg.content = data.content
+                msg.content = data.content || fullResponse
                 msg.is_streaming = false
               }
-              loading.value = false
-              await saveConversations()
+              streamEnded = true
               break
             } else if (data.type === 'error') {
               ElMessage.error(data.content)
@@ -411,30 +344,45 @@ async function sendMessage() {
                 msg.is_streaming = false
                 msg.content = '抱歉，AI服务暂时不可用'
               }
-              loading.value = false
+              streamEnded = true
+              break
             }
-          } catch (e) {
-            console.error('Parse error:', e)
+          } catch (parseErr) {
+            console.warn('Parse error:', parseErr)
           }
         }
       }
     }
-    loading.value = false
-
-    if (thinkContent) {
-      ElMessage.success('深度思考完成')
-    }
-
-    scrollToBottom()
-  } catch (e) {
-    ElMessage.error('发送失败：' + e.message)
-    const msg = messages.value.find(m => m.is_streaming)
-    if (msg) {
-      msg.is_streaming = false
-      msg.content = '抱歉，响应时出现错误：' + e.message
+  } catch (err) {
+    if (err.name === 'AbortError' || err.message.includes('abort')) {
+      console.log('Request aborted')
+    } else {
+      console.error('Stream error:', err)
+      ElMessage.error('发送失败：' + err.message)
+      const msg = messages.value.find(m => m.id === assistantMsgId)
+      if (msg) {
+        msg.is_streaming = false
+        msg.content = '抱歉，响应时出现错误'
+      }
     }
   } finally {
     loading.value = false
+    
+    const msg = messages.value.find(m => m.id === assistantMsgId)
+    if (msg) {
+      msg.is_streaming = false
+      if (!msg.content) {
+        msg.content = fullResponse || '响应已完成'
+      }
+    }
+    
+    await saveConversations()
+    
+    if (thinkContent) {
+      ElMessage.success('深度思考完成')
+    }
+    
+    scrollToBottom(false)
   }
 }
 
@@ -463,14 +411,12 @@ function autoResize(e) {
   textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
 }
 
-function scrollToBottom() {
+function scrollToBottom(force = false) {
   nextTick(() => {
-    if (messagesContainer.value) {
-      const container = messagesContainer.value
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight
-      }
+    if (!messagesContainer.value) return
+    
+    if (force || !userScrolledUp.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
   })
 }
@@ -599,14 +545,15 @@ function renderMarkdown(content) {
   align-items: center;
   justify-content: center;
   color: white;
+  font-size: 1rem;
 }
 
 .avatar.user {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .message-content {
@@ -617,12 +564,11 @@ function renderMarkdown(content) {
 .message-header {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 0.75rem;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .message-author {
-  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -633,99 +579,75 @@ function renderMarkdown(content) {
 }
 
 .message-body {
-  font-size: 0.9375rem;
-  line-height: 1.8;
   color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.message-text {
+  word-wrap: break-word;
+}
+
+.message-text :deep(p) {
+  margin: 0 0 1rem;
+}
+
+.message-text :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.message-text :deep(code) {
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.message-text :deep(pre) {
+  background: var(--bg-tertiary);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.message-text :deep(pre code) {
+  background: none;
+  padding: 0;
 }
 
 .thinking-box {
-  margin-bottom: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  overflow: hidden;
   background: var(--bg-tertiary);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
 }
 
 .thinking-header {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.625rem 0.875rem;
-  background: var(--bg-hover);
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: background 0.15s ease;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .thinking-header:hover {
-  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .thinking-body {
-  padding: 0.875rem;
+  padding: 0 1rem 1rem;
+  color: var(--text-muted);
   font-size: 0.875rem;
-  line-height: 1.7;
-  color: var(--text-secondary);
+  line-height: 1.6;
   white-space: pre-wrap;
-}
-
-.message-text {
-  font-size: 0.9375rem;
-  line-height: 1.8;
-}
-
-.message-text :deep(p) {
-  margin: 0;
-}
-
-.message-text :deep(p + p) {
-  margin-top: 1em;
-}
-
-.message-text :deep(ol), .message-text :deep(ul) {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
-.message-text :deep(li) {
-  margin: 0.3em 0;
-}
-
-.message-text :deep(strong) {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.message-text :deep(code) {
-  background: var(--bg-tertiary);
-  padding: 0.2em 0.5em;
-  border-radius: 0.25rem;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 0.9em;
-  color: #ec4899;
-}
-
-.message-text :deep(pre) {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0.5em 0;
-}
-
-.message-text :deep(pre code) {
-  background: transparent;
-  padding: 0;
-  color: var(--text-primary);
 }
 
 .typing-dots {
   display: flex;
-  gap: 0.3125rem;
-  padding: 0.625rem 0;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
 }
 
 .typing-dots .dot {
@@ -746,19 +668,21 @@ function renderMarkdown(content) {
 
 @keyframes typing {
   0%, 80%, 100% {
-    transform: scale(0);
+    transform: scale(0.6);
+    opacity: 0.5;
   }
   40% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 .message-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
   margin-top: 0.75rem;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s;
 }
 
 .message:hover .message-actions {
@@ -766,191 +690,96 @@ function renderMarkdown(content) {
 }
 
 .message-action-btn {
-  width: 1.875rem;
-  height: 1.875rem;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-muted);
-  cursor: pointer;
+  background: var(--bg-tertiary);
+  border: none;
   border-radius: 0.375rem;
+  padding: 0.375rem;
+  cursor: pointer;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
 }
 
 .message-action-btn:hover {
-  border-color: var(--border-color);
-  background: var(--bg-hover);
+  background: var(--bg-primary);
   color: var(--text-primary);
 }
 
 .input-area {
-  flex-shrink: 0;
-  padding: 1.25rem;
-  background: var(--bg-primary);
+  padding: 1rem 3.75rem 1.5rem;
+  max-width: 62.5rem;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .input-container {
-  max-width: 50rem;
-  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 1rem;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  transition: border-color 0.15s ease;
-}
-
-.input-container:focus-within {
-  border-color: var(--accent-color);
-}
-
-.uploaded-images-preview {
-  display: flex;
-  gap: 8px;
-  padding: 0 12px;
-  flex-wrap: wrap;
-}
-
-.uploaded-image-item {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.uploaded-image-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.message-images {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.message-images img {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 8px;
-  cursor: pointer;
-  object-fit: cover;
-  transition: transform 0.2s ease;
-}
-
-.message-images img:hover {
-  transform: scale(1.05);
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.remove-image-btn:hover {
-  background: rgba(239, 68, 68, 0.8);
-}
-
-.input-tools {
-  display: flex;
-  padding: 0.75rem 0.5rem;
-}
-
-.tool-btn {
-  width: 2.25rem;
-  height: 2.25rem;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-
-.tool-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
 }
 
 .textarea-wrapper {
   flex: 1;
-  padding: 0.75rem 0;
 }
 
 .textarea-wrapper textarea {
   width: 100%;
   border: none;
   background: transparent;
-  resize: none;
-  font-size: 0.9375rem;
-  font-family: inherit;
   color: var(--text-primary);
-  line-height: 1.6;
-  padding: 0 0 0 0.5rem;
-  min-height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  font-family: inherit;
   max-height: 12.5rem;
-  overflow-y: auto;
 }
 
 .textarea-wrapper textarea::placeholder {
   color: var(--text-muted);
 }
 
-.textarea-wrapper textarea:focus {
-  outline: none;
+.textarea-wrapper textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .send-section {
-  display: flex;
-  padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+  flex-shrink: 0;
 }
 
 .send-btn {
-  width: 2.25rem;
-  height: 2.25rem;
-  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.5rem;
-  background: var(--accent-color);
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
 }
 
 .send-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
+  transform: scale(1.05);
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .send-btn.loading {
-  background: var(--text-muted);
+  background: var(--bg-tertiary);
 }
 
 .spinner-icon {
@@ -967,57 +796,19 @@ function renderMarkdown(content) {
 }
 
 .input-footer-text {
-  max-width: 50rem;
-  margin: 0.5rem auto 0;
   text-align: center;
-}
-
-.input-footer-text span {
+  margin-top: 0.75rem;
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
-@media screen and (max-width: 768px) {
-  .chat-view {
-    height: calc(100vh - 5rem);
-    min-height: 300px;
-  }
-  
+@media (max-width: 48rem) {
   .message {
-    padding: 1rem 1rem;
-    gap: 0.75rem;
+    padding: 1rem 1.5rem;
   }
-  
-  .welcome-content {
-    padding: 1.5rem;
-  }
-  
-  .welcome-content h1 {
-    font-size: 1.5rem;
-  }
-  
-  .welcome-content p {
-    font-size: 0.875rem;
-  }
-  
-  .welcome-logo {
-    width: 4rem;
-    height: 4rem;
-  }
-  
-  .input-area {
-    padding: 0.75rem;
-  }
-  
-  .input-container {
-    border-radius: 0.75rem;
-  }
-}
 
-@media screen and (min-width: 1920px) {
-  .chat-view {
-    max-width: 1400px;
-    margin: 0 auto;
+  .input-area {
+    padding: 1rem 1.5rem 1.5rem;
   }
 }
 </style>

@@ -356,7 +356,7 @@ def extract_features_sync(user_id: str, message: str, response: str = "") -> boo
                         VALUES (?, ?, ?, ?, ?, 1, ?, ?)
                     """, (user_id, feature_type, feature_value, confidence, reasoning,
                           datetime.utcnow(), datetime.utcnow()))
-                    print(f"  ✅ 新特征: {feature_type} = {feature_value} ({confidence:.0%})")
+                    print(f"  [OK] 新特征: {feature_type} = {feature_value} ({confidence:.0%})")
             else:
                 cursor.execute("""
                     SELECT id, confidence FROM features
@@ -380,16 +380,16 @@ def extract_features_sync(user_id: str, message: str, response: str = "") -> boo
                         VALUES (?, ?, ?, ?, ?, 1, ?, ?)
                     """, (user_id, feature_type, feature_value, confidence, reasoning,
                           datetime.utcnow(), datetime.utcnow()))
-                    print(f"  ✅ 新特征: {feature_type} = {feature_value} ({confidence:.0%})")
+                    print(f"  [OK] 新特征: {feature_type} = {feature_value} ({confidence:.0%})")
 
         conn.commit()
         conn.close()
 
-        print(f"  ✅ LLM 提取特征成功：{len(features)} 个有效特征")
+        print(f"  [OK] LLM 提取特征成功：{len(features)} 个有效特征")
         return True
 
     except Exception as e:
-        print(f"  ❌ LLM 特征提取失败: {e}")
+        print(f"  [ERROR] LLM 特征提取失败: {e}")
         import traceback
         traceback.print_exc()
         return False

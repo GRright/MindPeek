@@ -310,7 +310,7 @@ async function loadProfile() {
   }
 }
 
-async function generatePredictions(silent = true) {
+async function generatePredictions(silent = true, retryCount = 0) {
   // 静默模式：不显示 loading 和提示
   if (silent) {
     generatingPredictions.value = false
@@ -341,13 +341,17 @@ async function generatePredictions(silent = true) {
           ElMessage.success('AI 预测已生成')
         }
       }
+    } else if (response.status >= 500 && retryCount < 2) {
+      // 服务器错误时重试
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      await generatePredictions(silent, retryCount + 1)
     } else if (!silent) {
       ElMessage.error('生成预测失败')
     }
   } catch (e) {
-    console.error('生成预测失败:', e)
+    // 网络错误时静默忽略（可能后端还在初始化）
     if (!silent) {
-      ElMessage.error('生成预测失败：' + e.message)
+      console.warn('预测生成跳过:', e.message)
     }
   } finally {
     generatingPredictions.value = false
@@ -1636,6 +1640,10 @@ function getTimeframeLabel(timeframe) {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15.625rem, 1fr));
     gap: 1rem;
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

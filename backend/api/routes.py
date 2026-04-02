@@ -278,7 +278,15 @@ async def _extract_features_async(user_id: str, message: str, response: str):
     """异步执行特征提取，不阻塞流式响应"""
     try:
         print(f">>> 开始特征提取...")
-        extract_features_sync(user_id, message, response if response else "(无回复内容)")
+        import asyncio
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None, 
+            extract_features_sync, 
+            user_id, 
+            message, 
+            response if response else "(无回复内容)"
+        )
         print(f">>> 特征提取完成")
     except Exception as e:
         print(f">>> 特征提取失败: {e}")

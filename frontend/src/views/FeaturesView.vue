@@ -114,29 +114,31 @@
       </div>
     </div>
     
-    <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
-      <div class="alerts-panel">
-        <div class="panel-header">
-          <el-icon :size="18"><Bell /></el-icon>
-          <span>智能提醒</span>
-        </div>
-        <div class="alerts-list">
-          <div 
-            v-for="(alert, index) in insights.alerts" 
-            :key="index"
-            :class="['alert-item', alert.level]"
-          >
-            <el-icon :size="16" :class="alert.level">
-              <component :is="getAlertIcon(alert.icon)" />
-            </el-icon>
-            <div class="alert-content">
-              <span class="alert-title">{{ alert.title }}</span>
-              <span class="alert-message">{{ alert.message }}</span>
+    <Transition name="alerts-fade">
+      <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
+        <div class="alerts-panel">
+          <div class="panel-header">
+            <el-icon :size="18"><Bell /></el-icon>
+            <span>智能提醒</span>
+          </div>
+          <div class="alerts-list">
+            <div 
+              v-for="(alert, index) in insights.alerts" 
+              :key="index"
+              :class="['alert-item', alert.level]"
+            >
+              <el-icon :size="16" :class="alert.level">
+                <component :is="getAlertIcon(alert.icon)" />
+              </el-icon>
+              <div class="alert-content">
+                <span class="alert-title">{{ alert.title }}</span>
+                <span class="alert-message">{{ alert.message }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -430,11 +432,22 @@ function tableRowClassName({ rowIndex }) {
 
 .alerts-dropdown {
   position: absolute;
-  top: 5.5rem;
-  right: 1.25rem;
+  top: 3.5rem;
+  right: 0;
   z-index: 1000;
   min-width: 22rem;
   max-width: 28rem;
+}
+
+.alerts-fade-enter-active,
+.alerts-fade-leave-active {
+  transition: all 0.25s ease;
+}
+
+.alerts-fade-enter-from,
+.alerts-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-0.5rem);
 }
 
 .alerts-panel {
@@ -553,6 +566,7 @@ function tableRowClassName({ rowIndex }) {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .search-input {
