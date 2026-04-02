@@ -194,23 +194,40 @@ After the test, visit these pages to see results:
 ```
 MindPeek/
 ├── backend/
-│   ├── agents/          # Agent modules
-│   │   ├── chat_graph.py          # Conversation flow
-│   │   ├── feature_discovery.py   # Feature discovery (User profiling)
-│   │   ├── prediction_agent.py    # Behavior prediction
-│   │   └── intent_classifier.py   # Intent classification
-│   ├── services/        # Service layer
+│   ├── agents/           # Agent core modules
+│   │   ├── agent_engine.py        # Multi-Agent analysis engine (MBTI, etc.)
+│   │   ├── chat_graph.py          # LangGraph conversation flow
+│   │   ├── feature_discovery.py    # Feature discovery agent
+│   │   ├── intent_classifier.py   # Intent classifier
+│   │   ├── personal_info_agent.py # Personal info extraction agent
+│   │   ├── prediction_agent.py    # Behavior prediction agent
+│   │   └── async_orchestrator.py  # Async task orchestrator
+│   ├── services/         # Service layer
 │   │   ├── profile_service.py     # User profile service
-│   │   └── llm_service.py         # LLM service
-│   ├── profile/          # User profiling core module
-│   └── models/           # Data models
-├── frontend/             # Vue 3 frontend
-│   ├── views/            # Page views
-│   │   ├── chat/         # Chat interface
-│   │   ├── profile/      # User profile page
-│   │   └── features/     # Feature management page
-│   └── components/       # Components
-└── config/               # Configuration files
+│   │   ├── llm_provider.py        # LLM provider (multi-model support)
+│   │   ├── feature_merger.py      # Feature merger service
+│   │   └── memo_base_service.py   # MemoBase cloud sync
+│   ├── knowledge_graph/  # Knowledge graph (psychology knowledge base)
+│   │   └── graph.py
+│   ├── models/           # Data models
+│   │   ├── database.py            # SQLAlchemy models
+│   │   └── schemas.py            # Pydantic schemas
+│   ├── api/              # API routes
+│   │   └── routes.py
+│   └── core/             # Core configuration
+│       └── config.py
+├── frontend/              # Vue 3 frontend
+│   └── src/
+│       ├── views/                 # Page views
+│       │   ├── ChatView.vue       # Chat page
+│       │   ├── ProfileView.vue    # User profile page
+│       │   ├── FeaturesView.vue   # Feature management page
+│       │   └── KnowledgeGraphView.vue  # Knowledge graph page
+│       ├── components/            # Components
+│       ├── stores/                # State management
+│       ├── api/                   # API calls
+│       └── router/                # Router configuration
+└── config/                # Configuration files
 ```
 
 ---

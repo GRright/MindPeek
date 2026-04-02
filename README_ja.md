@@ -194,23 +194,40 @@ python tests/interactive_conversation_test.py
 ```
 MindPeek/
 ├── backend/
-│   ├── agents/          # エージェントモジュール
-│   │   ├── chat_graph.py          # 会話フロー
-│   │   ├── feature_discovery.py   # 特徴発見（ユーザープロファイリング）
-│   │   ├── prediction_agent.py     # 行動予測
-│   │   └── intent_classifier.py    # インテント分類
-│   ├── services/        # サービス層
+│   ├── agents/           # エージェントコアモジュール
+│   │   ├── agent_engine.py        # マルチエージェント分析エンジン（MBTI等）
+│   │   ├── chat_graph.py          # LangGraph 会話フロー
+│   │   ├── feature_discovery.py    # 特徴発見エージェント
+│   │   ├── intent_classifier.py   # インテント分類器
+│   │   ├── personal_info_agent.py # 個人情報抽出エージェント
+│   │   ├── prediction_agent.py     # 行動予測エージェント
+│   │   └── async_orchestrator.py  # 非同期タスクオーケストレーター
+│   ├── services/         # サービス層
 │   │   ├── profile_service.py     # ユーザープロファイルサービス
-│   │   └── llm_service.py         # LLM サービス
-│   ├── profile/          # ユーザープロファイリングコアモジュール
-│   └── models/           # データモデル
-├── frontend/             # Vue 3 フロントエンド
-│   ├── views/            # ページビュー
-│   │   ├── chat/         # チャット界面
-│   │   ├── profile/      # ユーザープロファイルページ
-│   │   └── features/     # 特徴管理ページ
-│   └── components/       # コンポーネント
-└── config/               # 設定ファイル
+│   │   ├── llm_provider.py        # LLMプロバイダー（マルチモデルサポート）
+│   │   ├── feature_merger.py      # 特徴マージサービス
+│   │   └── memo_base_service.py   # MemoBaseクラウド同期
+│   ├── knowledge_graph/  # 知識グラフ（心理学知識ベース）
+│   │   └── graph.py
+│   ├── models/           # データモデル
+│   │   ├── database.py            # SQLAlchemyモデル
+│   │   └── schemas.py            # Pydanticスキーマ
+│   ├── api/              # APIルート
+│   │   └── routes.py
+│   └── core/             # コア設定
+│       └── config.py
+├── frontend/              # Vue 3 フロントエンド
+│   └── src/
+│       ├── views/                 # ページビュー
+│       │   ├── ChatView.vue       # チャットページ
+│       │   ├── ProfileView.vue    # ユーザープロファイルページ
+│       │   ├── FeaturesView.vue   # 特徴管理ページ
+│       │   └── KnowledgeGraphView.vue  # 知識グラフページ
+│       ├── components/            # コンポーネント
+│       ├── stores/                # 状態管理
+│       ├── api/                   # API呼び出し
+│       └── router/                # ルーター設定
+└── config/                # 設定ファイル
 ```
 
 ---

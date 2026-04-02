@@ -202,23 +202,40 @@ python tests/interactive_conversation_test.py
 ```
 MindPeek/
 ├── backend/
-│   ├── agents/          # Agent 智能体
-│   │   ├── chat_graph.py          # 对话流程
-│   │   ├── feature_discovery.py   # 特征发现（用户画像构建）
-│   │   ├── prediction_agent.py    # 行为预测
-│   │   └── intent_classifier.py   # 意图分类
-│   ├── services/        # 服务层
+│   ├── agents/           # Agent 智能体核心模块
+│   │   ├── agent_engine.py        # 多Agent分析引擎（MBTI等）
+│   │   ├── chat_graph.py          # LangGraph 聊天流程
+│   │   ├── feature_discovery.py    # 特征发现Agent
+│   │   ├── intent_classifier.py   # 意图分类器
+│   │   ├── personal_info_agent.py # 个人信息提取Agent
+│   │   ├── prediction_agent.py    # 行为预测Agent
+│   │   └── async_orchestrator.py  # 异步任务编排器
+│   ├── services/         # 服务层
 │   │   ├── profile_service.py     # 用户画像服务
-│   │   └── llm_service.py        # LLM 服务
-│   ├── profile/          # 用户画像核心模块
-│   └── models/           # 数据模型
-├── frontend/             # Vue 3 前端
-│   ├── views/            # 页面视图
-│   │   ├── chat/         # 聊天界面
-│   │   ├── profile/      # 用户画像页面
-│   │   └── features/     # 特征管理页面
-│   └── components/       # 组件
-└── config/               # 配置文件
+│   │   ├── llm_provider.py        # LLM提供者（支持多种模型）
+│   │   ├── feature_merger.py      # 特征合并服务
+│   │   └── memo_base_service.py   # MemoBase云同步
+│   ├── knowledge_graph/  # 知识图谱（心理学知识库）
+│   │   └── graph.py
+│   ├── models/           # 数据模型
+│   │   ├── database.py            # SQLAlchemy模型
+│   │   └── schemas.py            # Pydantic模式
+│   ├── api/              # API路由
+│   │   └── routes.py
+│   └── core/             # 核心配置
+│       └── config.py
+├── frontend/              # Vue 3 前端
+│   └── src/
+│       ├── views/                 # 页面视图
+│       │   ├── ChatView.vue       # 聊天页面
+│       │   ├── ProfileView.vue    # 用户画像页面
+│       │   ├── FeaturesView.vue   # 特征管理页面
+│       │   └── KnowledgeGraphView.vue  # 知识图谱页面
+│       ├── components/            # 组件
+│       ├── stores/                # 状态管理
+│       ├── api/                   # API调用
+│       └── router/                # 路由配置
+└── config/                # 配置文件
 ```
 
 ***
