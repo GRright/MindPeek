@@ -148,38 +148,40 @@ python tests/interactive_conversation_test.py
 
 ```mermaid
 graph TB
-    subgraph Frontend["MindPeek フロントエンド"]
-        direction LR
+    subgraph Frontend["フロントエンド層"]
         Chat["💬 チャット"]
-        Profile["👤 プロファイル"]
+        Profile["👤 ユーザープロファイル"]
         KG["🔗 ナレッジグラフ"]
-        Features["✨ 特徴"]
+        Features["✨ 特徴管理"]
     end
 
-    subgraph LangGraph["🤖 LangGraph Orchestrator"]
-        direction LR
-        subgraph Agents1[""]
-            direction LR
-            FeatureAgent["Feature Discovery Agent"]
-            IntentAgent["Latent Intent Agent"]
-            CorrelationAgent["Correlation Agent"]
-        end
-        subgraph Agents2[""]
-            direction LR
-            MBTIAgent["MBTI / BigFive Agent"]
-            PredictionAgent["Prediction Agent"]
-        end
+    subgraph Agents["エージェント層"]
+        FeatureAgent["特徴発見"]
+        IntentAgent["意図分類"]
+        MBTIAgent["MBTI分析"]
+        PredictionAgent["予測"]
     end
 
-    subgraph Storage["ストレージ層"]
-        direction LR
-        SQLite["💾 SQLite<br/>ローカル保存"]
-        MemoBase["📡 MemoBase<br/>リモート同期"]
-        LLM["🧠 LLM<br/>(DeepSeek等)"]
+    subgraph Services["サービス層"]
+        ProfileService["プロファイルサービス"]
+        KGService["グラフサービス"]
+        LLMService["LLMサービス"]
     end
 
-    Frontend --> LangGraph
-    LangGraph --> Storage
+    subgraph Storage["データ層"]
+        SQLite["💾 SQLite"]
+        MemoBase["📡 MemoBase"]
+        LLM["🧠 LLM"]
+    end
+
+    Frontend --> Agents
+    Agents --> Services
+    Services --> Storage
+    
+    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
+    style Agents fill:#bbf,stroke:#333,stroke-width:2px
+    style Services fill:#bfb,stroke:#333,stroke-width:2px
+    style Storage fill:#ff9,stroke:#333,stroke-width:2px
 ```
 
 ---

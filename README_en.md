@@ -148,38 +148,40 @@ After the test, visit these pages to see results:
 
 ```mermaid
 graph TB
-    subgraph Frontend["MindPeek Frontend"]
-        direction LR
+    subgraph Frontend["Frontend Layer"]
         Chat["💬 Chat"]
-        Profile["👤 Profile"]
+        Profile["👤 User Profile"]
         KG["🔗 Knowledge Graph"]
         Features["✨ Features"]
     end
 
-    subgraph LangGraph["🤖 LangGraph Orchestrator"]
-        direction LR
-        subgraph Agents1[""]
-            direction LR
-            FeatureAgent["Feature Discovery Agent"]
-            IntentAgent["Latent Intent Agent"]
-            CorrelationAgent["Correlation Agent"]
-        end
-        subgraph Agents2[""]
-            direction LR
-            MBTIAgent["MBTI / BigFive Agent"]
-            PredictionAgent["Prediction Agent"]
-        end
+    subgraph Agents["Agents Layer"]
+        FeatureAgent["Feature Discovery"]
+        IntentAgent["Intent Classification"]
+        MBTIAgent["MBTI Analysis"]
+        PredictionAgent["Prediction"]
     end
 
-    subgraph Storage["Storage Layer"]
-        direction LR
-        SQLite["💾 SQLite<br/>Local Store"]
-        MemoBase["📡 MemoBase<br/>Remote Sync"]
-        LLM["🧠 LLM<br/>(DeepSeek etc.)"]
+    subgraph Services["Services Layer"]
+        ProfileService["Profile Service"]
+        KGService["Graph Service"]
+        LLMService["LLM Service"]
     end
 
-    Frontend --> LangGraph
-    LangGraph --> Storage
+    subgraph Storage["Data Layer"]
+        SQLite["💾 SQLite"]
+        MemoBase["📡 MemoBase"]
+        LLM["🧠 LLM"]
+    end
+
+    Frontend --> Agents
+    Agents --> Services
+    Services --> Storage
+    
+    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
+    style Agents fill:#bbf,stroke:#333,stroke-width:2px
+    style Services fill:#bfb,stroke:#333,stroke-width:2px
+    style Storage fill:#ff9,stroke:#333,stroke-width:2px
 ```
 
 ---
