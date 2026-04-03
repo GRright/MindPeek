@@ -63,6 +63,7 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 
 
+# 静态文件路由（在 API 路由之后）
 frontend_dist = BASE_DIR / "frontend" / "dist"
 if frontend_dist.exists():
     app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
@@ -81,9 +82,11 @@ async def root():
     })
 
 
+# SPA 通配符路由（必须在最后）
 @app.get("/{path:path}")
 async def serve_spa(path: str):
-    if path.startswith("api"):
+    # 排除 API 和文档路径
+    if path.startswith("api") or path in ["docs", "redoc", "openapi.json"]:
         return JSONResponse({"error": "Not found"}, status_code=404)
 
     if "." in path:
