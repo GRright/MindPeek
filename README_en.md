@@ -96,7 +96,7 @@ AI provides thoughtful responses based on your profile:
 </p>
 
 <p style="color: #666; font-size: 12px; text-align: left; padding-left: 40px;">
-* When users chat, responses are personalized based on user profile information. In the image, the answer is tailored to the user who lives in Shanghai and has a fast-paced lifestyle, making the response more relevant to the user's actual situation.
+* When users chat, responses are personalized based on extracted user profile information. In the image, the AI deeply considers previously extracted user features such as living in Shanghai and being introverted, making the output answer more aligned with the user's actual situation.
 </p>
 
 ---
