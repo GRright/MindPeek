@@ -1,6 +1,10 @@
 # MindPeek - AI User Profiling Engine
 
 <p align="center">
+  <img src="./assets/logo.png" alt="MindPeek Logo" width="120" style="border-radius: 20px;">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Vue-3-green.svg" alt="Vue">
   <img src="https://img.shields.io/badge/License-GPL--3.0-orange.svg" alt="License">

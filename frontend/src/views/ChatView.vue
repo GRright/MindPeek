@@ -20,8 +20,8 @@
           >
             <div class="message-avatar">
               <div class="avatar" :class="msg.role">
-                <el-icon v-if="msg.role === 'user'"><User /></el-icon>
-                <el-icon v-else><Cpu /></el-icon>
+                <img v-if="msg.role === 'assistant'" :src="logo" alt="MindPeek" class="avatar-logo" />
+                <el-icon v-else-if="msg.role === 'user'"><User /></el-icon>
               </div>
             </div>
 
@@ -105,9 +105,9 @@ import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import MarkdownIt from 'markdown-it'
+import logo from '@/assets/logo.png'
 import {
   User,
-  Cpu,
   ChatDotRound,
   Promotion,
   Loading,
@@ -548,12 +548,19 @@ function renderMarkdown(content) {
   font-size: 1rem;
 }
 
+.avatar-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0.375rem;
+}
+
 .avatar.user {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
 
 .avatar.assistant {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: transparent;
 }
 
 .message-content {

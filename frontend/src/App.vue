@@ -4,7 +4,7 @@
       <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="sidebar-header">
           <div class="logo" v-show="!sidebarCollapsed">
-            <el-icon :size="24"><Cpu /></el-icon>
+            <img :src="logo" alt="MindPeek Logo" class="logo-image" />
             <span class="logo-text">MindPeek</span>
           </div>
           <el-button
@@ -54,8 +54,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import logo from './assets/logo.png'
 import {
-  Cpu,
   ChatDotRound,
   UserFilled,
   Connection,
@@ -191,6 +191,12 @@ html, body, #app {
   align-items: center;
   gap: 12px;
   color: var(--text-primary);
+}
+
+.logo-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .logo .el-icon {
