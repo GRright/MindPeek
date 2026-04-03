@@ -69,7 +69,7 @@ AI 会根据你的画像提供贴心回复：
       <td align="center">
         <img src="docs/images/page/chat1.png" width="300" alt="智能思考"/>
         <br/>
-        <strong>根据用户画像智能对话*</strong>
+        <strong>智能对话*</strong>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="特征管理"/>

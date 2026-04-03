@@ -67,7 +67,7 @@ AI provides thoughtful responses based on your profile:
       <td align="center">
         <img src="docs/images/page/chat1.png" width="300" alt="Smart Conversation"/>
         <br/>
-        <strong>Personalized Conversation*</strong>
+        <strong>Smart Conversation*</strong>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="Feature Management"/>

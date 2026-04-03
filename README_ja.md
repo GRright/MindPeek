@@ -65,9 +65,9 @@ AIはあなたのプロファイルに基づいて思いやりのある応答を
         <strong>チャット画面</strong>
       </td>
       <td align="center">
-        <img src="docs/images/page/chat1.png" width="300" alt="パーソナライズ会話"/>
+        <img src="docs/images/page/chat1.png" width="300" alt="スマート会話"/>
         <br/>
-        <strong>ユーザープロファイルに基づく会話*</strong>
+        <strong>スマート会話*</strong>
       </td>
       <td align="center">
         <img src="docs/images/page/feature1.png" width="300" alt="特徴管理"/>
