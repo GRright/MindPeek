@@ -173,7 +173,7 @@ This script will automatically:
 
 After the test, visit these pages to see results:
 - 📊 Features: http://localhost:3000/features
-- 🔗 Knowledge Graph: http://localhost:3000/knowledge-graph
+- 🔗 Feature Graph: http://localhost:3000/knowledge-graph
 
 ---
 

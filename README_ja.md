@@ -173,7 +173,7 @@ python tests/interactive_conversation_test.py
 
 テスト後、以下のページで結果を確認：
 - 📊 特徴管理：http://localhost:3000/features
-- 🔗 ナレッジグラフ：http://localhost:3000/knowledge-graph
+- 🔗 特徴グラフ：http://localhost:3000/knowledge-graph
 
 ---
 

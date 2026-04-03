@@ -177,7 +177,7 @@ python tests/interactive_conversation_test.py
 测试完成后，访问以下页面查看结果：
 
 - 📊 特征管理：<http://localhost:3000/features>
-- 🔗 知识图谱：<http://localhost:3000/knowledge-graph>
+- 🔗 特征图谱：<http://localhost:3000/knowledge-graph>
 
 ***
 
