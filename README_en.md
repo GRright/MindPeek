@@ -117,28 +117,31 @@ npm install
 copy config\config.example.json config\config.json
 ```
 
-Edit `config/config.json` with your configuration:
+Edit `config/config.json`, only fill in the following:
 
 ```json
 {
-    "llm_provider": {
-        "api_url": "Your LLM API URL",
-        "api_key": "Your LLM API Key",
-        "model": "Model name (e.g., qwen-plus)"
+    "llm_providers": {
+        "openai": {
+            "api_url": "Your LLM API URL",
+            "api_key": "Your API Key",
+            "model": "Model name, e.g., Qwen-3.5"
+        }
     },
+    "default_provider": "openai",
     "memo_base": {
-        "project_url": "Your MemoBase URL", // Create a project at https://app.memobase.io/dashboard/projects to get project_url and api_key (free quota is sufficient for basic use)
+        "project_url": "Your MemoBase URL",
         "api_key": "Your MemoBase API Key"
     }
 }
 ```
 
 **Required Configuration**:
-- **llm_provider**: LLM service configuration (required for chat functionality)
+- **llm_providers**: LLM service configuration, required for chat functionality
   - `api_url`: LLM API endpoint
   - `api_key`: API access key
   - `model`: Model name to use
-- **memo_base**: MemoBase database configuration
+- **memo_base**: MemoBase database configuration (create a project at https://app.memobase.io/dashboard/projects to get project_url and api_key, free tier is sufficient for basic usage)
   - `project_url`: MemoBase project URL
   - `api_key`: MemoBase API key
 

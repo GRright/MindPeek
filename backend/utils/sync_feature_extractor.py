@@ -7,9 +7,9 @@ import asyncio
 import re
 from datetime import datetime
 from backend.services.llm_provider import LLMProviderFactory
-from backend.core.config import ConfigManager
+from backend.core.config import config_manager
 
-DB_PATH = 'C:\\myProject\\MindPeek\\data\\permir.db'
+DB_PATH = config_manager.get_database_path()
 
 FEATURE_TYPES = [
     "MBTI", "大五人格", "行为习惯", "兴趣爱好",
@@ -245,8 +245,8 @@ def validate_and_clean_feature(feature: dict) -> dict:
 def extract_features_sync(user_id: str, message: str, response: str = "") -> bool:
     """使用 LLM 进行智能特征提取"""
     try:
-        config_manager = ConfigManager()
-        llm = LLMProviderFactory.get_provider("openai")
+        default_provider = config_manager.get_default_provider()
+        llm = LLMProviderFactory.get_provider(default_provider)
 
         prompt = LLM_EXTRACTION_PROMPT.format(
             message=message,

@@ -6,8 +6,9 @@ import sqlite3
 from datetime import datetime
 from typing import Optional, Dict, Any
 import json
+from backend.core.config import config_manager
 
-DB_PATH = 'C:\\myProject\\MindPeek\\data\\permir.db'
+DB_PATH = config_manager.get_database_path()
 
 def save_conversation_sync(user_id: str, role: str, content: str, session_id: str = "default", think_content: str = None) -> bool:
     """同步保存对话"""

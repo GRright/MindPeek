@@ -23,11 +23,13 @@ from backend.knowledge_graph.graph import knowledge_graph
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("正在初始化数据库...")
-    data_dir = BASE_DIR / "data"
-    data_dir.mkdir(exist_ok=True)
-
-    db_path = data_dir / "permir.db"
-
+    
+    from backend.core.config import config_manager
+    
+    db_path = config_manager.get_database_path()
+    db_dir = Path(db_path).parent
+    db_dir.mkdir(parents=True, exist_ok=True)
+    
     from backend.core.config import settings
     settings.database_url = f"sqlite+aiosqlite:///{db_path}"
 

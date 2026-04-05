@@ -12,7 +12,7 @@ from datetime import datetime
 class FeatureMerger:
     """特征智能合并器 - 规则 + LLM 混合模式"""
 
-    def __init__(self, use_llm: bool = False):
+    def __init__(self, use_llm: bool = True):
         self.synonyms = self._load_synonyms()
         self.abbreviations = self._load_abbreviations()
         self.conflicts = self._load_conflicts()
@@ -212,7 +212,7 @@ class FeatureMerger:
             try:
                 from .llm_provider import LLMProviderFactory
                 from ..core.config import config_manager
-                default_provider = config_manager._config.get("default_llm_provider", "deepseek")
+                default_provider = config_manager.get_default_provider()
                 self._llm_provider = LLMProviderFactory.get_provider(default_provider)
                 self._llm_available = True
             except Exception as e:

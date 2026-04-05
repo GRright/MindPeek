@@ -427,7 +427,7 @@ class DeepSeekProvider(BaseLLMProvider):
     """DeepSeek提供者 - 使用 OpenAI 兼容接口"""
 
     async def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "dummy_key")
+        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "")
 
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -442,8 +442,7 @@ class DeepSeekProvider(BaseLLMProvider):
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
-            api_url = self.config.api_url or "http://172.16.5.147:8000/v1"
-            # 确保 URL 以 /chat/completions 结尾
+            api_url = self.config.api_url or "https://api.deepseek.com/v1"
             if not api_url.endswith("/chat/completions"):
                 api_url = f"{api_url}/chat/completions"
             
@@ -457,7 +456,7 @@ class DeepSeekProvider(BaseLLMProvider):
             return result["choices"][0]["message"]["content"]
 
     async def chat_stream(self, messages: List[Dict[str, str]], **kwargs):
-        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "dummy_key")
+        api_key = self.config.api_key or os.getenv("DEEPSEEK_API_KEY", "")
 
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -475,7 +474,7 @@ class DeepSeekProvider(BaseLLMProvider):
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream(
                 "POST",
-                self.config.api_url or "http://172.16.5.147:8000/v1/chat/completions",
+                self.config.api_url or "https://api.deepseek.com/v1/chat/completions",
                 headers=headers,
                 json=payload
             ) as response:
@@ -511,8 +510,15 @@ class LLMProviderFactory:
         if provider_type in cls._instances:
             return cls._instances[provider_type]
         
+        if provider_type not in cls._providers:
+            available = list(cls._providers.keys())
+            raise ValueError(
+                f"不支持的 LLM 提供者: '{provider_type}'\n"
+                f"支持的提供者: {available}"
+            )
+        
         config = config_manager.get_llm_config(provider_type)
-        provider_class = cls._providers.get(provider_type, QwenProvider)
+        provider_class = cls._providers[provider_type]
         instance = provider_class(config)
         cls._instances[provider_type] = instance
         return instance

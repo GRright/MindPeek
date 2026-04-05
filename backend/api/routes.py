@@ -9,6 +9,7 @@ from backend.models.database import FeatureModel
 from backend.agents.async_orchestrator import get_orchestrator, TaskType
 from backend.knowledge_graph.hybrid_graph import knowledge_graph
 from backend.services.feature_merger import feature_merger
+from backend.core.config import config_manager
 from fastapi.responses import StreamingResponse
 from backend.utils.sync_database import (
     save_conversation_sync, 
@@ -391,7 +392,7 @@ async def get_profile(
         
         features = feature_merger.clean_features(features)
         
-        conn = sqlite3.connect('C:\\myProject\\MindPeek\\data\\permir.db')
+        conn = sqlite3.connect(config_manager.get_database_path())
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -777,7 +778,7 @@ async def get_profile_insights(user_id: str):
     from datetime import datetime, timedelta
     
     try:
-        conn = sqlite3.connect('C:\\myProject\\MindPeek\\data\\permir.db')
+        conn = sqlite3.connect(config_manager.get_database_path())
         cursor = conn.cursor()
         
         cursor.execute("""

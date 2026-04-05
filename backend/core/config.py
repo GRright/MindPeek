@@ -42,8 +42,6 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    default_llm_provider: str = "deepseek"
-
     class Config:
         env_file = ".env"
 
@@ -69,57 +67,25 @@ class ConfigManager:
             with open(full_path, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
         else:
-            self._config = self._get_default_config()
-
-    def _get_default_config(self) -> Dict[str, Any]:
-        return {
-            "llm_providers": {
-                "deepseek": {
-                    "enabled": True,
-                    "api_key": "",
-                    "api_url": "http://172.16.5.147:8000/v1",
-                    "model": "deepseek-chat",
-                    "temperature": 0.7,
-                    "max_tokens": 2000
-                },
-                "openai": {
-                    "enabled": False,
-                    "api_key": os.getenv("OPENAI_API_KEY", ""),
-                    "api_url": "https://api.openai.com/v1/chat/completions",
-                    "model": "gpt-4",
-                    "temperature": 0.7,
-                    "max_tokens": 2000
-                },
-                "openrouter": {
-                    "enabled": False,
-                    "api_key": os.getenv("OPENROUTER_API_KEY", ""),
-                    "api_url": "https://openrouter.ai/api/v1/chat/completions",
-                    "model": "stepfun/step-3.5-flash:free",
-                    "temperature": 0.7,
-                    "max_tokens": 2000
-                }
-            },
-            "default_provider": "deepseek",
-            "memo_base": {
-                "enabled": False,
-                "project_url": "",
-                "api_key": ""
-            },
-            "feature_extraction": {
-                "confidence_threshold": 0.6,
-                "auto_update_on_new_message": True,
-                "max_history_messages": 100,
-                "enable_knowledge_graph": True,
-                "enable_multi_agent": True
-            }
-        }
+            example_path = os.path.join(base_dir, "config/config.example.json")
+            raise FileNotFoundError(
+                f"配置文件不存在: {full_path}\n"
+                f"请复制 config/config.example.json 为 config/config.json 并填写您的配置信息。\n"
+                f"示例配置路径: {example_path}"
+            )
 
     def get_llm_config(self, provider: str = None) -> LLMProviderConfig:
-        # 兼容简化后的配置格式
         if "llm_provider" in self._config:
             return LLMProviderConfig(**self._config["llm_provider"])
-        # 兼容旧格式
+        
         providers = self._config.get("llm_providers", {})
+        if provider not in providers:
+            available = list(providers.keys())
+            raise ValueError(
+                f"LLM 提供者 '{provider}' 未在配置文件中定义。\n"
+                f"可用的提供者: {available}\n"
+                f"请在 config/config.json 的 llm_providers 中配置 '{provider}'。"
+            )
         config = providers.get(provider, {})
         return LLMProviderConfig(**config)
 
@@ -131,11 +97,30 @@ class ConfigManager:
         config = self._config.get("feature_extraction", {})
         return FeatureExtractionConfig(**config)
 
+    def get_database_path(self) -> str:
+        db_config = self._config.get("database", {})
+        if "path" not in db_config:
+            raise ValueError(
+                "未配置数据库路径。\n"
+                "请在 config/config.json 中配置 database.path。"
+            )
+        db_path = db_config["path"]
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        return os.path.join(base_dir, db_path)
+
     def get_default_provider(self) -> str:
-        # 兼容简化后的配置格式
-        if "llm_provider" in self._config:
-            return "deepseek"
-        return self._config.get("default_provider", "deepseek")
+        if "default_provider" in self._config:
+            return self._config["default_provider"]
+        
+        providers = self._config.get("llm_providers", {})
+        for provider_name, provider_config in providers.items():
+            if provider_config.get("enabled", True):
+                return provider_name
+        
+        raise ValueError(
+            "未找到可用的 LLM 提供者。\n"
+            "请在 config/config.json 中配置 llm_providers 并设置 default_provider。"
+        )
 
     def update_llm_config(self, provider: str, api_key: str = None, **kwargs) -> None:
         if provider not in self._config["llm_providers"]:

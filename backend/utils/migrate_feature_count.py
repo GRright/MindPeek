@@ -2,8 +2,9 @@
 数据库迁移脚本：添加 feature_count_at_generation 字段到 user_predictions 表
 """
 import sqlite3
+from backend.core.config import config_manager
 
-DB_PATH = 'C:\\myProject\\MindPeek\\data\\permir.db'
+DB_PATH = config_manager.get_database_path()
 
 def migrate():
     """执行数据库迁移"""

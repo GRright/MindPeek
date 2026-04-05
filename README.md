@@ -119,28 +119,31 @@ npm install
 copy config\config.example.json config\config.json
 ```
 
-编辑 `config/config.json`，填入你的配置信息：
+编辑 `config/config.json`，只需填写以下配置：
 
 ```json
 {
-    "llm_provider": {
-        "api_url": "你的 LLM API URL",
-        "api_key": "你的 LLM api_key",
-        "model": "模型名称 如qwen-plus"
+    "llm_providers": {
+        "openai": {
+            "api_url": "你的 LLM API URL",
+            "api_key": "你的 API Key",
+            "model": "模型名称 如 gpt-3.5-turbo"
+        }
     },
+    "default_provider": "openai",
     "memo_base": {
-        "project_url": "你的 MemoBase 地址", // 初次使用可前往https://app.memobase.io/dashboard/projects进行创建项目（免费额度足够基本使用），便可得到project_url和api_key
+        "project_url": "你的 MemoBase 地址",
         "api_key": "你的 MemoBase API 密钥"
     }
 }
 ```
 
 **必要配置说明**：
-- **llm_provider**：LLM 服务配置，必须填写才能正常使用对话功能
+- **llm_providers**：LLM 服务配置，必须填写才能正常使用对话功能
   - `api_url`：LLM API 接口地址
   - `api_key`：API 访问密钥
   - `model`：使用的模型名称
-- **memo_base**：MemoBase 数据库配置
+- **memo_base**：MemoBase 数据库配置（初次使用可前往 https://app.memobase.io/dashboard/projects 创建项目得到project_url和api_key，免费额度足够基本使用）
   - `project_url`：MemoBase 项目地址
   - `api_key`：MemoBase API 密钥
 

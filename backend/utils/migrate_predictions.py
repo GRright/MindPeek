@@ -3,8 +3,9 @@
 """
 import sqlite3
 from datetime import datetime
+from backend.core.config import config_manager
 
-DB_PATH = 'C:\\myProject\\MindPeek\\data\\permir.db'
+DB_PATH = config_manager.get_database_path()
 
 def migrate():
     """执行数据库迁移"""

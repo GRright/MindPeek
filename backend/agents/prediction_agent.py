@@ -6,13 +6,15 @@ import asyncio
 from datetime import datetime
 from typing import List, Dict, Any
 from backend.services.llm_provider import LLMProviderFactory
+from backend.core.config import config_manager
 
 
 class PredictionAgent:
     """用户行为预测 Agent"""
     
     def __init__(self):
-        self.llm = LLMProviderFactory.get_provider("openai")
+        default_provider = config_manager.get_default_provider()
+        self.llm = LLMProviderFactory.get_provider(default_provider)
     
     async def predict_user_behavior(
         self,

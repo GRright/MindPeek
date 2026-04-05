@@ -117,28 +117,31 @@ npm install
 copy config\config.example.json config\config.json
 ```
 
-`config/config.json` を編集して、設定情報を入力してください：
+`config/config.json` を編集して、以下の設定を入力してください：
 
 ```json
 {
-    "llm_provider": {
-        "api_url": "あなたの LLM API URL",
-        "api_key": "あなたの LLM API キー",
-        "model": "モデル名（例：qwen-plus）"
+    "llm_providers": {
+        "openai": {
+            "api_url": "あなたの LLM API URL",
+            "api_key": "あなたの API Key",
+            "model": "モデル名（例：Qwen-3.5）"
+        }
     },
+    "default_provider": "openai",
     "memo_base": {
-        "project_url": "あなたの MemoBase URL", // https://app.memobase.io/dashboard/projects でプロジェクトを作成（無料枠で基本使用に十分）すると、project_url と api_key が取得できます
+        "project_url": "あなたの MemoBase URL",
         "api_key": "あなたの MemoBase API キー"
     }
 }
 ```
 
 **必須設定**：
-- **llm_provider**：LLM サービス設定（チャット機能に必須）
+- **llm_providers**：LLM サービス設定、チャット機能に必須
   - `api_url`：LLM API エンドポイント
   - `api_key`：API アクセスキー
   - `model`：使用するモデル名
-- **memo_base**：MemoBase データベース設定
+- **memo_base**：MemoBase データベース設定（https://app.memobase.io/dashboard/projects でプロジェクトを作成してproject_urlとapi_keyを取得、無料枠で基本使用に十分）
   - `project_url`：MemoBase プロジェクト URL
   - `api_key`：MemoBase API キー
 

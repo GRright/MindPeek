@@ -9,6 +9,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from ..services.llm_provider import LLMProviderFactory, BaseLLMProvider
 from ..knowledge_graph.hybrid_graph import knowledge_graph
+from ..core.config import config_manager
 
 
 @dataclass
@@ -445,7 +446,9 @@ class CorrelationAgent(BaseAgent):
 class AgentOrchestrator:
     """Agent编排器 - 协调多个Agent协作"""
     
-    def __init__(self, provider_type: str = "qwen"):
+    def __init__(self, provider_type: str = None):
+        if provider_type is None:
+            provider_type = config_manager.get_default_provider()
         self.llm = LLMProviderFactory.get_provider(provider_type)
         
         self.agents = {
