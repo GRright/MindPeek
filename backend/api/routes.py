@@ -7,7 +7,7 @@ from backend.services.profile_service import ProfileService
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.models.database import FeatureModel
 from backend.agents.async_orchestrator import get_orchestrator, TaskType
-from backend.knowledge_graph.graph import knowledge_graph
+from backend.knowledge_graph.hybrid_graph import knowledge_graph
 from backend.services.feature_merger import feature_merger
 from fastapi.responses import StreamingResponse
 from backend.utils.sync_database import (
@@ -369,16 +369,22 @@ async def delete_conversation(
 @router.get("/profile/{user_id}")
 async def get_profile(
     user_id: str,
+    use_inference: bool = True  # 是否使用推理（包括混合推理）
 ):
-    """使用同步方式获取用户画像"""
+    """使用同步方式获取用户画像
+    
+    Args:
+        user_id: 用户 ID
+        use_inference: 是否使用推理增强特征，默认 True
+    """
     from backend.utils.sync_database import get_user_features_sync
     import sqlite3
     
     try:
-        # 同步获取特征
         features = get_user_features_sync(user_id)
         
-        # 同步获取对话统计
+        features = feature_merger.clean_features(features)
+        
         conn = sqlite3.connect('C:\\myProject\\MindPeek\\data\\permir.db')
         cursor = conn.cursor()
         
@@ -411,13 +417,55 @@ async def get_profile(
         # 获取用户预测（Top 10）
         predictions = get_user_predictions_sync(user_id)
         
+        # 使用混合推理增强特征（安全版本）
+        all_features = features.copy()
+        inferred_features = []
+        
+        if use_inference and features:
+            try:
+                feature_dicts = []
+                for f in features:
+                    feature_dicts.append({
+                        "feature_type": f.get("feature_type", ""),
+                        "feature_value": f.get("feature_value", ""),
+                        "confidence": f.get("confidence", 0.8)
+                    })
+                
+                graph_data = knowledge_graph.get_user_subgraph(feature_dicts)
+                
+                for node in graph_data.get("nodes", []):
+                    if node.get("node_type") == "inferred":
+                        props = node.get("properties", {})
+                        inferred_features.append({
+                            "feature_type": "推断特征",
+                            "feature_value": node.get("node_name", ""),
+                            "confidence": props.get("confidence", 0.6),
+                            "inference_source": props.get("source", "unknown"),
+                            "inference_mode": "rule_based"
+                        })
+                
+                all_features = features + inferred_features
+                
+                for f in inferred_features:
+                    ftype = f.get('feature_type', '推断特征')
+                    if ftype not in features_by_type:
+                        features_by_type[ftype] = []
+                    features_by_type[ftype].append(f)
+                    
+            except Exception as e:
+                print(f"混合推理失败（使用原始特征）：{e}")
+        
         return {
             "user_id": user_id,
-            "features": features,
+            "features": all_features,
+            "inferred_features": inferred_features,
+            "inference_count": len(inferred_features),
             "predictions": predictions,
             "summary": {
                 "conversation_count": conversation_count,
                 "feature_count": len(features),
+                "inferred_count": len(inferred_features),
+                "total_features": len(all_features),
                 "first_conversation": str(time_range[0]) if time_range[0] else None,
                 "last_conversation": str(time_range[1]) if time_range[1] else None,
                 "big_five": big_five,
@@ -461,25 +509,36 @@ async def generate_predictions(
         if not features:
             return {"predictions": [], "message": "特征不足，无法生成预测"}
         
-        # 使用预测 Agent 生成预测
-        agent = get_prediction_agent()
-        predictions = await agent.predict_user_behavior(
-            user_id=user_id,
-            features=features,
-            recent_conversations=conversations
-        )
+        # 使用预测 Agent 生成预测（添加超时保护）
+        try:
+            agent = get_prediction_agent()
+            predictions = await asyncio.wait_for(
+                agent.predict_user_behavior(
+                    user_id=user_id,
+                    features=features,
+                    recent_conversations=conversations
+                ),
+                timeout=30.0  # 30 秒超时
+            )
+        except asyncio.TimeoutError:
+            print("预测生成超时，返回空预测")
+            predictions = []
+        except Exception as agent_error:
+            print(f"预测 Agent 调用失败：{agent_error}")
+            predictions = []
         
         # 保存预测到数据库
         if predictions:
             save_predictions_sync(user_id, predictions)
         
-        return {"predictions": predictions[:10], "cached": False}
+        return {"predictions": predictions[:10] if predictions else [], "cached": False}
         
     except Exception as e:
         import traceback
         print(f"生成预测失败：{e}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        # 返回空预测而不是 500 错误
+        return {"predictions": [], "error": str(e)}
 
 def calculate_big_five(features):
     """根据特征计算大五人格分数"""
@@ -643,7 +702,13 @@ async def merge_duplicate_features(user_id: str, threshold: float = 0.75):
             raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/knowledge-graph/{user_id}")
-async def get_knowledge_graph(user_id: str):
+async def get_knowledge_graph(user_id: str, use_hybrid: bool = True):
+    """获取知识图谱
+    
+    Args:
+        user_id: 用户 ID
+        use_hybrid: 是否使用混合推理（规则 + LLM），默认 True
+    """
     from backend.utils.database import DatabaseSession
     async with DatabaseSession() as session:
         service = ProfileService(session)
@@ -653,10 +718,15 @@ async def get_knowledge_graph(user_id: str):
             for feature in user_features:
                 feature_dicts.append({
                     "feature_type": feature.feature_type,
-                    "feature_value": feature.feature_value
+                    "feature_value": feature.feature_value,
+                    "confidence": feature.confidence
                 })
             
-            graph_data = knowledge_graph.get_user_subgraph(feature_dicts)
+            # 使用混合推理
+            graph_data = await knowledge_graph.get_user_subgraph_async(
+                feature_dicts, 
+                use_hybrid=use_hybrid
+            )
             
             nodes = []
             edges = []
@@ -664,7 +734,8 @@ async def get_knowledge_graph(user_id: str):
                 nodes.append({
                     "id": node["id"],
                     "label": node["node_name"],
-                    "type": node["node_type"]
+                    "type": node["node_type"],
+                    "properties": node.get("properties", {})
                 })
             
             for edge in graph_data.get("edges", []):
@@ -672,14 +743,23 @@ async def get_knowledge_graph(user_id: str):
                     "source": edge["source_id"],
                     "target": edge["target_id"],
                     "relation": edge["relation_type"],
-                    "inferred": edge.get("weight", 1.0) < 1.0,
+                    "inferred": edge["relation_type"] in ["implies", "inferred_from"],
                     "weight": edge.get("weight", 1.0)
                 })
             
             feature_types = list(set([
                 feature.feature_type for feature in user_features
             ]))
-            return {"nodes": nodes, "edges": edges, "featureTypes": feature_types}
+            
+            # 返回额外信息
+            return {
+                "nodes": nodes, 
+                "edges": edges, 
+                "featureTypes": feature_types,
+                "inference_mode": "hybrid" if use_hybrid else "rules_only",
+                "total_nodes": len(nodes),
+                "total_edges": len(edges)
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

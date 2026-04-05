@@ -2,7 +2,6 @@
   <div class="knowledge-graph-view">
     <div class="graph-header">
       <h1 class="page-title">
-        <span class="title-icon">🔮</span>
         <span class="title-text">用户画像特征图谱</span>
       </h1>
       <div class="header-actions">
@@ -50,7 +49,7 @@
                 <div 
                   class="type-bar-fill" 
                   :style="{ 
-                    width: (count / featureCount * 100) + '%',
+                    width: (count / typeBarMax * 100) + '%',
                     background: getTypeColor(type)
                   }"
                 ></div>
@@ -114,6 +113,13 @@ const typeDistribution = computed(() => {
     dist[f.feature_type] = (dist[f.feature_type] || 0) + 1
   })
   return dist
+})
+
+const typeBarMax = computed(() => {
+  const counts = Object.values(typeDistribution.value)
+  if (counts.length === 0) return 10
+  const maxCount = Math.max(...counts)
+  return Math.ceil(maxCount / 10) * 10
 })
 
 const nodeLegendItems = computed(() => {

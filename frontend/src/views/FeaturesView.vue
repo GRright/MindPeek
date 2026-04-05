@@ -165,7 +165,7 @@ const insights = ref({
 
 const showAlerts = ref(false)
 
-let abortController = null
+let insightsAbortController = null
 
 function toggleAlerts() {
   showAlerts.value = !showAlerts.value
@@ -229,16 +229,14 @@ watch([searchQuery, selectedTypes], () => {
 })
 
 onMounted(async () => {
-  await Promise.all([
-    loadFeatures(),
-    loadInsights()
-  ])
+  await loadFeatures()
+  loadInsights()
   document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
-  if (abortController) {
-    abortController.abort()
+  if (insightsAbortController) {
+    insightsAbortController.abort()
   }
   document.removeEventListener('click', handleClickOutside)
 })
@@ -249,23 +247,22 @@ async function loadFeatures() {
     const data = await store.loadProfile()
     features.value = data.features || []
   } catch (e) {
-    if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
-      console.error('Failed to load features:', e)
-    }
+    console.error('Failed to load features:', e)
   } finally {
     loading.value = false
   }
 }
 
 async function loadInsights() {
-  if (abortController) {
-    abortController.abort()
+  if (insightsAbortController) {
+    insightsAbortController.abort()
   }
-  abortController = new AbortController()
+  insightsAbortController = new AbortController()
   
   try {
     const response = await axios.get(`/api/profile/${store.currentUserId}/insights`, {
-      signal: abortController.signal
+      signal: insightsAbortController.signal,
+      timeout: 30000
     })
     const data = response.data
     data.alerts = data.alerts.filter(alert => 
