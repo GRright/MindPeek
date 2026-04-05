@@ -127,7 +127,7 @@ copy config\config.example.json config\config.json
         "openai": {
             "api_url": "你的 LLM API URL",
             "api_key": "你的 API Key",
-            "model": "模型名称 如 gpt-3.5-turbo"
+            "model": "模型名称 如 Qwen-3.5"
         }
     },
     "default_provider": "openai",
