@@ -99,7 +99,12 @@ class ConfigManager:
 
     def get_database_path(self) -> str:
         db_config = self._config.get("database", {})
-        db_path = db_config.get("path", "data/permir.db")
+        if "path" not in db_config:
+            raise ValueError(
+                "未配置数据库路径。\n"
+                "请在 config/config.json 中配置 database.path。"
+            )
+        db_path = db_config["path"]
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         return os.path.join(base_dir, db_path)
 
