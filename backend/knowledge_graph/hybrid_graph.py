@@ -394,6 +394,26 @@ class HybridKnowledgeGraph:
         
         return merged
 
+    def _get_inferred_features(self, feature_value: str) -> List[str]:
+        """基于单个特征值推断相关特征（兼容接口）"""
+        inferred = []
+        
+        for behavior, traits in self.knowledge_base.BEHAVIOR_TRAIT_MAPPING.items():
+            if behavior == feature_value or behavior in feature_value:
+                inferred.extend(traits)
+        
+        for need_key, need_data in self.knowledge_base.IMPLICIT_NEEDS.items():
+            if feature_value == need_key or need_key in feature_value:
+                inferred.extend(need_data.get("潜在需求", []))
+        
+        for mbti_pair, (relation, weight) in self.knowledge_base.MBTI_RELATIONS.items():
+            if feature_value in mbti_pair or any(m in feature_value for m in mbti_pair):
+                other = mbti_pair[1] if mbti_pair[0] == feature_value or mbti_pair[0] in feature_value else mbti_pair[0]
+                if relation == "implies":
+                    inferred.append(other)
+        
+        return list(set(inferred))[:5]
+
     def _guess_feature_type(self, feature_value: str) -> str:
         """猜测特征值的类型"""
         for category, values in self.knowledge_base.FEATURE_CATEGORIES.items():

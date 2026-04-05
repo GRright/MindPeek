@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from dataclasses import dataclass, field
 from ..services.llm_provider import LLMProviderFactory, BaseLLMProvider
-from ..knowledge_graph.graph import knowledge_graph
+from ..knowledge_graph.hybrid_graph import knowledge_graph
 
 
 @dataclass

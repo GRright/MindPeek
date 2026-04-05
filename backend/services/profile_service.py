@@ -14,7 +14,7 @@ from ..models.schemas import (
     ProfileResponse, ProfileSummary, UserProfileDetail
 )
 from ..agents.agent_engine import AgentOrchestrator
-from ..knowledge_graph.graph import knowledge_graph
+from ..knowledge_graph.hybrid_graph import knowledge_graph
 from ..core.config import config_manager
 from .memo_base_service import memo_base_service
 from .feature_merger import feature_merger

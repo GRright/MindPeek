@@ -525,7 +525,7 @@ class FeatureMerger:
         threshold: float = 0.7
     ) -> Tuple[Optional[Dict], float]:
         """
-        在现有特征中找到最佳匹配
+        在现有特征中找到最佳匹配（规则优先 + LLM 兜底）
         
         Args:
             new_feature: 新特征值
@@ -561,6 +561,23 @@ class FeatureMerger:
             if similarity > best_score and similarity >= threshold:
                 best_match = feature
                 best_score = similarity
+        
+        if best_score >= threshold:
+            return best_match, best_score
+        
+        if self.use_llm and self._llm_available is not False and len(existing_features) > 0:
+            for feature in existing_features[:5]:
+                if feature_type and feature.get("feature_type") != feature_type:
+                    continue
+                existing_value = feature.get("feature_value", "")
+                is_similar, llm_score = self._llm_check_similarity(
+                    new_feature, existing_value, feature_type or ""
+                )
+                if is_similar and llm_score > best_score:
+                    best_match = feature
+                    best_score = llm_score
+                    if best_score >= threshold:
+                        break
         
         return best_match, best_score
 

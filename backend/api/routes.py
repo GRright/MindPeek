@@ -211,6 +211,12 @@ async def chat_stream(
 请直接回答。"""
             
             messages = [{"role": "system", "content": system_prompt}]
+            
+            history = get_user_conversations_sync(request.user_id, limit=10)
+            if history:
+                for msg in reversed(history):
+                    messages.append({"role": msg["role"], "content": msg["content"]})
+            
             messages.append({"role": "user", "content": request.message})
 
             full_response = ""
