@@ -51,16 +51,39 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="基于LLM的多轮对话用户画像生成系统",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=settings.debug and "/docs" or None,
+    redoc_url=settings.debug and "/redoc" or None
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
+
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from backend.core.security import RateLimitMiddleware
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1", "*"]
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+from fastapi.responses import Response
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+    return response
 
 app.include_router(api_router, prefix="/api")
 

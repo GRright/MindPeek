@@ -34,16 +34,21 @@ class FeatureExtractionConfig(BaseModel):
 class Settings(BaseSettings):
     app_name: str = "perMIR - 用户画像生成系统"
     app_version: str = "2.0.0"
-    debug: bool = True
+    debug: bool = False
 
     database_url: str = "sqlite+aiosqlite:///./data/permir.db"
 
-    secret_key: str = "your-secret-key-change-in-production"
+    secret_key: str = "your-secret-key-change-in-production-please-use-a-strong-random-key"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    rate_limit_enabled: bool = True
+    rate_limit_requests: int = 100
+    rate_limit_window: int = 60
+
     class Config:
         env_file = ".env"
+        env_prefix = "MINDPEEK_"
 
 
 class ConfigManager:

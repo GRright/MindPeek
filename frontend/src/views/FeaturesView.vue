@@ -1,119 +1,126 @@
 <template>
   <div class="features-view">
-    <div class="features-layout">
-      <div class="right-panel">
-        <div class="features-header">
-          <div class="header-left">
-            <el-icon :size="20"><Document /></el-icon>
-            <span class="header-title">特征管理</span>
-            <span class="feature-count" v-if="features.length > 0">共 {{ features.length }} 个特征</span>
+    <div class="features-container">
+      <div class="features-header">
+        <div class="header-left">
+          <div class="stats-badge">
+            <span class="stats-count">{{ features.length }}</span>
+            <span class="stats-label">特征</span>
           </div>
-          <div class="header-actions">
-            <div class="alerts-trigger" v-if="insights.alerts.length > 0" @click="toggleAlerts">
-              <el-icon :size="20"><Bell /></el-icon>
-              <span class="alerts-badge">{{ insights.alerts.length }}</span>
-            </div>
-            <el-input
-              v-model="searchQuery"
-              placeholder="搜索特征..."
-              clearable
-              class="search-input"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            <el-select
-              v-model="selectedTypes"
-              multiple
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="筛选类型"
-              class="filter-select"
-            >
-              <el-option
-                v-for="type in featureTypes"
-                :key="type"
-                :label="type"
-                :value="type"
-              />
-            </el-select>
+          <div class="header-text">
+            <h2 class="header-title">特征管理</h2>
+            <p class="header-subtitle">查看和管理所有提取的用户特征</p>
           </div>
         </div>
-
-        <div class="features-content">
-          <el-table
-            :data="paginatedFeatures"
-            style="width: 100%"
-            v-loading="loading"
-            class="features-table"
-            :row-class-name="tableRowClassName"
+        <div class="header-actions">
+          <div class="alerts-trigger" v-if="insights.alerts.length > 0" @click="toggleAlerts">
+            <el-icon :size="18"><Bell /></el-icon>
+            <span class="alerts-badge">{{ insights.alerts.length }}</span>
+          </div>
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索特征..."
+            clearable
+            class="search-input"
           >
-            <el-table-column prop="feature_type" label="特征类型" width="140">
-              <template #default="{ row }">
-                <el-tag :type="getFeatureTagType(row.feature_type)" size="small">
-                  {{ row.feature_type }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="feature_value" label="特征值" min-width="200">
-              <template #default="{ row }">
-                <span class="feature-value-cell">{{ row.feature_value }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="confidence" label="置信度" width="160">
-              <template #default="{ row }">
-                <div class="confidence-cell">
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select
+            v-model="selectedTypes"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="筛选类型"
+            class="filter-select"
+          >
+            <el-option
+              v-for="type in featureTypes"
+              :key="type"
+              :label="type"
+              :value="type"
+            />
+          </el-select>
+        </div>
+      </div>
+
+      <div class="features-content">
+        <el-table
+          :data="paginatedFeatures"
+          style="width: 100%"
+          v-loading="loading"
+          class="features-table"
+          :row-class-name="tableRowClassName"
+        >
+          <el-table-column prop="feature_type" label="特征类型" width="150">
+            <template #default="{ row }">
+              <el-tag :type="getFeatureTagType(row.feature_type)" size="small" effect="light">
+                {{ row.feature_type }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="feature_value" label="特征值" min-width="220">
+            <template #default="{ row }">
+              <span class="feature-value-cell">{{ row.feature_value }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="confidence" label="置信度" width="180">
+            <template #default="{ row }">
+              <div class="confidence-cell">
+                <div class="progress-wrapper">
                   <el-progress
                     :percentage="row.confidence * 100"
-                    :stroke-width="6"
+                    :stroke-width="8"
                     :color="getConfidenceColor(row.confidence)"
                     :show-text="false"
                     class="confidence-bar"
                   />
-                  <span class="confidence-text">{{ (row.confidence * 100).toFixed(0) }}%</span>
                 </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="reasoning" label="推理依据" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="updated_at" label="更新时间" width="160">
-              <template #default="{ row }">
-                <span class="time-cell">{{ formatTime(row.updated_at) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  type="danger"
-                  size="small"
-                  text
-                  @click="deleteFeature(row)"
-                  class="delete-btn"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+                <span class="confidence-text">{{ (row.confidence * 100).toFixed(0) }}%</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reasoning" label="推理依据" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="updated_at" label="更新时间" width="170">
+            <template #default="{ row }">
+              <span class="time-cell">{{ formatTime(row.updated_at) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="90" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                type="danger"
+                size="small"
+                text
+                @click="deleteFeature(row)"
+                class="delete-btn"
+              >
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
 
-          <div class="pagination-wrapper" v-if="filteredTotal > pageSize">
-            <el-pagination
-              :current-page="currentPage"
-              @update:current-page="currentPage = $event"
-              :page-size="pageSize"
-              :total="filteredTotal"
-              layout="total, prev, pager, next"
-            />
-          </div>
+        <div class="pagination-wrapper" v-if="filteredTotal > pageSize">
+          <el-pagination
+            :current-page="currentPage"
+            @update:current-page="currentPage = $event"
+            :page-size="pageSize"
+            :total="filteredTotal"
+            layout="total, prev, pager, next"
+          />
+        </div>
 
-          <div class="empty-state" v-if="!loading && features.length === 0">
+        <div class="empty-state" v-if="!loading && features.length === 0">
+          <div class="empty-icon">
             <el-icon :size="48"><Document /></el-icon>
-            <p>暂无特征数据</p>
           </div>
+          <p class="empty-text">暂无特征数据</p>
         </div>
       </div>
     </div>
-    
+
     <Transition name="alerts-fade">
       <div class="alerts-dropdown" v-if="showAlerts && insights.alerts.length > 0">
         <div class="alerts-panel">
@@ -143,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProfileStore } from '@/stores/profile'
 import { Document, Search, Bell, Warning, SuccessFilled, Refresh } from '@element-plus/icons-vue'
@@ -164,12 +171,10 @@ const insights = ref({
 })
 
 const showAlerts = ref(false)
-
 let insightsAbortController = null
 
 function toggleAlerts() {
   showAlerts.value = !showAlerts.value
-  console.log('toggleAlerts, showAlerts:', showAlerts.value)
 }
 
 function handleClickOutside(event) {
@@ -181,16 +186,6 @@ function handleClickOutside(event) {
     showAlerts.value = false
   }
 }
-
-const showAddDialog = ref(false)
-const adding = ref(false)
-const newFeature = ref({
-  feature_type: '',
-  feature_value: '',
-  confidence: 0.7,
-  source_message: '',
-  reasoning: ''
-})
 
 const featureTypes = computed(() => {
   const types = new Set(features.value.map(f => f.feature_type))
@@ -285,32 +280,6 @@ function getAlertIcon(iconType) {
   return icons[iconType] || Warning
 }
 
-async function addFeature() {
-  if (!newFeature.value.feature_type || !newFeature.value.feature_value) {
-    ElMessage.warning('请填写特征类型和特征值')
-    return
-  }
-
-  adding.value = true
-  try {
-    await store.addFeature(newFeature.value)
-    ElMessage.success('添加成功')
-    showAddDialog.value = false
-    newFeature.value = {
-      feature_type: '',
-      feature_value: '',
-      confidence: 0.7,
-      source_message: '',
-      reasoning: ''
-    }
-    await loadFeatures()
-  } catch (e) {
-    ElMessage.error('添加失败: ' + e.message)
-  } finally {
-    adding.value = false
-  }
-}
-
 async function deleteFeature(row) {
   try {
     await ElMessageBox.confirm('确定要删除这个特征吗？', '确认删除', {
@@ -358,7 +327,7 @@ function getFeatureTagType(type) {
 }
 
 function getConfidenceColor(confidence) {
-  if (confidence >= 0.8) return '#22c55e'
+  if (confidence >= 0.8) return '#10b981'
   if (confidence >= 0.6) return '#f59e0b'
   return '#ef4444'
 }
@@ -370,25 +339,87 @@ function tableRowClassName({ rowIndex }) {
 
 <style scoped>
 .features-view {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 7rem);
-  min-height: 400px;
-  overflow: hidden;
-  position: relative;
 }
 
-.features-layout {
+.features-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-.right-panel {
+.features-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 24px;
+  background: white;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stats-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.stats-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.stats-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.header-text {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
+  gap: 2px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
 }
 
 .alerts-trigger {
@@ -396,89 +427,302 @@ function tableRowClassName({ rowIndex }) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 40px;
+  height: 40px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
 }
 
 .alerts-trigger:hover {
   background: var(--bg-tertiary);
-  border-color: var(--accent-color);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .alerts-badge {
   position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.25rem;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   background: #ef4444;
   color: white;
-  font-size: 0.625rem;
+  font-size: 10px;
   font-weight: 600;
-  border-radius: 0.625rem;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.search-input {
+  width: 220px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  box-shadow: none;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  border-color: var(--border-medium);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-input :deep(.el-input__inner) {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.filter-select {
+  width: 150px;
+}
+
+.filter-select :deep(.el-input__wrapper) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  box-shadow: none;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+
+.filter-select :deep(.el-input__wrapper:hover) {
+  border-color: var(--border-medium);
+}
+
+.filter-select :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filter-select :deep(.el-input__inner) {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.features-content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.features-table {
+  background: transparent;
+  flex: 1;
+}
+
+.features-table :deep(.el-table__header-wrapper th) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.features-table :deep(.el-table__body-wrapper) {
+  background: transparent;
+}
+
+.features-table :deep(.el-table__row) {
+  background: transparent;
+}
+
+.features-table :deep(.el-table__row.even-row) {
+  background: var(--bg-secondary);
+}
+
+.features-table :deep(.el-table__row:hover>td) {
+  background: var(--bg-tertiary) !important;
+}
+
+.features-table :deep(.el-table__row td) {
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  background: white !important;
+}
+
+.features-table :deep(.el-table__row.even-row td) {
+  background: var(--bg-secondary) !important;
+}
+
+.features-table :deep(.el-table__row:hover > td) {
+  background: var(--bg-tertiary) !important;
+}
+
+.feature-value-cell {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.confidence-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-wrapper {
+  flex: 1;
+}
+
+.confidence-bar {
+  flex: 1;
+}
+
+.confidence-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-width: 36px;
+  font-weight: 600;
+}
+
+.time-cell {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  color: var(--color-danger) !important;
+}
+
+.delete-btn:hover {
+  opacity: 0.8;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.pagination-wrapper :deep(.el-pagination) {
+  color: var(--text-secondary);
+}
+
+.pagination-wrapper :deep(.el-pagination button) {
+  background: white;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.pagination-wrapper :deep(.el-pagination button:hover) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pagination-wrapper :deep(.el-pager li) {
+  background: white;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  margin: 0 4px;
+}
+
+.pagination-wrapper :deep(.el-pager li:hover) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pagination-wrapper :deep(.el-pager li.is-active) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 .alerts-dropdown {
   position: absolute;
-  top: 3.5rem;
+  top: calc(100% + 8px);
   right: 0;
   z-index: 1000;
-  min-width: 22rem;
-  max-width: 28rem;
+  min-width: 340px;
+  max-width: 400px;
 }
 
 .alerts-fade-enter-active,
 .alerts-fade-leave-active {
-  transition: all 0.25s ease;
+  transition: all var(--transition-base);
 }
 
 .alerts-fade-enter-from,
 .alerts-fade-leave-to {
   opacity: 0;
-  transform: translateY(-0.5rem);
+  transform: translateY(-8px);
 }
 
 .alerts-panel {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  max-height: 25rem;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  max-height: 360px;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 .panel-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 8px;
+  margin-bottom: 12px;
   color: var(--text-primary);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .alerts-list {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 8px;
 }
 
 .alert-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.625rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  transition: all var(--transition-fast);
+}
+
+.alert-item:hover {
   background: var(--bg-tertiary);
 }
 
@@ -509,233 +753,39 @@ function tableRowClassName({ rowIndex }) {
 .alert-content {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
 
 .alert-title {
-  font-size: 0.8125rem;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
 }
 
 .alert-message {
-  font-size: 0.75rem;
+  font-size: 12px;
   color: var(--text-secondary);
   word-break: break-word;
+  line-height: 1.4;
 }
 
-.features-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  color: var(--text-primary);
-}
-
-.header-title {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.feature-count {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.625rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  position: relative;
-}
-
-.search-input {
-  width: 12.5rem;
-  max-width: 100%;
-}
-
-.search-input :deep(.el-input__wrapper) {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-}
-
-.search-input :deep(.el-input__inner) {
-  color: var(--text-primary);
-}
-
-.filter-select {
-  width: 11.25rem;
-  max-width: 100%;
-}
-
-.filter-select :deep(.el-input__wrapper) {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-}
-
-.filter-select :deep(.el-input__inner) {
-  color: var(--text-primary);
-}
-
-.features-content {
-  flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 300px;
-}
-
-.features-table {
-  background: transparent;
-  flex: 1;
-}
-
-.features-table :deep(.el-table__header-wrapper th) {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-weight: 600;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.features-table :deep(.el-table__body-wrapper) {
-  background: transparent;
-}
-
-.features-table :deep(.el-table__row) {
-  background: transparent;
-}
-
-.features-table :deep(.el-table__row.even-row) {
-  background: var(--bg-tertiary);
-}
-
-.features-table :deep(.el-table__row:hover>td) {
-  background: var(--bg-hover) !important;
-}
-
-.features-table :deep(.el-table__row td) {
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);
-  background: var(--bg-secondary) !important;
-}
-
-.features-table :deep(.el-table__row.even-row td) {
-  background: var(--bg-tertiary) !important;
-}
-
-.features-table :deep(.el-table__row:hover > td) {
-  background: var(--bg-hover) !important;
-}
-
-.feature-value-cell {
-  font-weight: 500;
-}
-
-.confidence-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-}
-
-.confidence-bar {
-  flex: 1;
-}
-
-.confidence-text {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  min-width: 2.5rem;
-}
-
-.time-cell {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-}
-
-.delete-btn {
-  color: var(--danger-color) !important;
-}
-
-.delete-btn:hover {
-  opacity: 0.8;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 1.25rem;
-  flex-shrink: 0;
-}
-
-.pagination-wrapper :deep(.el-pagination) {
-  color: var(--text-secondary);
-}
-
-.pagination-wrapper :deep(.el-pagination button) {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-.pagination-wrapper :deep(.el-pager li) {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-.pagination-wrapper :deep(.el-pager li.is-active) {
-  background: var(--accent-color);
-  color: white;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3.75rem 1.25rem;
-  color: var(--text-muted);
-}
-
-.empty-state p {
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-}
-
-@media screen and (max-width: 768px) {
+@media (max-width: 768px) {
   .features-view {
     height: auto;
-    min-height: calc(100vh - 7rem);
-  }
-  
-  .features-layout {
-    height: auto;
+    min-height: 100%;
   }
   
   .features-header {
+    padding: 16px;
     flex-direction: column;
     align-items: stretch;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .header-actions {
@@ -748,7 +798,7 @@ function tableRowClassName({ rowIndex }) {
   }
   
   .features-content {
-    padding: 0.75rem;
+    padding: 16px;
     min-height: 250px;
   }
   
@@ -757,13 +807,6 @@ function tableRowClassName({ rowIndex }) {
     right: 0;
     min-width: auto;
     max-width: none;
-  }
-}
-
-@media screen and (min-width: 1920px) {
-  .features-view {
-    max-width: 1400px;
-    margin: 0 auto;
   }
 }
 </style>

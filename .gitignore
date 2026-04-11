@@ -22,18 +22,50 @@ npm-debug.log*
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # Data
 *.db
 *.sqlite
+*.sqlite3
+data/
 
 # Environment
 .env
 .env.local
+.env.*.local
+*.env
 
 # Build
 dist/
 *.egg
+frontend/dist/
 
 # Config (use config.example.json as template)
 config/config.json
+
+# API Keys and Secrets (Security Critical)
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Logs
+logs/
+*.log
+server.log
+access.log
+error.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

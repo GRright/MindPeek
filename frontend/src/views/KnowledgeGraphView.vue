@@ -1,22 +1,6 @@
 <template>
   <div class="knowledge-graph-view">
-    <div class="graph-header">
-      <h1 class="page-title">
-        <span class="title-text">用户画像特征图谱</span>
-      </h1>
-      <div class="header-actions">
-        <el-button class="action-btn" @click="refreshGraph">
-          <el-icon><Refresh /></el-icon>
-          刷新
-        </el-button>
-        <el-button class="action-btn" @click="fitView">
-          <el-icon><FullScreen /></el-icon>
-          适应视图
-        </el-button>
-      </div>
-    </div>
-
-    <div class="graph-content">
+    <div class="graph-container">
       <aside class="left-sidebar">
         <div class="user-profile-card">
           <div class="user-avatar">
@@ -74,12 +58,18 @@
         <div class="graph-card">
           <div class="card-header">
             <span class="card-title">🌀 特征图谱</span>
-            <div class="graph-controls">
-              <el-button size="small" class="mini-btn" @click="zoomIn">+</el-button>
-              <el-button size="small" class="mini-btn" @click="zoomOut">-</el-button>
+            <div class="graph-actions">
+              <el-button class="action-btn" @click="refreshGraph">
+                <el-icon><Refresh /></el-icon>
+                刷新
+              </el-button>
+              <el-button class="action-btn" @click="fitView">
+                <el-icon><FullScreen /></el-icon>
+                适应视图
+              </el-button>
             </div>
           </div>
-          <div ref="graphContainer" class="graph-container"></div>
+          <div ref="graphContainer" class="graph-container-inner"></div>
         </div>
       </main>
     </div>
@@ -224,15 +214,15 @@ function buildGraphData() {
     draggable: true,
     itemStyle: {
       color: NODE_COLORS.userHex,
-      shadowColor: 'rgba(99, 102, 241, 0.5)',
-      shadowBlur: 20
+      shadowColor: 'rgba(99, 102, 241, 0.4)',
+      shadowBlur: 15
     },
     label: {
       show: true,
       position: 'bottom',
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: 'bold',
-      color: '#1f2937'
+      color: 'var(--text-primary)'
     }
   })
   
@@ -250,19 +240,19 @@ function buildGraphData() {
       id: `type_${type}`,
       name: type,
       category: 1,
-      symbolSize: 55,
+      symbolSize: 50,
       draggable: true,
       itemStyle: {
         color: colorHex,
-        shadowColor: `rgba(${hexToRgb(colorHex)}, 0.4)`,
-        shadowBlur: 15
+        shadowColor: `rgba(${hexToRgb(colorHex)}, 0.35)`,
+        shadowBlur: 12
       },
       label: {
         show: true,
         position: 'bottom',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: 600,
-        color: '#374151'
+        color: 'var(--text-secondary)'
       }
     })
     
@@ -271,7 +261,7 @@ function buildGraphData() {
       target: `type_${type}`,
       value: 1,
       lineStyle: {
-        width: 5,
+        width: 3,
         color: {
           type: 'linear',
           x: 0, y: 0, x2: 1, y2: 0,
@@ -281,7 +271,7 @@ function buildGraphData() {
           ]
         },
         curveness: 0.2,
-        opacity: 0.8
+        opacity: 0.7
       }
     })
   })
@@ -301,19 +291,19 @@ function buildGraphData() {
       id: `feature_${idx}`,
       name: feature.feature_value,
       category: isInferred ? 3 : 2,
-      symbolSize: 35 + (feature.confidence * 20),
+      symbolSize: 30 + (feature.confidence * 15),
       draggable: true,
       itemStyle: {
         color: color,
-        shadowColor: `rgba(${hexToRgb(color)}, 0.4)`,
-        shadowBlur: 12,
+        shadowColor: `rgba(${hexToRgb(color)}, 0.3)`,
+        shadowBlur: 10,
         opacity: 0.95
       },
       label: {
         show: true,
         position: 'right',
-        fontSize: 12,
-        color: '#374151',
+        fontSize: 11,
+        color: 'var(--text-secondary)',
         formatter: (params) => {
           return params.name.length > 12 ? params.name.slice(0, 12) + '...' : params.name
         }
@@ -327,11 +317,11 @@ function buildGraphData() {
         target: `feature_${idx}`,
         value: feature.confidence,
         lineStyle: {
-          width: Math.max(2, feature.confidence * 5),
+          width: Math.max(1.5, feature.confidence * 3),
           color: color,
           curveness: 0.3,
           type: isInferred ? 'dashed' : 'solid',
-          opacity: isInferred ? 0.6 : 0.8
+          opacity: isInferred ? 0.6 : 0.75
         }
       })
     }
@@ -364,21 +354,17 @@ function renderChart() {
       show: true,
       trigger: 'item',
       backgroundColor: 'rgba(255, 255, 255, 0.98)',
-      borderColor: '#e5e7eb',
+      borderColor: 'var(--border-light)',
       borderWidth: 1,
-      textStyle: { color: '#374151' },
+      textStyle: { color: 'var(--text-primary)' },
       formatter: (params) => {
         if (params.dataType === 'edge') {
-          return `<div style="padding: 8px;">
-            <div style="color: #6366f1; font-weight: 600; margin-bottom: 8px;">连接关系</div>
-            <div>${params.data.source} → ${params.data.target}</div>
-            <div style="color: #6b7280; margin-top: 4px;">置信度: ${((params.data.value || 0) * 100).toFixed(0)}%</div>
-          </div>`
+          return `<div style="padding: 8px;"><div style="color: #6366f1; font-weight: 600; margin-bottom: 8px;">连接关系</div><div>${params.data.source} → ${params.data.target}</div><div style="color: var(--text-muted); margin-top: 4px;">置信度: ${((params.data.value || 0) * 100).toFixed(0)}%</div></div>`
         }
         let content = `<div style="padding: 8px;">`
         content += `<div style="color: #6366f1; font-weight: 600; font-size: 14px; margin-bottom: 8px;">${params.name}</div>`
         if (params.data.value !== undefined) {
-          content += `<div style="color: #6b7280;">置信度: <span style="color: #22c55e; font-weight: 600;">${(params.data.value * 100).toFixed(0)}%</span></div>`
+          content += `<div style="color: var(--text-muted);">置信度: <span style="color: #22c55e; font-weight: 600;">${(params.data.value * 100).toFixed(0)}%</span></div>`
         }
         content += '</div>'
         return content
@@ -401,15 +387,15 @@ function renderChart() {
       label: { show: true, position: 'right', formatter: '{b}' },
       lineStyle: { color: 'source', curveness: 0.3 },
       force: {
-        repulsion: 600,
+        repulsion: 500,
         gravity: 0.1,
-        edgeLength: 180,
+        edgeLength: 150,
         layoutAnimation: true
       },
       emphasis: {
         focus: 'adjacency',
-        lineStyle: { width: 10 },
-        label: { fontSize: 14, fontWeight: 'bold' }
+        lineStyle: { width: 6 },
+        label: { fontSize: 13, fontWeight: 'bold' }
       }
     }]
   }
@@ -475,102 +461,58 @@ onUnmounted(() => {
 
 <style scoped>
 .knowledge-graph-view {
-  min-height: calc(100vh - 7rem);
-  padding: 1.25rem;
-  background: var(--bg-primary);
+  height: 100%;
 }
 
-.graph-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.625rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.title-icon {
-  font-size: 1.75rem;
-}
-
-.action-btn {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  transition: all 0.3s ease;
-}
-
-.action-btn:hover {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-  color: white;
-}
-
-.graph-content {
+.graph-container {
   display: grid;
-  grid-template-columns: 18.75rem 1fr;
-  gap: 1.25rem;
-  height: calc(100vh - 11.25rem);
-  min-height: 31.25rem;
-}
-
-@media (max-width: 75rem) {
-  .graph-content {
-    grid-template-columns: 16.25rem 1fr;
-  }
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  height: 100%;
 }
 
 .left-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 20px;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding-right: 4px;
 }
 
 .left-sidebar::-webkit-scrollbar {
-  width: 0.375rem;
+  width: 6px;
 }
 
 .left-sidebar::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 0.1875rem;
+  background: var(--bg-secondary);
+  border-radius: 3px;
 }
 
 .left-sidebar::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 0.1875rem;
+  background: var(--border-light);
+  border-radius: 3px;
 }
 
 .user-profile-card,
 .feature-types-card,
 .legend-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
-  padding: 1.25rem;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
 }
 
 .user-avatar {
-  margin-bottom: 0.75rem;
+  margin-bottom: 16px;
 }
 
 .avatar-ring {
-  width: 4.375rem;
-  height: 4.375rem;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  padding: 0.25rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  padding: 3px;
   margin: 0 auto;
 }
 
@@ -578,99 +520,104 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: var(--bg-tertiary);
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 26px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-primary);
 }
 
 .user-name {
   text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 0.875rem;
+  margin: 0 0 16px;
+  letter-spacing: -0.3px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.625rem;
+  gap: 12px;
 }
 
 .stat-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.75rem 0.5rem;
-  background: var(--bg-tertiary);
-  border-radius: 0.625rem;
-  transition: transform 0.2s ease;
+  gap: 4px;
+  padding: 14px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  transition: transform var(--transition-fast);
 }
 
 .stat-box:hover {
-  transform: translateY(-0.125rem);
+  transform: translateY(-2px);
 }
 
 .stat-value {
-  font-size: 1.375rem;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.6875rem;
+  font-size: 12px;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .card-title {
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.875rem;
+  margin-bottom: 16px;
+  letter-spacing: -0.2px;
 }
 
 .type-bars {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 10px;
 }
 
 .type-bar-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 10px;
 }
 
 .type-name {
-  width: 4.375rem;
-  font-size: 0.6875rem;
+  width: 70px;
+  font-size: 12px;
   color: var(--text-secondary);
   flex-shrink: 0;
+  font-weight: 500;
 }
 
 .type-bar {
   flex: 1;
-  height: 0.5rem;
-  background: var(--bg-tertiary);
-  border-radius: 0.25rem;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .type-bar-fill {
   height: 100%;
-  border-radius: 0.25rem;
+  border-radius: 4px;
   transition: width 0.6s ease;
 }
 
 .type-count {
-  width: 1.5rem;
+  width: 24px;
   text-align: right;
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -678,114 +625,106 @@ onUnmounted(() => {
 .legend-list {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 10px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  transition: transform 0.2s ease;
+  gap: 10px;
+  transition: transform var(--transition-fast);
 }
 
 .legend-item:hover {
-  transform: translateX(0.25rem);
+  transform: translateX(4px);
 }
 
 .legend-dot {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .legend-name {
-  font-size: 0.8125rem;
+  font-size: 13px;
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .main-content {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .graph-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
 }
 
 .card-title {
-  font-size: 0.9375rem;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
 }
 
-.graph-controls {
+.graph-actions {
   display: flex;
-  gap: 0.375rem;
+  gap: 10px;
 }
 
-.mini-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+.action-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   color: var(--text-secondary);
-  font-weight: 600;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md);
 }
 
-.mini-btn:hover {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
+.action-btn:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
-.graph-container {
+.graph-container-inner {
   flex: 1;
-  min-height: 25rem;
+  min-height: 400px;
 }
 
-@media (max-width: 56.25rem) {
-  .knowledge-graph-view {
-    min-height: auto;
-    padding: 0.75rem;
-  }
-  
-  .graph-header {
-    margin-bottom: 0.75rem;
-  }
-  
-  .page-title {
-    font-size: 1.25rem;
-  }
-  
-  .graph-content {
+@media (max-width: 1024px) {
+  .graph-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 20px;
     height: auto;
-    min-height: auto;
+    min-height: 100%;
   }
   
   .left-sidebar {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
     overflow: visible;
+    padding-right: 0;
   }
   
   .legend-card {
@@ -793,23 +732,41 @@ onUnmounted(() => {
   }
   
   .main-content {
-    min-height: 25rem;
+    min-height: 400px;
   }
   
   .graph-card {
     height: 100%;
-    min-height: 25rem;
+    min-height: 400px;
   }
   
-  .graph-container {
-    min-height: 20rem;
+  .graph-container-inner {
+    min-height: 320px;
   }
 }
 
-@media screen and (min-width: 120rem) {
-  .knowledge-graph-view {
-    max-width: 87.5rem;
-    margin: 0 auto;
+@media (max-width: 768px) {
+  .graph-container {
+    gap: 16px;
+  }
+  
+  .left-sidebar {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-header {
+    padding: 16px 20px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .graph-actions {
+    width: 100%;
+  }
+  
+  .action-btn {
+    flex: 1;
   }
 }
 </style>

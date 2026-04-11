@@ -102,6 +102,22 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     extract_features: bool = True
     deep_think: bool = False
+    
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v):
+        from backend.core.security import validate_user_id
+        if not validate_user_id(v):
+            raise ValueError('用户ID格式无效')
+        return v
+    
+    @field_validator('message')
+    @classmethod
+    def validate_message(cls, v):
+        from backend.core.security import validate_message, sanitize_input
+        if not validate_message(v):
+            raise ValueError('消息内容无效')
+        return sanitize_input(v)
 
 
 class ChatResponse(BaseModel):
@@ -117,6 +133,42 @@ class LLMConfigRequest(BaseModel):
     api_key: str
     model: Optional[str] = None
     api_url: Optional[str] = None
+    
+    @field_validator('provider')
+    @classmethod
+    def validate_provider(cls, v):
+        from backend.core.security import validate_provider
+        if not validate_provider(v):
+            raise ValueError('提供者格式无效')
+        return v
+    
+    @field_validator('api_key')
+    @classmethod
+    def validate_api_key(cls, v):
+        from backend.core.security import validate_api_key
+        if not validate_api_key(v):
+            raise ValueError('API密钥格式无效')
+        return v
+    
+    @field_validator('model')
+    @classmethod
+    def validate_model(cls, v):
+        if v is None:
+            return v
+        from backend.core.security import validate_model
+        if not validate_model(v):
+            raise ValueError('模型名称格式无效')
+        return v
+    
+    @field_validator('api_url')
+    @classmethod
+    def validate_api_url(cls, v):
+        if v is None:
+            return v
+        from backend.core.security import validate_api_url
+        if not validate_api_url(v):
+            raise ValueError('API URL格式无效')
+        return v
 
 
 class LLMConfigResponse(BaseModel):

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import json
 import asyncio
+import traceback
 from backend.services.profile_service import ProfileService
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.models.database import FeatureModel
@@ -21,6 +22,13 @@ from backend.utils.sync_database import (
     get_user_features_sync
 )
 from backend.utils.sync_feature_extractor import extract_features_sync
+from backend.core.security import (
+    sanitize_input,
+    validate_user_id,
+    validate_message,
+    validate_feature_type,
+    validate_feature_value
+)
 
 router = APIRouter()
 
@@ -29,6 +37,20 @@ class ChatStreamRequest(BaseModel):
     message: str
     extract_features: bool = False
     deep_think: bool = True
+    
+    @field_validator('user_id')
+    @classmethod
+    def validate_user_id(cls, v):
+        if not validate_user_id(v):
+            raise ValueError('用户ID格式无效')
+        return v
+    
+    @field_validator('message')
+    @classmethod
+    def validate_message(cls, v):
+        if not validate_message(v):
+            raise ValueError('消息内容无效')
+        return sanitize_input(v)
 
 
 def _should_use_personalization(message: str) -> bool:
@@ -276,7 +298,7 @@ async def chat_stream(
             error_msg = str(e)
             print(f"Stream error: {error_msg}")
             print(traceback.format_exc())
-            yield f"data: {json.dumps({'type': 'error', 'content': f'错误：{error_msg}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'content': '服务暂时不可用，请稍后重试'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -485,7 +507,7 @@ async def get_profile(
         import traceback
         print(f"获取用户画像失败：{e}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="获取用户画像失败")
 
 
 @router.post("/profile/{user_id}/predict")
@@ -706,7 +728,10 @@ async def merge_duplicate_features(user_id: str, threshold: float = 0.75):
                 "merged_count": merged_count
             }
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            import traceback
+            print(f"合并特征失败：{e}")
+            print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail="合并特征失败")
 
 @router.get("/knowledge-graph/{user_id}")
 async def get_knowledge_graph(user_id: str, use_hybrid: bool = True):
@@ -768,7 +793,10 @@ async def get_knowledge_graph(user_id: str, use_hybrid: bool = True):
                 "total_edges": len(edges)
             }
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            import traceback
+            print(f"获取知识图谱失败：{e}")
+            print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail="获取知识图谱失败")
 
 
 @router.get("/profile/{user_id}/insights")
@@ -860,4 +888,4 @@ async def get_profile_insights(user_id: str):
         import traceback
         print(f"获取画像洞察失败：{e}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="获取画像洞察失败")
