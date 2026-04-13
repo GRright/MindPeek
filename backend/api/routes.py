@@ -889,3 +889,179 @@ async def get_profile_insights(user_id: str):
         print(f"获取画像洞察失败：{e}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail="获取画像洞察失败")
+
+
+@router.get("/profile/{user_id}/summary")
+async def get_profile_summary(user_id: str):
+    """获取用户画像摘要"""
+    from backend.utils.sync_database import get_user_features_sync
+    import sqlite3
+    
+    try:
+        features = get_user_features_sync(user_id)
+        
+        # 按类型分组
+        features_by_type = {}
+        for f in features:
+            ftype = f.get('feature_type', '其他')
+            if ftype not in features_by_type:
+                features_by_type[ftype] = []
+            features_by_type[ftype].append(f)
+        
+        # 计算统计
+        total_features = len(features)
+        feature_types = list(features_by_type.keys())
+        
+        # 获取对话数量
+        conn = sqlite3.connect(config_manager.get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM conversations WHERE user_id = ?", (user_id,))
+        conversation_count = cursor.fetchone()[0]
+        conn.close()
+        
+        return {
+            "user_id": user_id,
+            "total_features": total_features,
+            "feature_types": feature_types,
+            "conversation_count": conversation_count,
+            "features_by_type": features_by_type
+        }
+    except Exception as e:
+        print(f"获取画像摘要失败：{e}")
+        raise HTTPException(status_code=500, detail="获取画像摘要失败")
+
+
+@router.get("/profile/{user_id}/features")
+async def get_profile_features(user_id: str, feature_type: str = None):
+    """获取用户特征列表"""
+    from backend.utils.sync_database import get_user_features_sync
+    
+    try:
+        features = get_user_features_sync(user_id)
+        
+        # 如果指定了类型，进行过滤
+        if feature_type:
+            features = [f for f in features if f.get('feature_type') == feature_type]
+        
+        return {
+            "user_id": user_id,
+            "features": features,
+            "total": len(features)
+        }
+    except Exception as e:
+        print(f"获取特征列表失败：{e}")
+        raise HTTPException(status_code=500, detail="获取特征列表失败")
+
+
+class FeatureCreateRequest(BaseModel):
+    feature_type: str
+    feature_value: str
+    confidence: float = 0.8
+    reasoning: str = ""
+
+
+@router.post("/profile/{user_id}/features")
+async def add_profile_feature(user_id: str, request: FeatureCreateRequest):
+    """添加用户特征"""
+    import sqlite3
+    from datetime import datetime
+    
+    try:
+        conn = sqlite3.connect(config_manager.get_database_path())
+        cursor = conn.cursor()
+        
+        now = datetime.now().isoformat()
+        cursor.execute("""
+            INSERT INTO features 
+            (user_id, feature_type, feature_value, confidence, reasoning, created_at, updated_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        """, (user_id, request.feature_type, request.feature_value, 
+              request.confidence, request.reasoning, now, now))
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "status": "success",
+            "message": "特征添加成功",
+            "feature": {
+                "feature_type": request.feature_type,
+                "feature_value": request.feature_value,
+                "confidence": request.confidence
+            }
+        }
+    except Exception as e:
+        print(f"添加特征失败：{e}")
+        raise HTTPException(status_code=500, detail="添加特征失败")
+
+
+@router.get("/knowledge-graph")
+async def get_global_knowledge_graph():
+    """获取全局知识图谱"""
+    try:
+        # 返回空图谱或示例数据
+        return {
+            "nodes": [],
+            "edges": [],
+            "featureTypes": [],
+            "inference_mode": "hybrid",
+            "total_nodes": 0,
+            "total_edges": 0
+        }
+    except Exception as e:
+        print(f"获取知识图谱失败：{e}")
+        raise HTTPException(status_code=500, detail="获取知识图谱失败")
+
+
+@router.get("/llm/providers")
+async def get_llm_providers():
+    """获取可用的 LLM 提供商列表"""
+    try:
+        providers = config_manager._config.get("llm_providers", {})
+        default_provider = config_manager.get_default_provider()
+        
+        result = []
+        for name, config in providers.items():
+            result.append({
+                "name": name,
+                "enabled": config.get("enabled", True),
+                "model": config.get("model", ""),
+                "api_url": config.get("api_url", ""),
+                "is_default": name == default_provider
+            })
+        
+        return {
+            "providers": result,
+            "default_provider": default_provider
+        }
+    except Exception as e:
+        print(f"获取LLM提供商失败：{e}")
+        raise HTTPException(status_code=500, detail="获取LLM提供商失败")
+
+
+class LLMConfigUpdateRequest(BaseModel):
+    provider: str
+    api_key: str
+    model: str = None
+    api_url: str = None
+
+
+@router.post("/llm/config")
+async def update_llm_config(request: LLMConfigUpdateRequest):
+    """更新 LLM 配置"""
+    try:
+        config_manager.update_llm_config(
+            request.provider,
+            request.api_key,
+            model=request.model,
+            api_url=request.api_url
+        )
+        config_manager.save_config()
+        
+        return {
+            "status": "success",
+            "message": "LLM配置更新成功"
+        }
+    except Exception as e:
+        print(f"更新LLM配置失败：{e}")
+        raise HTTPException(status_code=500, detail="更新LLM配置失败")

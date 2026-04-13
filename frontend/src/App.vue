@@ -407,7 +407,7 @@ html, body, #app {
 }
 
 .page-header {
-  padding: 40px;
+  padding: 20px 40px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -432,30 +432,30 @@ html, body, #app {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(14, 165, 233, 0.1) 100%);
   border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: 30px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-primary);
-  margin-bottom: 16px;
-}
-
-.page-title {
-  font-size: 48px;
-  font-weight: 800;
-  letter-spacing: -1.5px;
-  color: var(--text-primary);
-  line-height: 1.1;
   margin-bottom: 8px;
 }
 
+.page-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
 .page-subtitle {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .content-wrapper {
@@ -540,11 +540,11 @@ html, body, #app {
   }
   
   .page-header {
-    padding: 32px;
+    padding: 20px 32px;
   }
   
   .page-title {
-    font-size: 40px;
+    font-size: 28px;
   }
   
   .content-wrapper {
@@ -553,34 +553,48 @@ html, body, #app {
 }
 
 @media (max-width: 900px) {
-  .nav-links {
-    display: none;
+  .nav-container {
+    padding: 12px 20px;
   }
   
-  .nav-container {
-    padding: 16px 24px;
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .nav-link span {
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
   .page-header {
-    padding: 24px;
+    padding: 16px 20px;
   }
   
   .page-title {
-    font-size: 32px;
+    font-size: 24px;
   }
   
   .page-subtitle {
-    font-size: 16px;
+    font-size: 13px;
   }
   
   .content-wrapper {
-    padding: 0 24px 24px;
+    padding: 0 16px 16px;
   }
   
   .nav-container {
-    padding: 14px 20px;
+    padding: 10px 16px;
+  }
+  
+  .nav-links {
+    gap: 4px;
+    padding: 4px;
+  }
+  
+  .nav-link {
+    padding: 6px 10px;
   }
   
   .logo-text {
