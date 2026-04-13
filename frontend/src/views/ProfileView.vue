@@ -361,7 +361,7 @@ function renderRadarChart() {
       indicator: indicators,
       radius: '65%',
       axisName: {
-        color: 'var(--text-primary)',
+        color: '#0f172a',
         fontSize: 14,
         fontWeight: 600,
         padding: [10, 10, 10, 10]
@@ -384,7 +384,7 @@ function renderRadarChart() {
         itemStyle: { color: '#6366f1', borderWidth: 2 },
         label: {
           show: true,
-          color: 'var(--text-primary)',
+          color: '#0f172a',
           fontSize: 12,
           fontWeight: 600,
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
