@@ -278,15 +278,30 @@ def get_cached_predictions_sync(user_id: str, max_age_hours: int = 24) -> dict:
         from datetime import timedelta
         cutoff_time = datetime.utcnow() - timedelta(hours=max_age_hours)
         
+        # 检查表是否有 feature_count_at_generation 字段
+        cursor.execute("PRAGMA table_info(user_predictions)")
+        columns = [col[1] for col in cursor.fetchall()]
+        has_feature_count_col = 'feature_count_at_generation' in columns
+        
         # 获取缓存的预测
-        cursor.execute("""
-            SELECT id, prediction, category, confidence, reasoning, timeframe,
-                   observable_signals, created_at
-            FROM user_predictions
-            WHERE user_id = ? AND created_at > ?
-            ORDER BY confidence DESC
-            LIMIT 10
-        """, (user_id, cutoff_time.isoformat()))
+        if has_feature_count_col:
+            cursor.execute("""
+                SELECT id, prediction, category, confidence, reasoning, timeframe,
+                       observable_signals, created_at, feature_count_at_generation
+                FROM user_predictions
+                WHERE user_id = ? AND created_at > ?
+                ORDER BY confidence DESC
+                LIMIT 10
+            """, (user_id, cutoff_time.isoformat()))
+        else:
+            cursor.execute("""
+                SELECT id, prediction, category, confidence, reasoning, timeframe,
+                       observable_signals, created_at
+                FROM user_predictions
+                WHERE user_id = ? AND created_at > ?
+                ORDER BY confidence DESC
+                LIMIT 10
+            """, (user_id, cutoff_time.isoformat()))
         
         predictions = cursor.fetchall()
         
@@ -311,23 +326,21 @@ def get_cached_predictions_sync(user_id: str, max_age_hours: int = 24) -> dict:
             "timeframe": p[5],
             "observable_signals": json.loads(p[6]) if p[6] else [],
             "created_at": p[7],
-            "feature_count_at_generation": p[8] if len(p) > 8 else 0  # 兼容旧数据
+            "feature_count_at_generation": p[8] if has_feature_count_col and len(p) > 8 else 0
         } for p in predictions]
         
-        # 检查特征数量是否发生变化
-        # 如果有预测数据，使用第一条预测的特征数量作为参考
+        # 检查特征数量是否发生变化（仅用于信息提示，不使缓存失效）
         generated_feature_count = predictions_list[0].get('feature_count_at_generation', 0) if predictions_list else 0
-        
-        # 如果特征数量发生变化，缓存失效
         is_feature_count_changed = (
             generated_feature_count > 0 and 
             current_feature_count != generated_feature_count
         )
         
+        # 只要有预测数据就认为是有效的（不因为特征数量变化而失效）
         return {
             "predictions": predictions_list,
             "feature_count": len(predictions_list),
-            "is_valid": len(predictions_list) > 0 and not is_feature_count_changed,
+            "is_valid": len(predictions_list) > 0,
             "current_feature_count": current_feature_count,
             "generated_feature_count": generated_feature_count,
             "is_feature_count_changed": is_feature_count_changed
@@ -363,25 +376,49 @@ def save_predictions_sync(user_id: str, predictions: list) -> bool:
             WHERE user_id = ? AND created_at < datetime('now', '-7 days')
         """, (user_id,))
         
+        # 检查表是否有 feature_count_at_generation 字段
+        cursor.execute("PRAGMA table_info(user_predictions)")
+        columns = [col[1] for col in cursor.fetchall()]
+        has_feature_count_col = 'feature_count_at_generation' in columns
+        
         # 插入新预测，同时记录生成时的特征数量
         for pred in predictions:
-            cursor.execute("""
-                INSERT INTO user_predictions 
-                (user_id, prediction, category, confidence, reasoning, timeframe,
-                 observable_signals, created_at, updated_at, feature_count_at_generation)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                user_id,
-                pred.get('prediction', ''),
-                pred.get('category', '其他'),
-                pred.get('confidence', 0.5),
-                pred.get('reasoning', ''),
-                pred.get('timeframe', '中期'),
-                json.dumps(pred.get('observable_signals', [])),
-                pred.get('created_at', datetime.utcnow().isoformat()),
-                datetime.utcnow().isoformat(),
-                feature_count
-            ))
+            if has_feature_count_col:
+                cursor.execute("""
+                    INSERT INTO user_predictions 
+                    (user_id, prediction, category, confidence, reasoning, timeframe,
+                     observable_signals, created_at, updated_at, feature_count_at_generation)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    user_id,
+                    pred.get('prediction', ''),
+                    pred.get('category', '其他'),
+                    pred.get('confidence', 0.5),
+                    pred.get('reasoning', ''),
+                    pred.get('timeframe', '中期'),
+                    json.dumps(pred.get('observable_signals', [])),
+                    pred.get('created_at', datetime.utcnow().isoformat()),
+                    datetime.utcnow().isoformat(),
+                    feature_count
+                ))
+            else:
+                # 兼容旧表结构
+                cursor.execute("""
+                    INSERT INTO user_predictions 
+                    (user_id, prediction, category, confidence, reasoning, timeframe,
+                     observable_signals, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    user_id,
+                    pred.get('prediction', ''),
+                    pred.get('category', '其他'),
+                    pred.get('confidence', 0.5),
+                    pred.get('reasoning', ''),
+                    pred.get('timeframe', '中期'),
+                    json.dumps(pred.get('observable_signals', [])),
+                    pred.get('created_at', datetime.utcnow().isoformat()),
+                    datetime.utcnow().isoformat()
+                ))
         
         conn.commit()
         conn.close()

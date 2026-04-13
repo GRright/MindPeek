@@ -17,15 +17,16 @@
             <span class="logo-text">MindPeek</span>
           </div>
           
-          <nav class="nav-links">
+          <nav class="nav-links" ref="navLinksRef">
+            <div class="nav-bubble" :style="bubbleStyle"></div>
             <router-link
               v-for="item in navItems"
               :key="item.path"
               :to="item.path"
               class="nav-link"
               :class="{ active: isActive(item.path) }"
+              :data-path="item.path"
             >
-              <div class="nav-indicator"></div>
               <el-icon :size="20"><component :is="item.icon" /></el-icon>
               <span>{{ item.label }}</span>
             </router-link>
@@ -64,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import logo from './assets/logo.png'
@@ -98,6 +99,40 @@ const currentPageSubtitle = computed(() => routeNameMap[route.path]?.subtitle ||
 function isActive(path) {
   return route.path === path
 }
+
+// 导航气泡动画
+const navLinksRef = ref(null)
+const bubbleStyle = ref({
+  transform: 'translateX(0px)',
+  width: '0px',
+  opacity: '0'
+})
+
+function updateBubblePosition() {
+  nextTick(() => {
+    if (!navLinksRef.value) return
+    
+    const activeLink = navLinksRef.value.querySelector('.nav-link.active')
+    if (activeLink) {
+      const parentRect = navLinksRef.value.getBoundingClientRect()
+      const itemRect = activeLink.getBoundingClientRect()
+      
+      const x = itemRect.left - parentRect.left
+      const width = itemRect.width
+      
+      bubbleStyle.value = {
+        transform: `translateX(${x}px)`,
+        width: `${width}px`,
+        opacity: '1'
+      }
+    }
+  })
+}
+
+watch(() => route.path, updateBubblePosition, { immediate: true })
+
+// 窗口大小改变时重新计算位置
+window.addEventListener('resize', updateBubblePosition)
 
 const routeOrder = ['/chat', '/profile', '/knowledge-graph', '/features']
 let lastRouteIndex = 0
@@ -325,11 +360,12 @@ html, body, #app {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   background: var(--bg-secondary);
-  padding: 8px;
+  padding: 6px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
+  position: relative;
 }
 
 .nav-link {
@@ -342,22 +378,21 @@ html, body, #app {
   text-decoration: none;
   font-size: 15px;
   font-weight: 600;
-  transition: all var(--transition-base);
+  transition: color 0.3s ease;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
 }
 
-.nav-indicator {
+.nav-bubble {
   position: absolute;
-  top: 0;
+  height: calc(100% - 12px);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.3s ease;
+  z-index: 0;
+  top: 6px;
   left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  border-radius: 0 0 2px 2px;
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform var(--transition-base);
 }
 
 .nav-link:hover {
@@ -372,12 +407,6 @@ html, body, #app {
 
 .nav-link.active {
   color: var(--color-primary);
-  background: white;
-  box-shadow: var(--shadow-md);
-}
-
-.nav-link.active .nav-indicator {
-  transform: scaleX(1);
 }
 
 .nav-right {

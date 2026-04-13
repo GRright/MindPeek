@@ -52,9 +52,13 @@ class PredictionAgent:
         try:
             response = await self.llm.chat([{"role": "user", "content": prompt}])
             predictions = self._parse_predictions(response)
-            return predictions[:10]  # 返回 Top10
+            if predictions:
+                return predictions[:10]  # 返回 Top10
+            else:
+                print("LLM 返回空预测")
+                return []
         except Exception as e:
-            print(f"预测失败：{e}")
+            print(f"LLM 预测失败：{e}")
             return []
     
     def _build_feature_summary(self, features: List[Dict[str, Any]]) -> str:

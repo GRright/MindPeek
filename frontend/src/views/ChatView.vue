@@ -973,12 +973,12 @@ function renderMarkdown(content) {
   max-width: 900px;
   margin: 0 auto;
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 16px 20px;
+  border-radius: 20px;
+  padding: 4px 8px;
   transition: all 0.4s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
@@ -1004,6 +1004,7 @@ function renderMarkdown(content) {
   outline: none;
   font-family: inherit;
   max-height: 200px;
+  padding: 0 8px;
 }
 
 .chat-textarea::placeholder {
